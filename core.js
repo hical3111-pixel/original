@@ -65,8 +65,19 @@ const zoneOf=s=>Math.floor((s-1)/10)%4;
 const TYPES=['슬라임','골렘','눈알귀','박쥐'];
 const ZTYPES=[[0,2,3],[1,3,0],[2,1,3],[0,1,2,3]];
 const ZHUES=[14,165,33,208];
+function bossTypeOf(s){
+  const z=zoneOf(s),pool=ZTYPES[z];
+  const bidx=Math.floor((s-1)/40)*2+Math.floor(((s-1)%10)/5);
+  return pool[bidx%pool.length];
+}
 const CODEX=[];
-ZONES.forEach((zn,z)=>{ZTYPES[z].forEach(t=>{CODEX.push({id:`${z}_${t}`,z,t,zone:zn,type:TYPES[t],name:`군주 ${TYPES[t]}`})})});
+ZONES.forEach((zn,z)=>{
+  ZTYPES[z].forEach(t=>{
+    let fs=0;
+    for(let s=5;s<=400;s+=5){if(zoneOf(s)===z&&bossTypeOf(s)===t){fs=s;break}}
+    CODEX.push({id:`${z}_${t}`,z,t,zone:zn,type:TYPES[t],name:`군주 ${TYPES[t]}`,first:fs});
+  });
+});
 function codexCount(){let n=0;for(const c of CODEX)if(S.codex&&S.codex[c.id]>0)n++;return n}
 function codexBonus(){return codexCount()*.02}
 
@@ -217,7 +228,7 @@ const PRE=['끈적한','성난','심연의','타오르는','얼어붙은','황�
 function makeMonster(s,mini){
   const z=zoneOf(s);
   const boss=!mini&&isBoss(s)&&!S.farm,pool=ZTYPES[z];
-  const type=mini?0:boss?pool[Math.floor(s/5)%pool.length]:pool[Math.floor(Math.random()*pool.length)];
+  const type=mini?0:boss?bossTypeOf(s):pool[Math.floor(Math.random()*pool.length)];
   const hp=monHp(s)*(boss?7:mini?.3:1);
   const o={type,zone:z,boss,mini:!!mini,hue:(s*47+200)%360,rb:boss?72:mini?28:46,hp,max:hp,chip:hp,chipT:0,
     x:boss?monX:W+140*U,yo:boss?-H:0,ly:0,lyT:0,px:0,pxT:0,pxF:6,sc:1,scT:1,state:'enter',t:0,sq:0,sqv:0,kx:0,kv:0,flash:0,hurt:0,deadT:0,ph:rnd(0,6),

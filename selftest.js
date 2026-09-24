@@ -114,6 +114,12 @@
     ok(codexCount()===13,'전체 도감 수집 수가 13이 아님');
     ok(Math.abs(codexBonus()-.26)<1e-5,'13칸 전부 열었을 때 보너스가 +26%가 아님: '+codexBonus());
     ok(Math.abs(stats().atk/(atk0*1.26)-1)<1e-3,'전체 해금 시 stats().atk 증가율이 +26%와 일치하지 않음');
+    // 스테이지 5~400 보스 출현 순회 검사 (13칸 모두 출현 & 100 스테이지 이내 출현)
+    const seen=new Set();
+    for(let s=5;s<=400;s+=5){seen.add(`${zoneOf(s)}_${bossTypeOf(s)}`)}
+    ok(seen.size===CODEX.length,'스테이지 5~400에서 도감 13칸 중 미출현 보스 존재: '+seen.size+'/'+CODEX.length);
+    ok(CODEX.every(c=>seen.has(c.id)&&c.first<=100),'100 스테이지 이내 미출현 도감 보스 존재');
+    ok($('comboTxt').textContent.includes(String(COMBOS.length)),'연계기 헤더에 COMBOS.length 미반영: '+$('comboTxt').textContent);
     S.codex={};ST=stats();
   });
 

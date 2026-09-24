@@ -693,6 +693,7 @@ function buildBook(){
     const eb=r.querySelector('.eq');if(eb)eb.addEventListener('click',()=>toggleEquip(s.id));
     r.querySelector('.pv').addEventListener('click',()=>{ensureAudio();if(!cast(s,true))banner('지금은 시연할 수 없음','몬스터와 싸우는 중에 다시 눌러 주세요','#9d95c4',1.4)});
     el.appendChild(r)}
+  const ctxt=$('comboTxt');if(ctxt)ctxt.textContent=`모든 스킬이 짝을 이룹니다 · ${COMBOS.length}쌍`;
   const cb=$('combos');cb.innerHTML='<div class="cbrule">⛓ <b>시작 스킬</b>을 쓰면 짝 스킬의 재사용 대기가 <b>'+PRIME_CD+'초 이하</b>로 줄어듭니다. '+comboWin()+'초 안에 짝 스킬을 쓰면 연계기가 발동하고, 시작 스킬 대기가 <b>절반</b>으로 줄며 각성 게이지가 20 찹니다. 자동 스킬은 짝 스킬을 아껴 두었다가 연계로 씁니다.</div>';
   for(const c of COMBOS){const a=skOf(c.a),b=skOf(c.b),ok=comboReady(c),both=equipped(a)&&equipped(b),d=document.createElement('div');
     d.className='cbc'+(ok?'':' locked');d.style.setProperty('--c',c.col);
@@ -750,7 +751,7 @@ function buildCodex(){
     d.innerHTML=`<div class="cdx-ico"><img src="${thumb}" alt="${open?c.name:'???'}"></div>`+
       `<div class="cdx-info"><div class="cdx-zone" style="color:${zcol}">${c.zone}</div>`+
       `<div class="cdx-name">${open?c.name:'???'}</div>`+
-      `<div class="cdx-sub">${open?`처치 ${cnt}회`:`<span class="cdx-hint">${c.zone} 출현</span>`}</div></div>`;
+      `<div class="cdx-sub">${open?`처치 ${cnt}회`:`<span class="cdx-hint">STAGE ${c.first} 이후 출현</span>`}</div></div>`;
     el.appendChild(d);
   }
   const pct=Math.round(n*2);
