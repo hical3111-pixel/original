@@ -555,10 +555,10 @@ function castAwaken(){
 }
 
 /* ================= 연계기 ================= */
-function comboLunar(){
+function comboLunar(pm=1){
   castLock=2.4;const c0=mCenter(m);
   addFX({dur:2.4,up(dt,o){const t=o.t;dimT=Math.max(dimT,.7);tintA=Math.max(tintA,.2);tintC='200,20,50';castLock=Math.max(castLock,.05);
-    at(o,.9,()=>{const c=m?mCenter(m):c0;skillHit(10,1,c.x,c.y,{heavy:1,name:'월식 처형',col:'#ff5a6a',fc:'255,60,80',crack:2,sid:'combo'});sfx.slash2();sfx.bigboom();ink(c.x,c.y,30,'#1a0006')});
+    at(o,.9,()=>{const c=m?mCenter(m):c0;skillHit(10,pm,c.x,c.y,{heavy:1,name:'월식 처형',col:'#ff5a6a',fc:'255,60,80',crack:2,sid:'combo'});sfx.slash2();sfx.bigboom();ink(c.x,c.y,30,'#1a0006')});
   },draw(o){const t=o.t,mx=W*.5,my=H*.2,mr=70*U*easeBack(Math.min(1,t/.4)),al=t>1.9?Math.max(0,1-(t-1.9)/.5):1;
     ctx.globalAlpha=al;ctx.globalCompositeOperation='lighter';const g=ctx.createRadialGradient(mx,my,mr*.8,mx,my,mr*2.4);g.addColorStop(0,'rgba(255,40,70,.5)');g.addColorStop(1,'rgba(255,40,70,0)');ctx.fillStyle=g;ctx.beginPath();ctx.arc(mx,my,mr*2.4,0,7);ctx.fill();ctx.globalCompositeOperation='source-over';
     ctx.fillStyle='#d0143a';ctx.beginPath();ctx.arc(mx,my,mr,0,7);ctx.fill();ctx.fillStyle='#14020a';ctx.beginPath();ctx.arc(mx+mr*.38,my-mr*.12,mr*.93,0,7);ctx.fill();
@@ -567,32 +567,45 @@ function comboLunar(){
       ctx.globalCompositeOperation='lighter';ctx.fillStyle='#ff2a4a';cres(p,s,1.1,1.25,.05,1.07,1.2);ctx.fill();ctx.globalCompositeOperation='source-over'}
     ctx.globalAlpha=1}});
 }
-function comboRain(){
+function comboRain(pm=1){
   castLock=2.5;const c0=mCenter(m),R=m.rb*U,py=Math.max(50*U,c0.y-270*U),sw=[],L=90*U;
   addFX({dur:2.5,up(dt,o){const t=o.t,c=m?mCenter(m):c0;dimT=Math.max(dimT,.55);castLock=Math.max(castLock,.05);
     if(t>.4&&t<1.7){o.acc=(o.acc||0)+dt;while(o.acc>.075){o.acc-=.075;sw.push({x:c0.x+rnd(-1.2,1.2)*R,ty:c.y+rnd(-.5,.8)*R,t,hit:0})}}
-    for(const s of sw){const k=Math.min(1,(t-s.t)/.1);s.cy=lerp(py,s.ty,easeIn(k));if(k>=1&&!s.hit){s.hit=1;burst(s.x,s.ty,['#c9a8ff','#fff'],6,700);skillHit(.8,1,s.x,s.ty,{light:1,col:'#d9c6ff',sid:'combo'});sfx.hit(false)}}
+    for(const s of sw){const k=Math.min(1,(t-s.t)/.1);s.cy=lerp(py,s.ty,easeIn(k));if(k>=1&&!s.hit){s.hit=1;burst(s.x,s.ty,['#c9a8ff','#fff'],6,700);skillHit(.8,pm,s.x,s.ty,{light:1,col:'#d9c6ff',sid:'combo'});sfx.hit(false)}}
     at(o,1.9,()=>{for(const s of sw)for(let i=0;i<2;i++)P.push({t:'shard',x:s.x,y:s.ty,vx:rnd(-400,400)*U,vy:rnd(-600,-100)*U,g:1500*U,drag:1,floor:1,size:rnd(4,9)*U,rot:rnd(0,6),vr:rnd(-12,12),life:.9,max:.9,color:'#7b4dff'});
-      skillHit(5,1,c.x,c.y,{heavy:1,name:'차원 검우',col:'#d9c6ff',fc:'200,170,255',crack:1,sid:'combo'});sfx.boom();sw.length=0});
+      skillHit(5,pm,c.x,c.y,{heavy:1,name:'차원 검우',col:'#d9c6ff',fc:'200,170,255',crack:1,sid:'combo'});sfx.boom();sw.length=0});
   },draw(o){const t=o.t,s=t<.35?easeBack(t/.35):t<1.8?1:Math.max(0,1-(t-1.8)/.25);
     if(s>0){ctx.fillStyle='#0a0612';ctx.beginPath();ctx.ellipse(c0.x,py,R*1.9*s,R*.45*s,0,0,7);ctx.fill();
       ctx.globalCompositeOperation='lighter';ctx.strokeStyle='#c9b8ff';ctx.lineWidth=3*U;ctx.beginPath();ctx.ellipse(c0.x,py,R*1.9*s,R*.45*s,0,0,7);ctx.stroke();
       ctx.setLineDash([8*U,6*U]);ctx.lineDashOffset=-t*60*U;ctx.beginPath();ctx.ellipse(c0.x,py,R*1.5*s,R*.32*s,0,0,7);ctx.stroke();ctx.setLineDash([]);ctx.globalCompositeOperation='source-over'}
     for(const s2 of sw)if(s2.cy!==undefined)drawPSword(s2.x,s2.cy-L*.55,Math.PI/2,L,1,s2.hit?0:.6)}});
 }
-function comboCrimson(){
+function comboCrimson(pm=1){
   castLock=2.3;const c0=mCenter(m),booms=[];
   addFX({dur:2.3,up(dt,o){const t=o.t,c=m?mCenter(m):c0;dimT=Math.max(dimT,.5);castLock=Math.max(castLock,.05);
     for(let i=0;i<6;i++)at(o,.1+i*.14,()=>{const k=i/5,x=lerp(heroX+80*U,c.x,k),y=lerp(groundY-40*U,c.y,k);booms.push({x,y,t:0,sc:.35+k*.55,seed:[...Array(12)].map(()=>rnd(0,7))});sfx.boom();addTrauma(.3);
-      if(i===5)skillHit(7,1,c.x,c.y,{heavy:1,name:'진홍 섬멸',col:'#ffb3b8',fc:'255,120,140',crack:2,sid:'combo'});else skillHit(.8,1,c.x,c.y,{light:1,col:'#ffb3b8',sid:'combo'})});
+      if(i===5)skillHit(7,pm,c.x,c.y,{heavy:1,name:'진홍 섬멸',col:'#ffb3b8',fc:'255,120,140',crack:2,sid:'combo'});else skillHit(.8,pm,c.x,c.y,{light:1,col:'#ffb3b8',sid:'combo'})});
     for(const b of booms)b.t+=dt;
   },draw(){for(const b of booms)fleshBoom(b,b.sc)}});
 }
 const COMBOS=[
-  {a:'shadow',b:'eclipse',name:'월식 처형',fn:comboLunar},
-  {a:'swords',b:'portal',name:'차원 검우',fn:comboRain},
-  {a:'breath',b:'cannon',name:'진홍 섬멸',fn:comboCrimson}];
+  {a:'shadow',b:'eclipse',name:'월식 처형',fn:comboLunar,col:'#ff4a6a',d:'붉은 달이 떠오르고, 화면 전체를 가르는 거대한 참격이 떨어진다.'},
+  {a:'swords',b:'portal',name:'차원 검우',fn:comboRain,col:'#c9a8ff',d:'하늘에 열린 차원문에서 보랏빛 검이 비처럼 쏟아진다.'},
+  {a:'breath',b:'cannon',name:'진홍 섬멸',fn:comboCrimson,col:'#ff6b7a',d:'기사 앞부터 적까지 붉은 폭발이 연쇄로 터져 나간다.'}];
+const COMBO_WIN=8;
 let lastCast=null,pendingCombo=null;
+const skOf=id=>SK.find(s=>s.id===id);
+function comboReady(c){return unlocked(skOf(c.a))&&unlocked(skOf(c.b))}
+function activeLink(){
+  if(!lastCast||pendingCombo||gt-lastCast.t>=COMBO_WIN)return null;
+  const c=COMBOS.find(c=>c.a===lastCast.id);if(!c||!comboReady(c))return null;
+  return{c,left:COMBO_WIN-(gt-lastCast.t)};
+}
+function fireCombo(c,pm){
+  const a=skOf(c.a),b=skOf(c.b);
+  cutin(c.name,`${a.name} ＋ ${b.name}`,c.col,[a.c,b.c]);c.fn(pm);
+}
+function previewCombo(c){if(!fighting()||castLock>0)return false;fireCombo(c,.1);return true}
 
 /* ================= 유물 상자 ================= */
 let relicQ=[];
@@ -670,7 +683,10 @@ function canCast(s){return fighting()&&(s.buff?frenzyT<=0:castLock<=0)}
 function cast(s,preview){
   if(!canCast(s))return false;
   if(!preview){if(!unlocked(s)||cds[s.id]>0)return false;cds[s.id]=s.cd*ST.cdm;
-    const cb=COMBOS.find(c=>lastCast&&c.a===lastCast.id&&c.b===s.id&&gt-lastCast.t<8);if(cb)pendingCombo=cb;lastCast={id:s.id,t:gt}}
+    const cb=COMBOS.find(c=>lastCast&&c.a===lastCast.id&&c.b===s.id&&gt-lastCast.t<COMBO_WIN);
+    if(cb){pendingCombo=cb;sfx.link();T.push({x:heroX,y:groundY-140*U,vx:0,vy:-60*U,text:'연계!',crit:1,label:cb.name,lcol:'#fff',size:34,life:1.2,max:1.2,color:cb.col})}
+    lastCast={id:s.id,t:gt};
+    const nx=COMBOS.find(c=>c.a===s.id);if(nx&&comboReady(nx))sfx.link()}
   s.fn(preview?.1:1);if(!s.buff)castLock=Math.max(castLock,.1);return true;
 }
 function autoCast(){
@@ -682,5 +698,5 @@ function autoCast(){
     if(equipped(s)&&unlocked(s)&&cds[s.id]<=0&&canCast(s)&&(s.buff||m.boss||m.hp>ST.atk*3)){cast(s);break}}
 }
 function tickCombo(){
-  if(pendingCombo&&castLock<=0&&fighting()){const cb=pendingCombo;pendingCombo=null;S.combos++;cutin(cb.name,'연계기 · COMBO','#ffd166');cb.fn()}
+  if(pendingCombo&&castLock<=0&&fighting()){const cb=pendingCombo;pendingCombo=null;S.combos++;fireCombo(cb,1)}
 }

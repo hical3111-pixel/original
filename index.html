@@ -107,9 +107,23 @@ button:focus-visible,input:focus-visible+span{outline:2px solid var(--spirit);ou
 .btns{display:flex;gap:4px}
 .btns button{border:1px solid var(--line);background:var(--bg);border-radius:7px;padding:3px 8px;font-size:11px;font-weight:700;color:var(--ink);cursor:pointer;white-space:nowrap}
 .btns button.eq.on{background:var(--c);color:#150d22;border-color:transparent}
-.cb{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px;background:var(--panel2);padding:9px 12px;font-size:12.5px;font-weight:700}
-.cb em{font-style:normal;color:var(--dim)}
-.cb b{margin-left:auto;font-family:var(--disp);font-weight:400;font-size:15px;color:var(--gold)}
+.combos{display:grid;gap:8px}
+.cbc{background:var(--panel2);border-radius:12px;padding:12px;display:grid;gap:8px;box-shadow:inset 3px 0 0 var(--c)}
+.cbc.locked{opacity:.6;box-shadow:inset 3px 0 0 #3a3360}
+.cbf{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.cbf .ic{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;background:var(--bg);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--c) 60%,transparent)}
+.cbf .ic svg{width:22px;height:22px}
+.cbf em{font-style:normal;color:var(--dim);font-weight:900}
+.cbf b{font-family:var(--disp);font-weight:400;font-size:18px;color:var(--c)}
+.cbc p{margin:0;font-size:12px;color:var(--mute);line-height:1.55}
+.cbc p b{color:var(--ink)}
+.cbs{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:11px;font-weight:700;color:var(--dim)}
+.cbs .ok{color:#7cf29a}
+.cbs button{border:1px solid var(--line);background:var(--bg);border-radius:7px;padding:4px 10px;font-size:11px;font-weight:700;color:var(--ink);cursor:pointer}
+.ctag{display:inline-block;margin-top:4px;font-size:10.5px;font-weight:700;color:var(--c);background:color-mix(in srgb,var(--c) 14%,transparent);padding:1px 7px;border-radius:999px}
+.skill.link{border-color:#ffd166;animation:lk .45s infinite alternate}
+.skill.link::before{content:"연계";position:absolute;top:3px;left:50%;transform:translateX(-50%);z-index:2;font-size:9px;font-weight:900;line-height:1.5;background:#ffd166;color:#2a1606;padding:0 5px;border-radius:4px}
+@keyframes lk{from{box-shadow:0 0 8px #ffd166}to{box-shadow:0 0 26px #ffd166,inset 0 0 12px rgba(255,209,102,.5)}}
 .relics{display:grid;grid-template-columns:1fr 1fr;gap:6px}
 .rl{display:grid;grid-template-columns:30px minmax(0,1fr) auto;gap:8px;align-items:center;background:var(--panel2);border-radius:10px;padding:8px;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--c) 40%,transparent)}
 .rl i{width:30px;height:30px;display:grid;place-items:center;font-style:normal;font-weight:900;border-radius:8px;background:color-mix(in srgb,var(--c) 22%,#120c22);color:var(--c);font-size:15px}
@@ -160,7 +174,7 @@ details.fold>*+*{margin-top:10px}
   .skill.awk .cd{padding-bottom:0;font-size:10px;align-items:end}
   .relics{grid-template-columns:1fr}
 }
-@media (prefers-reduced-motion:reduce){#retry,.skill.awk.full{animation:none}}
+@media (prefers-reduced-motion:reduce){#retry,.skill.awk.full,.skill.link{animation:none}}
 </style>
 </head>
 <body>
@@ -213,9 +227,9 @@ details.fold>*+*{margin-top:10px}
       <summary class="sec-h"><h2>스킬</h2><small id="slotTxt"></small></summary>
       <div class="list" id="book"></div>
     </details>
-    <details class="fold">
-      <summary class="sec-h"><h2>연계기</h2><small>앞 스킬 후 8초 안에 뒤 스킬</small></summary>
-      <div class="list" id="combos"></div>
+    <details class="fold" open>
+      <summary class="sec-h"><h2>연계기</h2><small>두 스킬을 8초 안에 이어 쓰면 발동</small></summary>
+      <div class="combos" id="combos"></div>
     </details>
     <details class="fold" open>
       <summary class="sec-h"><h2>유물</h2><small>보스 처치 시 획득</small></summary>

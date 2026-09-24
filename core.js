@@ -158,6 +158,8 @@ const sfx={
   chest(){noise(.25,.5,250,.6,'lowpass');tone('sine',90,50,.25,.6)},
   open(r){const base=[523,659,784,988][r];for(let i=0;i<3+r*2;i++)tone(r>2?'square':'triangle',base*Math.pow(1.26,i%5)*(i>4?2:1),base*Math.pow(1.26,i%5)*(i>4?2:1),.18,.07,i*.07);if(r>2)noise(1.2,.2,6000,.5,'highpass',.2)},
   cutin(){noise(.35,.4,2500,.6);tone('sawtooth',300,1200,.3,.07)},
+  siren(){for(let i=0;i<3;i++){tone('sawtooth',420,880,.28,.07,i*.56);tone('sawtooth',880,420,.28,.07,i*.56+.28)}},
+  link(){[784,1047,1319].forEach((f,i)=>tone('triangle',f,f,.12,.08,i*.05))},
 };
 
 /* ================= canvas & world vars ================= */
@@ -174,7 +176,8 @@ const comp={arT:.5,mgT:1.3,arShot:0,mgCast:0};
 const addTrauma=v=>{trauma=Math.min(1,trauma+v*FXS)};
 const flash=(v,c='255,255,255')=>{if(v*(RM?.3:1)>=flashA){flashA=v*(RM?.3:1);flashC=c}};
 const fighting=()=>m&&m.state==='fight';
-function cutin(name,sub,col){CUT={name,sub,col,t:0,dur:1.05};stop=Math.max(stop,.8);sfx.cutin()}
+function cutin(name,sub,col,pair){CUT={name,sub,col,pair,t:0,dur:pair?1.35:1.05};stop=Math.max(stop,pair?1.1:.8);sfx.cutin()}
+let BI=null;
 
 /* ================= monsters ================= */
 const PRE=['끈적한','성난','심연의','타오르는','얼어붙은','황금빛','독기 어린','폭풍의','굶주린','뒤틀린'];
@@ -332,14 +335,20 @@ function banner(text,sub,color,dur=1.7){BN={text,sub,color,t:0,dur}}
 function stageBanner(){
   const z=zoneOf(S.stage);
   if(z!==zoneShown)startInk();
-  if(isBoss(S.stage)&&!S.farm)banner('보스 출현',`STAGE ${S.stage}`,'#ff4f5e',1.9);
-  else if((S.stage-1)%10===0)banner(ZONES[z],`STAGE ${S.stage}`,PAL[z][6],1.9);
+  if(isBoss(S.stage)&&!S.farm)return;
+  if((S.stage-1)%10===0)banner(ZONES[z],`STAGE ${S.stage}`,PAL[z][6],1.9);
   else banner(`STAGE ${S.stage}`,ZONES[z],'#ffc94a',1.3);
 }
 function startInk(){if(RM){zoneShown=zoneOf(S.stage);return}inkT=0;inkB=[];for(let i=0;i<16;i++)inkB.push({x:rnd(0,W),y:rnd(0,H),r:rnd(.3,.55)*Math.max(W,H),d:rnd(0,.15),s:[...Array(5)].map(()=>[rnd(0,7),rnd(.9,1.15),rnd(.08,.18)])})}
 function retryBoss(){
   if(!S.farm)return;S.farm=false;S.farmKills=0;S.stage++;S.kills=0;
   if(m&&m.state==='fight')m.state='flee';
+  for(const s of SK)cds[s.id]=0;
+  lastCast=null;pendingCombo=null;
+  P.push({t:'ring',x:heroX,y:groundY-50*U,r0:10*U,r1:150*U,w:6*U,life:.45,max:.45,color:'#7fe3ff'});
+  for(let i=0;i<16;i++)P.push({t:'dot',x:heroX+rnd(-40,40)*U,y:groundY-rnd(0,90)*U,vx:rnd(-30,30)*U,vy:-rnd(120,320)*U,g:0,drag:1.5,size:rnd(1.5,3.5)*U,life:rnd(.5,1),max:1,color:'#7fe3ff'});
+  T.push({x:heroX,y:groundY-130*U,vx:0,vy:-70*U,text:'스킬 재충전!',crit:0,label:'',size:24,life:1.3,max:1.3,color:'#9ff3ff'});
+  sfx.chime();
   stageBanner();stageUI();
 }
 function bossFail(){

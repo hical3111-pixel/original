@@ -57,6 +57,85 @@ function resolveHit(p){
   T.push({x:hx,y:hy-80*U,vx:0,vy:-80*U,text:'기절!',crit:1,label:'',size:36,life:1.1,max:1.1,color:'#ff4f5e'});
 }
 
+/* ================= boss intro cutscene ================= */
+function startBossIntro(){BI={t:0,m};m.yo=-H;castLock=Math.max(castLock,.2);sfx.siren()}
+function updBossIntro(dt){
+  if(!BI)return;
+  if(!m||m!==BI.m){BI=null;return}
+  BI.t+=dt;const t=BI.t;
+  if(m.state==='enter'){castLock=Math.max(castLock,.1);dimT=Math.max(dimT,t<1?.5:.35)}
+  m.yo=t<.75?-H:t<1?lerp(-H,0,easeIn((t-.75)/.25)):0;
+  at(BI,1,()=>{sfx.land();sfx.bigboom();stop=Math.max(stop,.12);addTrauma(1);zoom+=.1*FXS;flash(.45,'255,90,100');m.sqv=10;
+    P.push({t:'ring',x:m.x,y:groundY,r0:10*U,r1:340*U,w:12*U,sy:.2,life:.7,max:.7,color:'#ff4f5e'});
+    P.push({t:'ring',x:m.x,y:groundY,r0:10*U,r1:220*U,w:6*U,sy:.2,life:.45,max:.45,color:'#ffffff'});
+    smoke(m.x,groundY-10*U,16,'#2a1a3e',1.3);rubble(m.x,m.rb*U*2.6,10,1.4);addCrack(m.x,groundY-20*U,false)});
+  at(BI,1.15,()=>{sfx.roar();m.sqv=-8});
+  if(t>1.15&&t<1.9){addTrauma(dt*1.4);m.sq=.1*Math.sin(t*45);m.sqv=0;zoom=Math.max(zoom,1+.08*FXS)}
+  at(BI,2.55,()=>{if(m.state==='enter'){m.state='fight';bossMax=30+3*rv('sand');bossT=bossMax;m.atkT=2.5;castLock=0;sfx.fanfare()}});
+  if(t>3.25)BI=null;
+}
+function skipBossIntro(){if(!BI||!m||m.state!=='enter'||BI.t<.4)return false;BI.t=BI.t<1?1:Math.max(BI.t,2.5);return true}
+function drawBossIntroWorld(){
+  if(!BI||!m)return;const t=BI.t,r=m.rb*U;
+  if(t<1){const k=clamp(t/1,0,1);ctx.fillStyle=`rgba(0,0,0,${.2+.45*k})`;ctx.beginPath();ctx.ellipse(m.x,groundY+2,r*(.3+.9*k),r*.22*(.3+.9*k),0,0,7);ctx.fill();
+    ctx.strokeStyle=`rgba(255,42,58,${.5+.4*Math.sin(t*18)})`;ctx.lineWidth=3*U;ctx.beginPath();ctx.ellipse(m.x,groundY+2,r*1.4,r*.3,0,0,7);ctx.stroke()}
+}
+function drawBossRoar(){
+  if(!BI||!m||BI.t<1.15||BI.t>1.9)return;const c=mCenter(m),k=(BI.t-1.15)/.75;
+  ctx.globalCompositeOperation='lighter';ctx.strokeStyle='#fff';ctx.lineCap='round';
+  for(let i=0;i<22;i++){const a=rnd(0,Math.PI*2),r0=rnd(90,160)*U,r1=r0+rnd(120,300)*U;ctx.globalAlpha=(1-k)*rnd(.3,.8);ctx.lineWidth=rnd(1.5,4)*U;
+    ctx.beginPath();ctx.moveTo(c.x+Math.cos(a)*r0,c.y+Math.sin(a)*r0);ctx.lineTo(c.x+Math.cos(a)*r1,c.y+Math.sin(a)*r1);ctx.stroke()}
+  ctx.globalAlpha=(1-k)*.8;ctx.strokeStyle='#ff4f5e';ctx.lineWidth=5*U;ctx.beginPath();ctx.arc(c.x,c.y,m.rb*U*(1.3+k*2.4),0,7);ctx.stroke();
+  ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over';
+}
+function drawBossIntro(){
+  if(!BI||!m)return;const t=BI.t;
+  const inK=easeOut(clamp(t/.3,0,1)),outK=easeIn(clamp((t-2.6)/.4,0,1)),bh=H*.11*inK*(1-outK);
+  if(t<1.1){ctx.fillStyle=`rgba(255,20,40,${.1+.08*Math.sin(t*14)})`;ctx.fillRect(0,0,W,H)}
+  if(bh>.5){ctx.fillStyle='#000';ctx.fillRect(0,0,W,bh);ctx.fillRect(0,H-bh,W,bh);
+    const wa=t<2.3?1:Math.max(0,1-(t-2.3)/.3);
+    if(wa>0){ctx.save();ctx.globalAlpha=wa;const fs=Math.max(11,Math.round(bh*.42));ctx.font=`${fs}px "Black Han Sans",sans-serif`;ctx.textBaseline='middle';ctx.textAlign='left';
+      const msg='WARNING  ·  BOSS APPROACHING  ·  보스 접근 중  ·  ',mw=ctx.measureText(msg).width;
+      for(const [y0,dir] of [[0,1],[H-bh,-1]]){ctx.save();ctx.beginPath();ctx.rect(0,y0,W,bh);ctx.clip();
+        ctx.fillStyle='#ff2a3a';const sy=dir>0?y0+bh-6:y0,off=(t*120)%24;for(let x=-24+off*dir;x<W+24;x+=24){ctx.beginPath();ctx.moveTo(x,sy);ctx.lineTo(x+12,sy);ctx.lineTo(x+6,sy+6);ctx.lineTo(x-6,sy+6);ctx.closePath();ctx.fill()}
+        ctx.fillStyle='rgba(255,60,80,.85)';const sx=-((t*140*dir)%mw+mw)%mw;for(let x=sx;x<W;x+=mw)ctx.fillText(msg,x,y0+bh/2);ctx.restore()}
+      ctx.restore()}}
+  ctx.textAlign='center';ctx.textBaseline='middle';ctx.lineJoin='round';
+  if(t>.1&&t<.95){const a=Math.sin(t*16)>0?1:.35,fs=Math.round(Math.max(34,72*U));ctx.globalAlpha=a;ctx.font=`${fs}px "Black Han Sans",sans-serif`;
+    ctx.lineWidth=8;ctx.strokeStyle='#000';ctx.strokeText('WARNING',W/2,H*.4);ctx.fillStyle='#ff2a3a';ctx.fillText('WARNING',W/2,H*.4);
+    ctx.globalAlpha=1;ctx.font=`700 ${Math.round(Math.max(12,16*U))}px "Noto Sans KR",sans-serif`;ctx.fillStyle='#ffd0d6';ctx.fillText(`STAGE ${S.stage} · 강력한 기운이 다가옵니다`,W/2,H*.4+fs*.7)}
+  if(t>1.3&&t<2.95){const k=easeOut(clamp((t-1.3)/.25,0,1)),out=easeIn(clamp((t-2.55)/.35,0,1)),x0=lerp(W,W*.06,k)-out*W*.15,y=bh+H*.12;
+    ctx.save();ctx.globalAlpha=1-out;ctx.textAlign='left';let fs=Math.round(Math.max(24,50*U));ctx.font=`${fs}px "Black Han Sans",sans-serif`;
+    while(ctx.measureText(m.name).width>W*.86&&fs>16){fs-=2;ctx.font=`${fs}px "Black Han Sans",sans-serif`}
+    const nw=ctx.measureText(m.name).width;
+    ctx.fillStyle='rgba(8,2,12,.7)';ctx.beginPath();ctx.moveTo(x0-16,y-fs*1.05);ctx.lineTo(x0+nw+40,y-fs*1.05);ctx.lineTo(x0+nw+14,y+fs*.75);ctx.lineTo(x0-16,y+fs*.75);ctx.closePath();ctx.fill();
+    ctx.font=`700 ${Math.round(Math.max(11,13*U))}px "Noto Sans KR",sans-serif`;ctx.fillStyle='#ff4f5e';ctx.fillText(`STAGE ${S.stage}  ·  BOSS  ·  제한 시간 ${30+3*rv('sand')}초`,x0,y-fs*.72);
+    ctx.font=`${fs}px "Black Han Sans",sans-serif`;ctx.lineWidth=6;ctx.strokeStyle='#000';ctx.strokeText(m.name,x0,y);ctx.fillStyle='#fff';ctx.fillText(m.name,x0,y);
+    const uk=easeOut(clamp((t-1.45)/.35,0,1));ctx.fillStyle='#ff2a3a';ctx.fillRect(x0,y+fs*.52,nw*uk,4*U);ctx.fillStyle='#fff';ctx.fillRect(x0,y+fs*.52+6*U,nw*uk*.6,1.5*U);
+    ctx.restore()}
+  if(t>2.55){const k=t-2.55,s=k<.15?lerp(2.2,1,easeOut(k/.15)):1,a=k>.45?Math.max(0,1-(k-.45)/.2):1;if(a>0){
+    ctx.save();ctx.globalAlpha=a;ctx.translate(W/2,H*.42);ctx.scale(s,s);ctx.rotate(-.05);const fs=Math.round(Math.max(40,80*U));ctx.font=`${fs}px "Black Han Sans",sans-serif`;
+    ctx.lineWidth=9;ctx.strokeStyle='#000';ctx.strokeText('전투 개시!',0,0);ctx.fillStyle='#ffc94a';ctx.fillText('전투 개시!',0,0);ctx.restore()}}
+  if(t>.4&&m.state==='enter'){ctx.globalAlpha=.6;ctx.font=`700 ${Math.round(Math.max(11,12*U))}px "Noto Sans KR",sans-serif`;ctx.textAlign='right';ctx.fillStyle='#fff';ctx.fillText('화면을 누르면 건너뛰기 ▸',W-14,H-bh-14);ctx.globalAlpha=1}
+}
+
+/* ================= combo link hint ================= */
+function drawLinkHint(){
+  const L=activeLink();if(!L||BI)return;const c=L.c,a=skOf(c.a),b=skOf(c.b),eq=equipped(b);
+  const txt=eq?`${b.name} 사용 시`:`${b.name} 미장착`,fs=Math.round(Math.max(12,14*U)),y=H-(W<560?64:90);
+  ctx.save();ctx.font=`700 ${fs}px "Noto Sans KR",sans-serif`;const w1=ctx.measureText(txt).width;ctx.font=`${fs+3}px "Black Han Sans",sans-serif`;const w2=ctx.measureText(c.name).width;
+  const pad=12,w=Math.min(W-20,w1+w2+pad*3+44),hh=fs*2.4,x=W/2-w/2,pul=L.left<2?1+.04*Math.sin(gt*30):1;
+  ctx.translate(W/2,y);ctx.scale(pul,pul);ctx.translate(-W/2,-y);
+  ctx.fillStyle='rgba(8,4,18,.85)';ctx.beginPath();ctx.roundRect(x,y-hh/2,w,hh,hh/2);ctx.fill();ctx.strokeStyle=c.col;ctx.lineWidth=2;ctx.stroke();
+  ctx.fillStyle=c.col;ctx.fillRect(x+hh/2,y+hh/2-4,(w-hh)*(L.left/COMBO_WIN),2.5);
+  ctx.textBaseline='middle';ctx.textAlign='left';let cx=x+pad+6;
+  ctx.fillStyle='#ffd166';ctx.font=`900 ${fs-2}px "Noto Sans KR",sans-serif`;ctx.fillText('⛓',cx-2,y-1);cx+=18;
+  ctx.fillStyle=eq?b.c:'#9d95c4';ctx.font=`700 ${fs}px "Noto Sans KR",sans-serif`;ctx.fillText(txt,cx,y-1);cx+=w1+8;
+  ctx.fillStyle='#fff';ctx.fillText('→',cx,y-1);cx+=18;
+  ctx.fillStyle=c.col;ctx.font=`${fs+3}px "Black Han Sans",sans-serif`;ctx.fillText(c.name,cx,y-1);
+  ctx.restore();
+}
+
 /* ================= allies ================= */
 function allyShoot(kind){
   const c=mCenter(m),r=m.rb*U;
@@ -138,6 +217,7 @@ function update(rdt){
   updAllies(dt,fg);
 
   for(let i=FX.length-1;i>=0;i--){const o=FX[i];if(!o)continue;o.t+=dt;o.up&&o.up(dt,o);if(o.t>=o.dur){o.end&&o.end(o);FX.splice(i,1)}}
+  updBossIntro(dt);
   bossAI(dt);
 
   // monster
@@ -155,9 +235,7 @@ function update(rdt){
     if(m.chipT>0)m.chipT-=dt;else m.chip+=(m.hp-m.chip)*Math.min(1,dt*7);
     if(m.state==='enter'){
       if(m.mini){const k=Math.min(1,m.t/.32);m.yo=lerp(-150*U,0,easeIn(k));if(k>=1){m.state='fight';m.sqv=7;P.push({t:'ring',x:m.x,y:groundY,r0:6*U,r1:60*U,w:4*U,sy:.25,life:.3,max:.3,color:'#fff'})}}
-      else if(m.boss){const k=Math.min(1,m.t/.5);m.yo=lerp(-H,0,easeIn(k));
-        if(k>=1){m.state='fight';bossMax=30+3*rv('sand');bossT=bossMax;m.sqv=8;sfx.land();addTrauma(.85);zoom+=.08*FXS;flash(.25,'255,90,100');
-          P.push({t:'ring',x:m.x,y:groundY,r0:10*U,r1:300*U,w:10*U,sy:.2,life:.6,max:.6,color:'#ff4f5e'});smoke(m.x,groundY-10*U,14,'#2a1a3e')}}
+      else if(m.boss){if(!BI||BI.m!==m)startBossIntro()}
       else{const k=Math.min(1,m.t/.5);m.x=lerp(W+140*U,monX,easeBack(k));if(k>=1){m.state='fight';m.x=monX}}
     }else if(m.state==='fight'){
       if(m.boss){bossT-=dt;if(bossT<=0)bossFail()}
@@ -476,6 +554,10 @@ function drawCutin(){
   ctx.font=`${fs}px "Black Han Sans",sans-serif`;while(ctx.measureText(CUT.name).width>W-tx-16&&fs>18){fs-=2;ctx.font=`${fs}px "Black Han Sans",sans-serif`}
   ctx.lineWidth=6;ctx.strokeStyle='#000';ctx.lineJoin='round';ctx.strokeText(CUT.name,tx,y-fs*.15);ctx.fillStyle='#fff';ctx.fillText(CUT.name,tx,y-fs*.15);
   ctx.font=`700 ${Math.max(10,Math.round(fs*.3))}px "Noto Sans KR",sans-serif`;ctx.fillStyle=CUT.col;ctx.fillText(CUT.sub,tx+4,y+fs*.6);
+  if(CUT.pair){const k=easeOut(Math.min(1,t/.35)),ds=Math.max(7,fs*.2),py=y-fs*1.05,gap=ds*2.6,mx=tx+ds*2.2;
+    CUT.pair.forEach((col,i)=>{const px=mx+(i?gap/2:-gap/2)*(.35+.65*k)+(i?1:-1)*(1-k)*60;ctx.save();ctx.translate(px+ds,py);ctx.rotate(Math.PI/4);
+      ctx.shadowColor=col;ctx.shadowBlur=14;ctx.fillStyle=col;ctx.fillRect(-ds,-ds,ds*2,ds*2);ctx.restore()});
+    if(k>=1){ctx.fillStyle='#fff';star4(mx+ds,py,ds*2.2*(1+.2*Math.sin(t*30)),ds*.5,0);ctx.fill()}}
   ctx.restore();ctx.restore();
 }
 function drawCracks(){
@@ -503,7 +585,9 @@ function render(){
   if(dimCur>.01){ctx.fillStyle=`rgba(4,2,10,${dimCur})`;ctx.fillRect(-60,-60,W+120,H+120)}
   for(const o of FX)o.back&&o.back(o);
   drawAllies();
+  drawBossIntroWorld();
   if(m)drawMonster(m);
+  drawBossRoar();
   drawBossPat();
   drawHero();drawSpirits();
   for(const o of FX)o.draw&&o.draw(o);
@@ -517,6 +601,7 @@ function render(){
   if(flashA>0){ctx.fillStyle=`rgba(${flashC},${flashA*.6})`;ctx.fillRect(0,0,W,H)}
   if(invertT>0&&!RM){ctx.globalCompositeOperation='difference';ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);ctx.globalCompositeOperation='source-over'}
   drawInk();drawCracks();
+  drawBossIntro();drawLinkHint();
   drawCoins();drawCombo();drawBanner();drawCutin();
 }
 
@@ -548,13 +633,24 @@ function toggleEquip(id){const i=S.equip.indexOf(id);
 function buildBook(){
   const el=$('book'),TR=tier();el.innerHTML='';$('slotTxt').textContent=`장착 ${S.equip.length}/7 · 연출 ${'★'.repeat(TR)}${'☆'.repeat(3-TR)}`;
   for(const s of SK){const r=document.createElement('div'),lk=!unlocked(s),eq=equipped(s);r.className='bk'+(lk?' locked':'');r.style.setProperty('--c',s.c);
-    r.innerHTML=`<i></i><div><b>${s.name}</b><small>${s.d}</small></div><div class="st">${lk?'STAGE '+s.unlock:''}<span class="btns">${lk?'':`<button type="button" class="eq${eq?' on':''}">${eq?'해제':'장착'}</button>`}<button type="button" class="pv">시연</button></span></div>`;
+    r.innerHTML=`<i></i><div><b>${s.name}</b><small>${s.d}${comboTag(s)}</small></div><div class="st">${lk?'STAGE '+s.unlock:''}<span class="btns">${lk?'':`<button type="button" class="eq${eq?' on':''}">${eq?'해제':'장착'}</button>`}<button type="button" class="pv">시연</button></span></div>`;
     const eb=r.querySelector('.eq');if(eb)eb.addEventListener('click',()=>toggleEquip(s.id));
     r.querySelector('.pv').addEventListener('click',()=>{ensureAudio();if(!cast(s,true))banner('지금은 시연할 수 없음','몬스터와 싸우는 중에 다시 눌러 주세요','#9d95c4',1.4)});
     el.appendChild(r)}
   const cb=$('combos');cb.innerHTML='';
-  for(const c of COMBOS){const a=SK.find(s=>s.id===c.a),b=SK.find(s=>s.id===c.b),d=document.createElement('div');d.className='cb';
-    d.innerHTML=`<span style="color:${a.c}">${a.name}</span><em>→</em><span style="color:${b.c}">${b.name}</span><b>${c.name}</b>`;cb.appendChild(d)}
+  for(const c of COMBOS){const a=skOf(c.a),b=skOf(c.b),ok=comboReady(c),both=equipped(a)&&equipped(b),d=document.createElement('div');
+    d.className='cbc'+(ok?'':' locked');d.style.setProperty('--c',c.col);
+    const st=!ok?`STAGE ${Math.max(a.unlock,b.unlock)}에 해금`:both?'준비됨 · 자동 스킬이면 알아서 이어 씁니다':'두 스킬을 모두 장착해야 발동';
+    d.innerHTML=`<div class="cbf"><span class="ic" style="--c:${a.c}">${IC[a.id]}</span><em>＋</em><span class="ic" style="--c:${b.c}">${IC[b.id]}</span><em>=</em><b>${c.name}</b></div>`+
+      `<p><span style="color:${a.c}">${a.name}</span>${eul(a.name)} 쓴 뒤 <b>${COMBO_WIN}초 안에</b> <span style="color:${b.c}">${b.name}</span>${eul(b.name)} 쓰면 발동. ${c.d}</p>`+
+      `<div class="cbs"><span class="${ok&&both?'ok':''}">${st}</span><button type="button">시연</button></div>`;
+    d.querySelector('button').addEventListener('click',()=>{ensureAudio();if(!previewCombo(c))banner('지금은 시연할 수 없음','몬스터와 싸우는 중에 다시 눌러 주세요','#9d95c4',1.4)});
+    cb.appendChild(d)}
+}
+function eul(w){const c=w.charCodeAt(w.length-1)-0xAC00;return c>=0&&c<11172&&c%28?'을':'를'}
+function comboTag(s){
+  const c=COMBOS.find(c=>c.a===s.id||c.b===s.id);if(!c)return'';const o=skOf(c.a===s.id?c.b:c.a);
+  return `<span class="ctag" style="--c:${c.col}">⛓ ${c.a===s.id?`다음에 ${o.name}`:`${o.name} 다음에`} → ${c.name}</span>`;
 }
 function buildRelics(){
   const el=$('relics');el.innerHTML='';
@@ -607,7 +703,8 @@ function uiTick(force){
     r.btn.classList.toggle('max',max);r.btn.classList.toggle('can',!max&&S.gold>=p.c);r.btn.disabled=max;
     r.n.textContent=max?'완료':'+'+p.n;r.c.textContent=max?'—':fmt(p.c)}
   lastDesc=key;
-  for(const s of SK){const b=s.el;if(!b)continue;const lk=!unlocked(s),cd=cds[s.id],act=s.buff&&frenzyT>0,mx=s.cd*ST.cdm;
+  const LK=activeLink();
+  for(const s of SK){const b=s.el;if(!b)continue;b.classList.toggle('link',!!LK&&LK.c.b===s.id&&cds[s.id]<=0);const lk=!unlocked(s),cd=cds[s.id],act=s.buff&&frenzyT>0,mx=s.cd*ST.cdm;
     b.classList.toggle('locked',lk);b.style.setProperty('--p',lk?1:act?0:Math.min(1,cd/mx));
     b.classList.toggle('ready',!lk&&cd<=0&&(s.buff?frenzyT<=0:castLock<=0));
     b.querySelector('.cd').textContent=lk?'ST'+s.unlock:act?Math.ceil(frenzyT):cd>0?Math.ceil(cd):''}
@@ -648,6 +745,7 @@ function soundUI(){const b=$('soundBtn');b.textContent=S.sound?'소리 켬':'소
 cv.addEventListener('pointerdown',e=>{
   ensureAudio();const r=cv.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;
   P.push({t:'ring',x,y,r0:4*U,r1:40*U,w:4*U,life:.25,max:.25,color:'#ffffff'});
+  if(skipBossIntro())return;
   if(m&&m.pat&&!m.pat.res){const d=m.pat.imp-m.pat.t;if(d<=.5&&d>=0)m.pat.parry=true}
   const now=performance.now();if(now-lastTap<66||castLock>0)return;lastTap=now;heroStrike(true);
 });
