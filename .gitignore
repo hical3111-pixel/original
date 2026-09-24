@@ -1,0 +1,10 @@
+# 스크린샷·녹화·로그·임시 파일은 커밋하지 않는다 (AGENTS.md 7장)
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+*.mp4
+*.webm
+*.log
+*.tmp
