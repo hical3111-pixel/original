@@ -671,10 +671,10 @@ const COMBOS=[
 const SCHOOLS=[
   {id:'crimson',name:'진홍',c:'#ff4f5e',awk:'inferno'},
   {id:'eclipse',name:'월식',c:'#9a7bff',awk:'dragon'},
-  {id:'verdant',name:'녹광',c:'#7dff5a',awk:null},
+  {id:'verdant',name:'녹광',c:'#7dff5a',awk:'celestial'},
   {id:'abyss',name:'심연',c:'#b06bff',awk:'circle'},
-  {id:'storm',name:'뇌전',c:'#ffe853',awk:null},
-  {id:'hellfire',name:'업화',c:'#ffa05a',awk:null},
+  {id:'storm',name:'뇌전',c:'#ffe853',awk:'judgment'},
+  {id:'hellfire',name:'업화',c:'#ffa05a',awk:'hellking'},
   {id:'frost',name:'빙정',c:'#61dcf3',awk:'frostcrown'},
 ].map(s=>({...s,pairs:COMBOS.filter(c=>c.school===s.id).map(c=>c.a)}));
 const RESONANCES=[
@@ -1623,6 +1623,89 @@ function awkFrostcrown(pm=1){
   }});
 }
 
+/* 계열 각성기 전용 도형: 단색 5층, 흰 중심만 가산. 기존 스킬 도우미와 독립. */
+const SCHOOL_AWK_COL={celestial:['#05070B','#235C48','#77808C','#7DFF5A','#FFFFFF'],judgment:['#05070B','#895D22','#77808C','#FFD45B','#FFFFFF'],hellking:['#05070B','#873D18','#77808C','#FFA05A','#FFFFFF']};
+function schoolAwkPoly(points,col){ctx.fillStyle=col;ctx.beginPath();points.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.closePath();ctx.fill()}
+function schoolAwkRing(x,y,rx,ry,p,turn=0,k=1){
+  if(k<=0)return;ctx.save();ctx.translate(x,y);ctx.rotate(turn);ctx.scale(U*k,U*k);
+  for(const [w,col] of [[11,p[1]],[6,p[3]],[2,p[4]]]){if(col===p[4])ctx.globalCompositeOperation='lighter';ctx.strokeStyle=col;ctx.lineWidth=w;ctx.beginPath();ctx.ellipse(0,0,rx,ry,0,0,Math.PI*2);ctx.stroke()}ctx.restore();
+}
+function schoolAwkBlade(x,y,ang,len,p,k=1){
+  if(k<=0)return;ctx.save();ctx.translate(x,y);ctx.rotate(ang);ctx.scale(U*k,U*k);
+  schoolAwkPoly([[-24,-16],[len*.65,-14],[len,0],[len*.65,14],[-24,16],[-7,0]],p[0]);
+  schoolAwkPoly([[0,-10],[len*.62,-9],[len,0],[len*.62,9],[0,10],[12,0]],p[1]);
+  schoolAwkPoly([[14,-6],[len*.7,-5],[len*.97,0],[len*.7,5],[14,6],[24,0]],p[3]);
+  ctx.globalCompositeOperation='lighter';schoolAwkPoly([[20,-2],[len*.95,0],[20,2]],p[4]);ctx.restore();
+}
+function schoolAwkBurst(x,y,p){
+  for(let i=0;i<72;i++){const a=i*Math.PI*2/72,sp=(180+i%7*65)*U,life=.45+i%5*.09;
+    P.push({t:i<24?'smoke':'shard',x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-100*U,g:550*U,drag:.8,size:(i<24?18:5+i%5)*U,r0:12*U,r1:(35+i%4*7)*U,rot:a,vr:i%2?4:-4,life,max:life,color:i<24?p[0]:i%3===0?p[3]:p[2]})}
+  for(let i=0;i<2;i++)P.push({t:'ring',x,y:groundY,r0:12*U,r1:(330-i*80)*U,w:(9-i*4)*U,sy:.23,life:.55,max:.55,color:p[i?4:3]});
+}
+function schoolAwkImpact(x,y,t,p){
+  if(t<0)return;const k=clamp(1-t/.9,0,1),r=(80+easeOut(clamp(t/.2,0,1))*125)*k;
+  ctx.save();ctx.translate(x,y);ctx.scale(U,U);
+  for(const [sc,col] of [[1.25,p[0]],[1,p[1]],[.76,p[3]],[.38,p[4]]]){if(col===p[4])ctx.globalCompositeOperation='lighter';const pts=[];for(let i=0;i<32;i++){const a=i*Math.PI/16,rr=r*sc*(i%2?.38:1+(i%3)*.12);pts.push([Math.cos(a)*rr,Math.sin(a)*rr])}schoolAwkPoly(pts,col)}ctx.restore();
+  schoolAwkRing(x,groundY,290,32,p,0,k);
+}
+function awkCelestial(pm=1){
+  cutin('천체 창례','각성 · 무너지는 천체의 궤도',SCHOOL_AWK_COL.celestial[3]);castLock=2.8;sfx.charge();
+  const p=SCHOOL_AWK_COL.celestial,c=m?mCenter(m):{x:monX,y:groundY-50*U},nx=c.x/W,alt=(groundY-c.y)/U,TR=tier();
+  return addFX({dur:2.8,schoolAwk:'celestial',up(dt,o){castLock=Math.max(castLock,.05);dimT=Math.max(dimT,.65*clamp((2.8-o.t)/.5,0,1));if(o.t<1.6)desat=Math.max(desat,.8);
+    if(o.t<.5){h.ang=-1.7;h.t=9}const x=nx*W,y=groundY-alt*U;
+    for(let i=0;i<4;i++)at(o,.8+i*.15,()=>{skillHit(2+.25*TR,pm,x,y,{light:1,col:p[3],sid:'celestial'});sfx.glass()});
+    at(o,1.6,()=>{schoolAwkBurst(x,y,p);sfx.bigboom();stop=Math.max(stop,.25);zoom+=.12*FXS;flash(.85,'255,255,255');skillHit(36+4*TR,pm,x,y,{heavy:1,name:'천체 창례',col:p[4],fc:'255,255,255',crack:2,sid:'celestial'})});
+  },post(o){const t=o.t,x=nx*W,y=groundY-alt*U,top=Math.max(80*U,y-205*U);
+    if(t<1.6){const rise=easeOut(clamp(t/.55,0,1)),fall=clamp((t-.85)/.75,0,1),cy=lerp(top,y,fall*fall),r=105*rise*(1-.82*fall)*U;
+      if(t<.5){schoolAwkBlade(heroX,groundY-90*U,-Math.PI/2,65,p,rise);schoolAwkRing(heroX,groundY-155*U,17,17,p,0,rise)}
+      ctx.save();ctx.fillStyle=p[0];ctx.beginPath();ctx.arc(x,cy,r*1.12,0,7);ctx.fill();ctx.fillStyle=p[2];ctx.beginPath();ctx.arc(x,cy,r,0,7);ctx.fill();
+      ctx.strokeStyle=p[0];ctx.lineWidth=6*U;for(let i=0;i<7;i++){const a=i*Math.PI*2/7;ctx.beginPath();ctx.moveTo(x+Math.cos(a)*r,cy+Math.sin(a)*r);ctx.lineTo(x+Math.cos(a+.2)*r*.55,cy+Math.sin(a+.2)*r*.55);ctx.lineTo(x,cy);ctx.stroke()}ctx.restore();
+      for(let i=0;i<12;i++){const a=i*Math.PI/6+t*.4,dist=(125*rise+40*Math.sin(fall*Math.PI))*U,px=x+Math.cos(a)*dist*(1-fall*.65),py=cy+Math.sin(a)*dist*.7;ctx.save();ctx.translate(px,py);ctx.scale(U,U);schoolAwkPoly([[-8,-9],[6,-12],[12,4],[-5,10]],p[2]);ctx.restore()}
+      for(let i=0;i<3;i++)schoolAwkRing(x,y+(i-1)*23*U,140-i*24,30,p,(i-1)*.16+t*.1,clamp((t-.45)/.4,0,1));
+      ctx.save();ctx.fillStyle=p[0];ctx.beginPath();ctx.arc(x,y,clamp((t-.7)/.8,0,1)*27*U,0,7);ctx.fill();ctx.restore();
+    }else{schoolAwkImpact(x,y,t-1.6,p);const k=clamp((2.65-t)/.9,0,1);for(let i=0;i<3;i++)schoolAwkRing(x,y+(i-1)*30*U,180-i*25,32,p,(i-1)*.13,k);
+      ctx.save();ctx.fillStyle=p[0];ctx.beginPath();ctx.arc(x,y,38*U*k,0,7);ctx.fill();ctx.restore()}
+  }});
+}
+function awkJudgment(pm=1){
+  cutin('천벌 병기','각성 · 세 고리를 꿰뚫는 하늘의 창',SCHOOL_AWK_COL.judgment[3]);castLock=2.8;sfx.charge();
+  const p=SCHOOL_AWK_COL.judgment,c=m?mCenter(m):{x:monX,y:groundY-50*U},nx=c.x/W,alt=(groundY-c.y)/U,TR=tier();
+  return addFX({dur:2.8,schoolAwk:'judgment',up(dt,o){castLock=Math.max(castLock,.05);dimT=Math.max(dimT,.7*clamp((2.8-o.t)/.5,0,1));if(o.t<1.65)desat=Math.max(desat,.8);const x=nx*W,y=groundY-alt*U;
+    if(o.t<.5){h.ang=-1.7;h.t=9}for(let i=0;i<3;i++)at(o,.7+i*.22,()=>{sfx.zap();skillHit(2+.25*TR,pm,x,y,{light:1,col:p[3],sid:'judgment'})});
+    at(o,1.65,()=>{schoolAwkBurst(x,groundY,p);sfx.bigboom();sfx.zap();stop=Math.max(stop,.28);zoom+=.13*FXS;flash(.9,'255,255,255');skillHit(40+4.75*TR,pm,x,y,{heavy:1,name:'천벌 병기',col:p[4],fc:'255,255,255',crack:2,sid:'judgment'})});
+  },post(o){const t=o.t,x=nx*W,y=groundY-alt*U,top=Math.max(65*U,y-220*U);
+    if(t<1.65){const k=clamp(t/.5,0,1),drop=clamp((t-1.2)/.45,0,1),tip=lerp(top+120*U,groundY,drop*drop),len=(tip+35*U)/U;
+      if(t<.5)schoolAwkBlade(heroX,groundY-85*U,-Math.PI/2,65,p,k);
+      if(t>.6){const grow=clamp((t-.6)/.4,0,1);schoolAwkBlade(x,tip-len*U,Math.PI/2,len,p,grow);
+        ctx.save();ctx.translate(x,tip);ctx.scale(U*grow,U*grow);schoolAwkPoly([[0,0],[-29,-68],[-13,-53],[-13,-125],[13,-125],[13,-53],[29,-68]],p[1]);schoolAwkPoly([[0,-3],[-22,-62],[-8,-47],[-8,-120],[8,-120],[8,-47],[22,-62]],p[3]);ctx.globalCompositeOperation='lighter';schoolAwkPoly([[0,-7],[-3,-49],[-3,-117],[3,-117],[3,-49]],p[4]);ctx.restore();
+        ctx.save();ctx.strokeStyle=p[3];ctx.lineWidth=3*U;for(let j=0;j<2;j++){ctx.beginPath();for(let i=0;i<9;i++){const px=x+((i%2?1:-1)*(20+j*12))*U,py=lerp(top,tip,i/8);i?ctx.lineTo(px,py):ctx.moveTo(px,py)}ctx.stroke()}ctx.restore()}
+      for(let i=0;i<3;i++)schoolAwkRing(x,top+i*48*U,95-i*18,17,p,0,clamp((t-.2-i*.13)/.35,0,1));
+    }else{const k=clamp((2.65-t)/.9,0,1);schoolAwkImpact(x,groundY-30*U,t-1.65,p);
+      ctx.save();ctx.globalCompositeOperation='lighter';ctx.fillStyle=p[3];ctx.fillRect(x-15*U*k,0,30*U*k,groundY);ctx.fillStyle=p[4];ctx.fillRect(x-5*U*k,0,10*U*k,groundY);ctx.restore();
+      for(let i=0;i<3;i++)schoolAwkRing(x,top+i*48*U,95-i*18,17,p,0,k*k)}
+  }});
+}
+function awkHellking(pm=1){
+  cutin('업화 명왕','각성 · 세 병기로 내리치는 불꽃 군주',SCHOOL_AWK_COL.hellking[3]);castLock=2.8;sfx.charge();
+  const p=SCHOOL_AWK_COL.hellking,c=m?mCenter(m):{x:monX,y:groundY-50*U},nx=c.x/W,alt=(groundY-c.y)/U,TR=tier();
+  return addFX({dur:2.8,schoolAwk:'hellking',up(dt,o){castLock=Math.max(castLock,.05);dimT=Math.max(dimT,.7*clamp((2.8-o.t)/.5,0,1));const x=nx*W,y=groundY-alt*U;
+    if(o.t<.5){h.ang=-1.7;h.t=9}for(let i=0;i<3;i++)at(o,1.1+i*.16,()=>{sfx.slash2();skillHit(3+.5*TR,pm,x,y,{light:1,col:p[3],sid:'hellking'})});
+    at(o,1.7,()=>{schoolAwkBurst(x,y,p);sfx.bigboom();stop=Math.max(stop,.27);zoom+=.13*FXS;flash(.85,'255,255,255');skillHit(39+4.5*TR,pm,x,y,{heavy:1,name:'업화 명왕',col:p[4],fc:'255,255,255',crack:2,sid:'hellking'})});
+  },post(o){const t=o.t,x=nx*W,y=groundY-alt*U,k=clamp(t/.5,0,1)*clamp((2.45-t)/.65,0,1),sx=heroX+25*U;
+    // 머리·몸·두 팔을 한 윤곽으로 그린다. 무기는 세 자루만 떠서 동일한 궤적으로 내려친다.
+    ctx.save();ctx.translate(sx,groundY);ctx.scale(U*k,U*k);
+    const body=[[-65,0],[-44,-92],[-65,-133],[-82,-96],[-106,-130],[-93,-196],[-57,-218],[-34,-224],[-44,-250],[-52,-285],[-24,-260],[0,-270],[24,-260],[52,-285],[44,-250],[34,-224],[57,-218],[93,-196],[106,-130],[82,-96],[65,-133],[44,-92],[65,0],[15,-20],[0,-70],[-15,-20]];
+    ctx.save();ctx.scale(1.06,1.04);schoolAwkPoly(body,p[1]);ctx.restore();schoolAwkPoly(body,p[0]);
+    for(const sg of [-1,1]){schoolAwkPoly([[sg*17,-242],[sg*5,-237],[sg*19,-233]],p[4]);schoolAwkPoly([[sg*35,-192],[sg*16,-165],[sg*24,-114],[sg*48,-162]],p[3]);
+      schoolAwkPoly([[sg*72,-82],[sg*103,-161],[sg*117,-225],[sg*127,-175],[sg*115,-96],[sg*85,-40]],p[3])}
+    ctx.restore();
+    for(let i=0;i<3;i++){const flight=clamp((t-1-i*.12)/.5,0,1),ox=sx+(i*36-30)*U,oy=groundY-(245-i*55)*U,ang=Math.atan2(y-oy,x-ox),px=lerp(ox,x-45*U,flight*flight),py=lerp(oy,y-25*U,flight*flight);
+      if(t<1.75){ctx.save();ctx.strokeStyle=p[1];ctx.lineWidth=10*U*k;ctx.beginPath();ctx.moveTo(ox,oy);ctx.quadraticCurveTo(px-65*U,oy,px,py);ctx.stroke();ctx.strokeStyle=p[3];ctx.lineWidth=3*U*k;ctx.stroke();ctx.restore();schoolAwkBlade(px,py,ang,160,p,k)}
+    }
+    if(t>=1.7){schoolAwkImpact(x,y,t-1.7,p);const f=clamp((2.65-t)/.95,0,1);for(let i=0;i<7;i++){ctx.save();ctx.translate(x+(i-3)*38*U,groundY);ctx.scale(U*f,U*f);schoolAwkPoly([[-20,0],[-12,-70],[5,-180-(3-Math.abs(i-3))*25],[12,-80],[25,0]],p[i%2?1:3]);ctx.globalCompositeOperation='lighter';schoolAwkPoly([[-5,0],[5,-120],[10,0]],p[4]);ctx.restore()}}
+  }});
+}
+
 /* ================= 각성기 ================= */
 let circleT=0;
 function awkCircle(pm=1){
@@ -1655,8 +1738,14 @@ const AWK=[
   {id:'dragon',name:'그림자 용',unlock:25,c:'#5a7bff',fn:pm=>castDragon(pm*2.5),d:'먹물로 된 용이 하늘을 휘감고 내려와 적을 물어뜯는다.'},
   {id:'inferno',name:'염마 강림',unlock:35,c:'#ff8a2a',fn:pm=>castInferno(pm*2.5),d:'불꽃 마왕을 불러내 거대한 화염 기둥을 일으킨다.'},
   {id:'frostcrown',name:'영원의 설관',unlock:45,c:'#61DCF3',fn:awkFrostcrown,d:'얼음 검과 여섯 결정의 설관을 세운다. 검을 휘감던 백룡이 내려꽂혀 거대한 빙정 가시를 터뜨린다.'},
+  {id:'celestial',name:'천체 창례',unlock:50,c:'#7DFF5A',fn:awkCelestial,d:'거대한 천체를 갈라 녹광 궤도로 압축하고, 검은 핵에서 백색 폭발을 일으킨다.'},
+  {id:'judgment',name:'천벌 병기',unlock:60,c:'#FFD45B',fn:awkJudgment,d:'하늘에 세 집속 고리를 펼친다. 거대한 번개 창이 고리를 관통해 지면을 분쇄한다.'},
+  {id:'hellking',name:'업화 명왕',unlock:70,c:'#FFA05A',fn:awkHellking,d:'검은 불꽃 군주가 세 병기를 펼쳐 내리친다. 주황 업화와 흰 절단선이 전장을 뒤덮는다.'},
 ];
 const AWK_IC={
+  celestial:'<svg viewBox="0 0 32 32"><circle cx="16" cy="13" r="9" fill="#77808C" stroke="#235C48"/><path d="M13 5l4 8-5 3 8 6" fill="none" stroke="#05070B" stroke-width="2"/><ellipse cx="16" cy="22" rx="14" ry="5" fill="none" stroke="#7DFF5A" stroke-width="2"/><circle cx="16" cy="22" r="4" fill="#05070B" stroke="#FFFFFF"/></svg>',
+  judgment:'<svg viewBox="0 0 32 32"><path d="M13 2h6v17l5-2-8 13-8-13 5 2z" fill="#FFD45B" stroke="#895D22"/><path d="M16 3v22" stroke="#FFFFFF" stroke-width="2"/><path d="M4 8q12 6 24 0M6 13q10 5 20 0M8 18q8 4 16 0" fill="none" stroke="#FFD45B" stroke-width="2"/></svg>',
+  hellking:'<svg viewBox="0 0 32 32"><path d="M3 2l9 6h8l9-6-5 13 4 15-12-5-12 5 4-15z" fill="#05070B" stroke="#FFA05A" stroke-width="2"/><path d="M9 13l5 2m9-2-5 2" stroke="#FFFFFF" stroke-width="2"/><path d="M4 20l5-2-4 10m23-8-5-2 4 10M16 18v12" stroke="#FFA05A" stroke-width="2"/></svg>',
   frostcrown:'<svg viewBox="0 0 32 32"><path d="M4 10l6 5 6-11 6 11 6-5-4 16H8z" fill="#245BBC" stroke="#61DCF3"/><path d="M16 7v23M10 23h12" stroke="#FFFFFF" stroke-width="2"/><path d="M4 3l2 3-2 3-2-3m26-3 2 3-2 3-2-3" fill="#61DCF3"/></svg>',
   thousand:'<svg viewBox="0 0 32 32"><path d="M16 2l2 11 11-2-9 6 6 10-10-7-10 7 6-10-9-6 11 2z" fill="#ff2a3a" stroke="#fff" stroke-width="1"/></svg>',
   circle:'<svg viewBox="0 0 32 32"><ellipse cx="16" cy="16" rx="14" ry="14" fill="none" stroke="#b89aff" stroke-width="1.6"/><path d="M16 4l10.4 18H5.6zM16 28L5.6 10h20.8z" fill="none" stroke="#e0d4ff" stroke-width="1.4"/></svg>',

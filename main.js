@@ -802,7 +802,7 @@ function watchSchoolUnlocks(){
       if(first>schoolSeenBest&&first<=S.best)schoolNotices.push({stage:first,text:'새 계열: '+s.name,sub:'계열 카드에서 스킬을 확인하세요',c:s.c});
       if(full>schoolSeenBest&&full<=S.best)schoolNotices.push({stage:full,text:s.name+' 완성 · 집중 가능',sub:'두 연계 쌍을 편성하면 집중이 켜집니다',c:s.c})}
     schoolNotices.sort((a,b)=>a.stage-b.stage);schoolSeenBest=S.best}
-  if(schoolNotices.length&&(!BN||BN.text==='새 스킬 해금')){const n=schoolNotices.shift();banner(n.text,n.sub,n.c,2.2)}
+  if(schoolNotices.length&&(!BN||BN.text==='새 스킬 해금'||BN.text==='새 각성기 해금')){const n=schoolNotices.shift();if(BN?.text==='새 각성기 해금')schoolNotices.push({text:BN.text,sub:BN.sub,c:BN.color});banner(n.text,n.sub,n.c,2.2)}
 }
 function barOrder(){const o=[];for(const id of S.equip){const c=comboOf(id);if(c)for(const sid of [c.a,c.b]){const s=skOf(sid);if(equipped(s)&&!o.includes(s))o.push(s)}}return o}
 function buildBar(){
