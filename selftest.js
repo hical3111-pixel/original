@@ -62,7 +62,14 @@
     m.hp=m.max*.49;tick(3);ok(m.state==='phase','체력 50% 아래에서 2페이즈 전환 없음');tick(200);ok(m.enraged&&m.state==='fight','2페이즈 변신 후 전투 복귀 실패');
     m.hp=m.max=1e15;const seen=new Set();for(let k=0;k<14;k++){m.atkT=0;tick(3);if(m.pat)seen.add(m.pat.ty);tick(150);if(!fighting())toFight()}
     ok(seen.size>=3,'보스 패턴 다양성 부족: '+[...seen].join(','));
-    bossFail();ok(S.farm,'보스 실패 후 반복 사냥으로 가지 않음');for(const s of SK)cds[s.id]=9;retryBoss();ok(SK.every(s=>cds[s.id]===0),'보스 재도전 시 쿨타임 초기화 안 됨');tick(400)});
+    bossFail();ok(S.farm,'보스 실패 후 반복 사냥으로 가지 않음');for(const s of SK)cds[s.id]=9;retryBoss();ok(SK.every(s=>cds[s.id]===0),'보스 재도전 시 쿨타임 초기화 안 됨');
+    S.farm=false;S.stage=10;m=null;spawnT=0;stop=0;BI=null;BF=null;
+    for(let k=0;k<120&&!(m&&BI);k++)tick(1);
+    tick(260);ok(m&&m.boss&&m.state==='fight','보스 전투 전환 실패');
+    m.sh=0;m.hp=1;BF=null;deal(100,false,'hero',m.x,groundY-60*U);
+    ok(m.state==='split','보스 처치 시 split 상태 미전환');
+    ok(BF&&BF.name==='일반 공격','보스 처치 결정타 연출 미발동: '+(BF&&BF.name));
+    tick(140);ok(!BF,'결정타 연출이 시간 내에 끝나지 않음');tick(400)});
 
   section('일일 도전');
   guard('도전',()=>{m=null;spawnT=0;tick(30);S.daily={key:'',done:false};const stBefore=S.stage;ok(startChallenge(),'도전 시작 실패');
