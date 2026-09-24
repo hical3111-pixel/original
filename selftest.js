@@ -431,6 +431,52 @@
     }finally{reset();m=null;buildBar();buildBook()}
   });
 
+  section('계열 B · 카드 · 편성 · 효과 칩 · 해금 안내');
+  guard('계열 UI',()=>{
+    const reset=(best=72)=>{if($('pairPicker').open)$('pairPicker').close();S=fresh();S.best=best;S.auto=false;S.sound=false;S.gold=1e30;ST=stats();CH=null;BI=null;BF=null;CUT=null;BN=null;FX=[];P=[];T=[];B=[];PR=[];C=[];relicQ=[];shieldOn=null;stop=slowT=castLock=frenzyT=circleT=0;gauge=0;lastCast=pendingCombo=null;spawnT=100;miniQ=0;h.stun=0;atkT=1e6;
+      m=makeMonster(1);m.state='fight';m.x=monX;m.sh=0;m.hp=m.max=1e12;for(const s of SK)cds[s.id]=0;schoolOpen=null;schoolSeenState=null;schoolNotices=[];buildBar();buildBook();uiTick()};
+    const equal=(a,b)=>JSON.stringify(a)===JSON.stringify(b),row=id=>$('book').querySelector('[data-skill="'+id+'"]'),slot=i=>$('loadoutGrid').children[i];
+    const shown=root=>[...root.querySelectorAll('[data-effect]')].map(e=>e.dataset.kind+':'+e.dataset.effect);
+    try{
+      reset(1);ok($('schoolCards').children.length===7,'계열 카드 7장');ok($('loadoutGrid').children.length===4,'항상 편성 4칸 표시');
+      for(const s of SCHOOLS){const card=$('schoolCards').querySelector('[data-school="'+s.id+'"]'),skills=schoolSkills(s),icons=[...card.querySelectorAll('.school-skill')];
+        ok(card.style.getPropertyValue('--c')===s.c&&card.querySelector('.school-heading b').textContent===s.name,s.name+': 카드 이름/색');
+        ok(icons.length===4&&equal(icons.map(e=>e.dataset.skill),skills.map(sk=>sk.id)),s.name+': 스킬 아이콘 4개');
+        ok(icons.every((e,i)=>e.classList.contains('locked')===!unlocked(skills[i])&&!!e.querySelector('.school-lock')===!unlocked(skills[i])),s.name+': 아이콘 잠금 표시');
+        const a=AWK.find(a=>a.id===s.awk);ok(card.querySelector('.school-awakening').textContent.includes(a?a.name:'미정'),s.name+': 전용 각성기');
+        const ns=RESONANCES.filter(r=>r.a===s.id||r.b===s.id).map(r=>SCHOOLS.find(n=>n.id===(r.a===s.id?r.b:r.a)).name);ok(ns.every(n=>card.querySelector('.school-neighbors').textContent.includes(n)),s.name+': 공명 이웃 이름 2개');
+        $('school-toggle-'+s.id).click();const visible=[...$('book').children].filter(e=>!e.hidden);
+        ok($('school-toggle-'+s.id).getAttribute('aria-expanded')==='true'&&!$('book').hidden&&$('book').parentElement.id==='school-body-'+s.id,s.name+': 카드 펼침');
+        ok(visible.length===4&&visible.every(e=>e.dataset.school===s.id&&e.querySelector('.eq')&&e.querySelector('.pv')&&e.querySelector('small').textContent),s.name+': 기존 설명/편성/시연 행 재사용');
+        $('school-toggle-'+s.id).click();ok($('book').hidden&&$('school-toggle-'+s.id).getAttribute('aria-expanded')==='false',s.name+': 다시 눌러 접기');
+      }
+      reset();$('school-toggle-frost').click();row('frostcut').querySelector('.awkbuy').click();ok(S.awk.frostcut==='a'&&schoolOpen==='frost','카드 안 스킬 각성 구매 후 펼침 유지');
+      row('frostcut').querySelector('[data-br="b"]').click();ok(S.awk.frostcut==='b','카드 안 분기 변경');
+      row('frostcut').querySelector('.pv').click();ok(FX.length>0&&castLock>0,'카드 안 실제 스킬 시연');
+      reset();setLoadout([]);buildBar();buildBook();const ids=['frostcut','iceflower','dash','spear'];
+      for(let i=0;i<4;i++){slot(i).click();ok($('pairPicker').open&&$('pairOptions').children.length===COMBOS.length,(i+1)+'번 빈칸: 전체 쌍 선택 창');
+        ok([...$('pairOptions').children].every(b=>b.disabled===S.loadout.includes(b.dataset.pair)),(i+1)+'번: 이미 편성된 쌍 중복 선택 금지');
+        $('pairOptions').querySelector('[data-pair="'+ids[i]+'"]').click();ok(!$('pairPicker').open&&S.loadout[i]===ids[i]&&slot(i).dataset.pair===ids[i],(i+1)+'번: 선택한 쌍 저장/칸 갱신')}
+      ok(S.equip.length===8&&equal(barOrder().map(s=>s.id),S.equip),'편성 UI에서 스킬 바까지 반영');
+      for(let i=3;i>=0;i--){slot(i).click();ok(S.loadout.length===i&&!slot(i).dataset.pair,(i+1)+'번: 편성된 칸 다시 눌러 해제')}
+      slot(0).click();$('closePairPicker').click();ok(!$('pairPicker').open&&S.loadout.length===0,'선택 창 닫기는 편성을 변경하지 않음');
+      reset(1);setLoadout([]);buildBar();slot(0).click();const locked=$('pairOptions').querySelector('[data-pair="iceflower"]');ok(locked.textContent.includes('72')&&!locked.disabled,'잠긴 연계도 해금 시각 안내 후 선택 가능');locked.click();ok(equal(S.loadout,['iceflower'])&&!cast(skOf('frostspiral')),'잠긴 쌍 편성은 해금/시전 조건을 바꾸지 않음');
+      reset();for(const [ids,best] of [[[],72],[['frostcut','iceflower','dash','spear'],72],[['frostcut','iceflower','dash','spear'],71],[['frostcut','iceflower','dash','spear'],63],[['breath','demon','whip','shadow'],72],[['whip','shadow','swords','frostcut'],72]]){
+        S.best=best;setLoadout(ids);buildBook();const state=schoolState(),expected=[...state.focus.map(id=>'focus:'+id),...state.resonance.map(id=>'resonance:'+id)];
+        ok(equal(shown($('schoolEffects')),expected),'편성 칩은 schoolState 그대로: '+ids.join('/')+' @'+best);
+        ok(equal(shown($('battleEffects')),expected)&&$('battleEffects').hidden===!expected.length,'전투 배지도 같은 상태/빈 상태 숨김');
+        ok([...$('schoolEffects').querySelectorAll('.effect-chip')].every(e=>{const focus=e.dataset.kind==='focus',d=(focus?SCHOOLS:RESONANCES).find(d=>d.id===e.dataset.effect);return e.textContent===(focus?'집중':'공명')+' · '+d.name&&e.querySelector('.effect-desc').textContent===''}),'활성 이름만 표시, 효과 설명 자리 비움');
+      }
+      S.best=63;setLoadout(['swords','frostcut']);buildBook();S.best=64;uiTick();ok(shown($('schoolEffects')).includes('resonance:abyss_frost'),'해금 순간 uiTick에서 공명 칩 자동 갱신');
+      ok(!$('schoolCards').querySelector('[data-skill="icedragon"]').classList.contains('locked'),'해금 순간 카드 잠금 자동 갱신');
+      $('recommendBtn').click();ok(equal(S.loadout,recommendLoadout())&&$('recommendBtn').closest('.formation'),'추천 버튼을 편성 영역으로 이동/동작 유지');
+      for(const [before,after,text] of [[2,3,'새 계열: 심연'],[59,60,'새 계열: 빙정'],[71,72,'빙정 완성 · 집중 가능']]){reset(before);S.best=after;BN={text:'새 스킬 해금',t:0,dur:2};uiTick();ok(BN?.text===text,'계열 해금 배너: '+text);BN=null;uiTick();ok(!BN,'같은 해금을 반복 안내하지 않음')}
+      reset(2);S.best=9;BN=null;uiTick();const notices=[BN.text];while(schoolNotices.length){BN=null;uiTick();notices.push(BN.text)}ok(equal(notices,['새 계열: 심연','새 계열: 진홍','새 계열: 월식','새 계열: 업화']),'여러 해금은 순서대로 안내');
+      reset(72);ok(!BN&&schoolNotices.length===0,'이미 해금된 저장을 불러와도 배너 재생 없음');
+      reset(59);S.stage=59;S.kills=KPS-1;kill();uiTick();ok(S.best===60&&BN?.text==='새 계열: 빙정','실제 몬스터 처치/해금 경로에서도 계열 배너 표시');
+    }finally{reset();m=null;spawnT=100}
+  });
+
   section('정리');
   guard('정리',()=>{tick(600);ok(FX.length===0,'연출이 끝나지 않고 남아 있음: '+FX.length+'개');ok(castLock<=0,'castLock이 풀리지 않음')});
 
