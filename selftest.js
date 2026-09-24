@@ -1,9 +1,9 @@
 'use strict';
 /* 구조 자가 점검 — 주소 뒤에 ?selftest 를 붙이면 index.html이 이 파일을 불러온다.
    저장을 끄고 새 상태에서 모든 스킬·연계기·각성기·보스·도전을 실제로 돌려 본 뒤 결과를 화면에 띄운다.
-   결과는 window.__selftest 에도 남는다: {pass, fail, lines}. 규칙은 AGENTS.md 참고. */
+   결과는 window.__selftest 에도 남는다: {pass, fail, lines, elapsedMs}. 규칙은 AGENTS.md 참고. */
 (()=>{
-  const lines=[];let pass=0,fail=0;
+  const startedAt=performance.now(),lines=[];let pass=0,fail=0;
   const ok=(cond,msg)=>{if(cond){pass++}else{fail++;lines.push('✗ '+msg)}};
   const section=name=>lines.push('— '+name);
   const tick=n=>{for(let i=0;i<n;i++){update(1/60);render()}};
@@ -108,12 +108,28 @@
       ok(hits.filter(h=>h.sid==='meteor').length===1&&hits.filter(h=>h.sid==='combo').length===1,'운석/연계 피해 중복 없음');
       ok(hits.at(-1)?.name==='천붕'&&hits.at(-1)?.crack===2,'천붕 강타 이름/큰 균열');
     }finally{skillHit=hit;deal=damage;reset()}
+    // 다른 스킬 쌍에도 데이터/훅만 붙여 동일한 인계 경로가 작동하는지 검증한다.
+    const other=comboOf('dash'),oa=skOf(other.a),ob=skOf(other.b),afn=oa.fn,bfn=ob.fn,cfn=other.fn;let transfer=null,standalone=0;
+    try{
+      other.keep={get:()=>FX.find(o=>o.testKept&&!o.collapse&&!o.consumed),ready:.1,release(o){o.collapse=true;o.dur=o.t+.05}};
+      oa.fn=pm=>addFX({testKept:1,dur:.2,up(dt,o){if(o.t<.1)castLock=Math.max(castLock,.05)}});
+      ob.fn=()=>standalone++;other.fn=(pm,o)=>{transfer={pm,o};o.consumed=true;o.dur=o.t+.1};
+      reset();cast(oa);const kept=other.keep.get();until(()=>castLock<=0);cast(ob);until(()=>!!transfer);
+      ok(transfer?.o===kept&&transfer?.pm===1,'다른 스킬 쌍 keep 훅의 동일 FX/실전 배율 인계');
+      ok(standalone===0&&S.combos===1,'keep 연계에서 마무리 스킬 중복 시전 방지');
+      reset();transfer=null;ok(previewCombo(other),'다른 스킬 쌍 keep 전체 시연');const demo=other.keep.get();until(()=>!!transfer);
+      ok(transfer?.o===demo&&transfer?.pm===.1,'keep 시연에서 시작 FX와 시연 배율 인계');
+      reset();cast(oa);FX=[];castLock=0;ok(!activeLink(),'keep FX 소멸 시 연계 안내 제거');cast(ob);
+      ok(!pendingCombo&&standalone===1,'keep FX 소멸 시 마무리 스킬 단독 발동');
+      reset();cast(oa);const interrupted=other.keep.get();lastCast=null;tick(20);
+      ok(interrupted.collapse&&!FX.includes(interrupted),'keep 연계 중단 시 release 훅 호출/정리');
+    }finally{oa.fn=afn;ob.fn=bfn;other.fn=cfn;delete other.keep;reset()}
     // 3쌍 120초 자동 전투: 기존 기준 14/15보다 낮아지면 실패한다.
     const originalCast=cast;let finish=0,linked=0;
     try{S.equip=['spear','thunder','archers','wolf','gravity','meteor'];buildBar();S.auto=true;
       cast=function(s,preview){const n=S.combos,result=originalCast(s,preview);if(result&&!preview&&COMBOS.some(c=>c.b===s.id)){finish++;if(pendingCombo||S.combos>n)linked++}return result};
-      const startTime=gt;tick(7200);lines.push('자동 연계: '+linked+'/'+finish+' (히트스톱 포함 120초)');
-      for(let i=0;i<7200&&gt-startTime<120;i++)tick(1);
+      const startTime=gt;for(let i=0;i<14400&&gt-startTime<120;i++)update(1/60);
+      ok(gt-startTime>=120,'자동 전투가 전투 시간 120초에 도달하지 못함');
       ok(finish>=15&&linked/finish>=14/15,'3쌍 전투 시간 120초 자동 연계 비율: '+linked+'/'+finish);lines.push('자동 연계: '+linked+'/'+finish+' (전투 시간 120초)');
     }finally{cast=originalCast;reset();S.equip=SK.slice(0,8).map(s=>s.id);buildBar()}
   });
@@ -183,9 +199,9 @@
   section('정리');
   guard('정리',()=>{tick(600);ok(FX.length===0,'연출이 끝나지 않고 남아 있음: '+FX.length+'개');ok(castLock<=0,'castLock이 풀리지 않음')});
 
-  const box=document.createElement('div');
+  const elapsedMs=performance.now()-startedAt,box=document.createElement('div');
   box.style.cssText='position:fixed;right:12px;top:12px;z-index:99;max-width:min(520px,92vw);max-height:80vh;overflow:auto;background:#0e0b1d;color:#f0ebff;border:2px solid '+(fail?'#ff4f5e':'#7cf29a')+';border-radius:12px;padding:14px;font:12px/1.6 "Noto Sans KR",sans-serif;white-space:pre-wrap';
-  box.textContent=(fail?'자가 점검 실패':'자가 점검 통과')+` · 통과 ${pass} · 실패 ${fail}\n`+lines.join('\n');
+  box.textContent=(fail?'자가 점검 실패':'자가 점검 통과')+` · 통과 ${pass} · 실패 ${fail} · ${(elapsedMs/1000).toFixed(1)}초\n`+lines.join('\n');
   document.body.appendChild(box);
-  window.__selftest={pass,fail,lines};console.log('[selftest]',pass,'pass',fail,'fail',lines.join('\n'));
+  window.__selftest={pass,fail,lines,elapsedMs};console.log('[selftest]',pass,'pass',fail,'fail',(elapsedMs/1000).toFixed(1)+'s',lines.join('\n'));
 })();
