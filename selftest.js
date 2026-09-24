@@ -273,6 +273,72 @@
     }finally{reset(5);m=null;spawnT=100;buildBar()}
   });
 
+  section('빙정 시트 · 유지 물체 · 피해');
+  guard('빙정',()=>{
+    const reset=()=>{S=fresh();S.best=999;S.auto=false;S.sound=false;S.equip=['frostcut','icedragon','iceflower','frostspiral'];ST=stats();CH=null;BI=null;BF=null;CUT=null;FX=[];P=[];T=[];B=[];PR=[];C=[];relicQ=[];shieldOn=null;stop=0;slowT=0;castLock=0;frenzyT=0;circleT=0;gauge=0;lastCast=null;pendingCombo=null;spawnT=100;miniQ=0;h.stun=0;
+      m=makeMonster(1);m.state='fight';m.x=monX;m.sh=0;m.hp=m.max=1e12;atkT=1e6;for(const s of SK)cds[s.id]=0};
+    // 긴 대기·수치 검사는 update만 실행. 실제 그리기는 기존 전체 시연과 아래 핵심 컷에서 확인한다.
+    const step=n=>{for(let i=0;i<n;i++)update(1/60)},until=fn=>{for(let i=0;i<1800&&!fn();i++)update(1/60)};
+    const data=[['frostcut',60,22,9.5,1.2],['icedragon',64,28,14,1.9],['iceflower',68,24,10,1.2],['frostspiral',72,30,14.5,1.9]];
+    const hit=skillHit,damage=deal;let hits=[],dealt=0;
+    try{
+      skillHit=function(mult,pm,x,y,o){hits.push({mult,pm,...o});return hit(mult,pm,x,y,o)};
+      deal=function(d,crit,src,x,y,o){if(src==='skill')dealt+=d;return damage(d,crit,src,x,y,o)};
+      ok(JSON.stringify(ICE_COL)===JSON.stringify(['#05070B','#245BBC','#697582','#61DCF3','#FFFFFF']),'JSON 빙정 5색 일치');
+      for(const [id,unlock,cd,base,slope] of data){const s=skOf(id);ok(s.unlock===unlock&&s.cd===cd,id+': 시트 배정/쿨타임');
+        ok((IC[id].match(/#[0-9a-f]{6}/gi)||[]).every(c=>ICE_COL.includes(c)),id+': 아이콘 빙정 팔레트');
+        for(const [tr,lv] of [[0,0],[1,5],[2,10],[3,20]])for(const b of [null,'a','b']){
+          reset();S.lv.skill=lv;if(b)S.awk[id]=b;ST=stats();ST.cc=0;hits=[];dealt=0;cast(s,true);step(230);
+          const total=base+slope*tr,expected=ST.atk*ST.sk*total*.1*(b==='a'?1.4:1);
+          ok(Math.abs(hits.reduce((n,h)=>n+h.mult,0)-total)<1e-8&&hits.every(h=>h.pm===.1&&h.sid===id),id+': TR '+tr+' 분기 '+b+' 피해/pm/id');
+          ok(dealt>=expected*.9&&dealt<=expected*1.1&&hits.at(-1)?.heavy&&hits.at(-1)?.name===s.name,id+': TR '+tr+' 분기 '+b+' 실제 피해/강타');
+          const prev=id==='frostcut'||id==='iceflower'?(9+1.2*tr)/20:(13.5+1.9*tr)/26;
+          ok(total/cd<=prev,id+': TR '+tr+' 기존 스킬 초당 배율 이하');
+        }
+        reset();S.awk[id]='b';cast(s);ok(Math.abs(cds[id]-s.cd*ST.cdm*.7)<1e-9,id+': B 쿨타임 -30%');
+        reset();cast(s,true);m=null;step(240);ok(FX.length===0&&castLock<=0,id+': 대상 소멸 안전');
+      }
+      for(const [id,kind,count,total] of [['frostcut','spikes',3,39.5],['iceflower','petals',6,40.5]]){
+        const c=comboOf(id),a=skOf(id),b=skOf(c.b);ok(c.keep&&c.keep.release===releaseIce,id+': 기존 keep 훅 사용');
+        reset();cds[b.id]=30;cast(a);const kept=c.keep.get(),pieces=kept.pieces,refs=[...pieces];
+        ok(pieces.length===count&&cds[b.id]===PRIME_CD,id+': 유지 개수/짝 준비');until(()=>castLock<=0);render();
+        ok(c.keep.get()===kept&&pieces.every((p,i)=>p===refs[i]&&!p.used),id+': 시작 연출 뒤 같은 물체 유지');
+        until(()=>gt-lastCast.t>=7.8);const cd=cds[id];gauge=0;ok(cast(b),id+': 8초 직전 수동 연계');
+        ok(cds[id]===cd*.5&&gauge===20*ST.gg,id+': 연계 보상');until(()=>kept.claimed);const fin=FX.find(o=>o.kept===kept);
+        ok(fin&&kept.pieces===pieces&&pieces.every((p,i)=>p===refs[i]),id+': 마무리에 원본 배열/객체 인계');
+        ok(FX.filter(o=>o.iceKind===kind).length===1,id+': 유지 물체 중복 소환 금지');until(()=>pieces.some(p=>p.used));render();
+        ok(pieces.some(p=>!p.used),id+': 한 번에 지우지 않고 순차 파괴/흡수');until(()=>kept.consumed);render();
+        ok(pieces.every(p=>p.used)&&fin.hit&&stop>=.14&&S.combos===1,id+': 모든 원본 소모/한 번 발동/히트스톱');step(150);
+        ok(!c.keep.get()&&FX.length===0&&castLock<=0,id+': 연계 종료 정리');
+        reset();cast(a);const auto=c.keep.get();S.auto=true;until(()=>auto.claimed);S.auto=false;ok(auto.claimed&&S.combos===1,id+': 자동 연계 인계');
+        reset();cast(a);const expired=c.keep.get();step(560);ok(!FX.includes(expired),id+': 8초 만료 정리');
+        reset();cast(a);const interrupted=c.keep.get();until(()=>castLock<=0);cast(skOf('dash'));step(120);ok(interrupted.collapse&&!FX.includes(interrupted),id+': 다른 스킬로 중단');
+        reset();S.best=a.unlock;cast(a);step(200);ok(!c.keep.get(),id+': 짝 미해금 시 소멸');
+        reset();CH={mods:[DMODS.find(x=>x.id==='chain')]};cast(a);const long=c.keep.get();until(()=>gt-lastCast.t>=15.7);
+        ok(c.keep.get()===long&&activeLink()?.left>0,id+': 도전 16초 동일 물체 유지');cast(b);until(()=>long.consumed);ok(long.consumed,id+': 16초 직전 연계');
+        reset();cast(a);until(()=>castLock<=0);FX=[];cds[b.id]=0;cast(b);ok(!pendingCombo,id+': 소실 물체 인계 금지');
+        reset();hits=[];let emitted=0,colors=[];const push=P.push;
+        P.push=function(...args){emitted+=args.length;colors.push(...args.map(p=>p.color));return push.apply(this,args)};
+        ok(previewCombo(c),id+': 시작부터 전체 시연');const demo=c.keep.get();step(350);
+        ok(demo.claimed&&demo.consumed&&hits.every(h=>h.pm===.1),id+': 시연의 동일 물체/pm 인계');
+        ok(Math.abs(hits.reduce((n,h)=>n+h.mult,0)-total)<1e-8&&hits.filter(h=>h.sid==='combo').length===1,id+': 시작+마무리+추가 16배 중복 없음');
+        ok(hits.at(-1)?.name===c.name&&hits.at(-1)?.crack===2,id+': 연계 강타/균열 이름');
+        ok(emitted<=100&&colors.every(col=>ICE_COL.includes(col)),id+': 전체 연계 입자 100개 이하/5색: '+emitted);delete P.push;
+      }
+      const a=AWK.find(a=>a.id==='frostcrown');ok(a.unlock===45&&a.name==='영원의 설관','빙정 각성기 배정');
+      for(const [tr,lv] of [[0,0],[3,20]]){reset();S.lv.skill=lv;ST=stats();hits=[];S.awkSel=a.id;gauge=100;
+        ok(castAwaken()&&gauge===0&&CUT.name===a.name,'설관 게이지 소비/컷인');step(300);
+        ok(Math.abs(hits.reduce((n,h)=>n+h.mult,0)-(48+6*tr))<1e-8&&hits.every(h=>h.pm===1&&h.sid===a.id),'설관 TR '+tr+' 실전 피해');
+        ok(hits.at(-1)?.heavy&&hits.at(-1)?.crack===2&&getFinisherInfo('skill',hits.at(-1)).kind==='각성기 결정타','설관 마지막 강타/각성 결정타');
+      }
+      reset();hits=[];let emitted=0,colors=[];const push=P.push;
+      P.push=function(...args){emitted+=args.length;colors.push(...args.map(p=>p.color));return push.apply(this,args)};
+      previewAwk(a);step(300);ok(hits.every(h=>h.pm===.1)&&hits.length===7,'설관 시연 6연타+강타/pm');
+      ok(emitted<=100&&colors.every(col=>ICE_COL.includes(col)),'설관 입자 100개 이하/5색: '+emitted);delete P.push;
+      reset();a.fn(1);m=null;step(300);ok(FX.length===0&&castLock<=0,'설관 대상 소멸 안전');
+    }finally{skillHit=hit;deal=damage;reset();m=null;buildBar()}
+  });
+
   section('정리');
   guard('정리',()=>{tick(600);ok(FX.length===0,'연출이 끝나지 않고 남아 있음: '+FX.length+'개');ok(castLock<=0,'castLock이 풀리지 않음')});
 

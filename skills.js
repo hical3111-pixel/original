@@ -664,7 +664,9 @@ const COMBOS=[
   {a:'hands',b:'skulls',name:'망자의 연회',fn:comboFeast,col:'#c9a8ff',d:'거대한 그림자 손이 적을 움켜쥐고, 해골 망령 열 개가 차례로 파고든다.'},
   {a:'whip',b:'dslash',name:'업화 난무',fn:comboPyre,col:'#ffa05a',d:'불꽃 채찍이 사방으로 휘몰아친 뒤, 거대한 참격파 두 줄기가 X자로 교차한다.'},
   {a:'spear',b:'thunder',name:'뇌신 강림',fn:comboThunderGod,col:'#ffe853',keep:{get:()=>thunderSpear(),ready:1.2,release:releaseSpear},d:'박힌 뇌창이 피뢰침이 되어 연속 낙뢰를 부르고, 번개 폭풍으로 대폭발을 일으킨다.'},
-  {a:'gravity',b:'meteor',name:'천붕',fn:comboSkyfall,col:'#ff9470',keep:{get:()=>gravityWell(),ready:1.8,release:releaseGravity},d:'중력 구속의 남은 구체가 운석을 휘어 끌어당긴다. 같은 구체와 충돌해 하얀 중심의 대폭발을 일으킨다.'}];
+  {a:'gravity',b:'meteor',name:'천붕',fn:comboSkyfall,col:'#ff9470',keep:{get:()=>gravityWell(),ready:1.8,release:releaseGravity},d:'중력 구속의 남은 구체가 운석을 휘어 끌어당긴다. 같은 구체와 충돌해 하얀 중심의 대폭발을 일으킨다.'},
+  {a:'frostcut',b:'icedragon',name:'빙룡쇄파',fn:comboIceDragon,col:'#61DCF3',keep:{get:()=>iceKeep('spikes'),ready:1.25,release:releaseIce},d:'서리 월참의 가시 3개가 남는다. 백룡이 같은 가시를 차례로 깨뜨려 빙룡쇄파를 일으킨다.'},
+  {a:'iceflower',b:'frostspiral',name:'만화빙정',fn:comboIceFlower,col:'#61DCF3',keep:{get:()=>iceKeep('petals'),ready:1.35,release:releaseIce},d:'빙화 장벽의 꽃잎 6개가 남는다. 동결 나선이 같은 꽃잎을 흡수해 거대한 빙정으로 폭발한다.'}];
 const comboWin=()=>hasMod('chain')?16:8;
 let lastCast=null,pendingCombo=null;
 const skOf=id=>SK.find(s=>s.id===id);
@@ -727,6 +729,10 @@ function relicFX(x,boss,min=0){
 
 /* ================= 스킬 목록 ================= */
 const IC={
+  frostcut:'<svg viewBox="0 0 32 32"><path d="M3 5c25 1 29 16 8 22 13-8 12-16-8-22z" fill="#61DCF3" stroke="#FFFFFF"/><path d="M3 29l3-8 3 8m2 0 4-13 4 13m2 0 3-9 3 9" fill="#245BBC" stroke="#61DCF3"/></svg>',
+  icedragon:'<svg viewBox="0 0 32 32"><path d="M2 25l7-10-5-6 10 3 5-8 1 7 10 4-4 5-7-1-7 5z" fill="#61DCF3" stroke="#FFFFFF"/><path d="M21 14l4 1-4 2z" fill="#05070B"/></svg>',
+  iceflower:'<svg viewBox="0 0 32 32"><g fill="#61DCF3" stroke="#FFFFFF"><path d="M16 2l3 5-3 6-3-6z"/><path d="M16 2l3 5-3 6-3-6z" transform="rotate(60 16 16)"/><path d="M16 2l3 5-3 6-3-6z" transform="rotate(120 16 16)"/><path d="M16 2l3 5-3 6-3-6z" transform="rotate(180 16 16)"/><path d="M16 2l3 5-3 6-3-6z" transform="rotate(240 16 16)"/><path d="M16 2l3 5-3 6-3-6z" transform="rotate(300 16 16)"/></g><circle cx="16" cy="16" r="2" fill="#FFFFFF"/></svg>',
+  frostspiral:'<svg viewBox="0 0 32 32"><path d="M16 2l7 14-7 14-7-14z" fill="#245BBC" stroke="#61DCF3"/><path d="M25 8C2 4 3 17 24 16S29 30 6 24" fill="none" stroke="#FFFFFF" stroke-width="2"/></svg>',
   gravity:'<svg viewBox="0 0 32 32"><circle cx="16" cy="12" r="8" fill="#050509" stroke="#c9c6df" stroke-width="2"/><ellipse cx="16" cy="12" rx="13" ry="4" fill="none" stroke="#fff"/><path d="M5 24l4-3 3 5-5 2zm17-3 5 2-2 6-5-3z" fill="#858593"/><path d="M16 21v8m-3-3 3 3 3-3" fill="none" stroke="#fff"/></svg>',
   meteor:'<svg viewBox="0 0 32 32"><path d="M2 2l23 8 5 17-12 4L8 22z" fill="#b42e3b"/><path d="M6 5l20 12-2 10-10-5z" fill="#ff864e"/><path d="M10 9l12 10-4 4z" fill="#fff"/><path d="M19 17l8 3-1 8-9-2-3-5z" fill="#646471" stroke="#fff"/></svg>',
   whip:'<svg viewBox="0 0 32 32"><path d="M4 26c6-2 6-12 13-14s10 6 11-4" stroke="#ff8a2a" stroke-width="3" fill="none" stroke-linecap="round" stroke-dasharray="3 2"/><circle cx="28" cy="7" r="3" fill="#ffc04a"/></svg>',
@@ -779,6 +785,10 @@ const SK=[
   {id:'thunder',name:'천뢰 낙하',unlock:48,cd:24,c:'#5ce1e6',fn:castThunder,d:'먹구름이 드리우고 하늘에서 거대한 낙뢰가 연달아 내리꽂힌다.'},
   {id:'gravity',name:'중력 구속',unlock:52,cd:20,c:'#c9c6df',fn:castGravity,d:'검은 구체가 파편을 빨아들이고 적을 땅에 짓누른다. 연계 가능 중에는 구체가 남고, 연계가 끊기면 붕괴한다.'},
   {id:'meteor',name:'운석 낙하',unlock:56,cd:26,c:'#ff9470',fn:castMeteor,d:'붉게 갈라진 하늘에서 불타는 운석이 대각선으로 낙하한다. 중력 구속 뒤에는 남은 구체로 휘어져 천붕을 일으킨다.'},
+  {id:'frostcut',name:'서리 월참',unlock:60,cd:22,c:'#61DCF3',fn:castFrostcut,d:'얼음 검의 초승달 참격이 적을 베고 바닥 가시 3개를 남긴다. 백룡 돌진으로 이어 가시를 깨뜨린다.'},
+  {id:'icedragon',name:'백룡 돌진',unlock:64,cd:28,c:'#61DCF3',fn:castIcedragon,d:'하얀 얼음 용이 적을 관통한다. 서리 월참의 가시가 남아 있으면 같은 가시를 파괴해 빙룡쇄파가 된다.'},
+  {id:'iceflower',name:'빙화 장벽',unlock:68,cd:24,c:'#61DCF3',fn:castIceflower,d:'공격용 결정 꽃잎 6개를 펼쳐 적을 벤다. 남은 꽃잎은 동결 나선에 흡수된다.'},
+  {id:'frostspiral',name:'동결 나선',unlock:72,cd:30,c:'#61DCF3',fn:castFrostspiral,d:'나선형 냉기가 적을 휘감아 빙정을 터뜨린다. 빙화 장벽의 꽃잎 6개를 흡수하면 만화빙정이 된다.'},
 ];
 SK.sort((a,b)=>a.unlock-b.unlock);
 const cds={};SK.forEach(s=>cds[s.id]=0);
@@ -1362,6 +1372,98 @@ function meteorFlight(pm,well=null){
 function castMeteor(pm){meteorFlight(pm)}
 function comboSkyfall(pm=1,well){if(well)meteorFlight(pm,well)}
 
+/* ================= 빙정 — 단색 5층 / 같은 가시·꽃잎 인계 ================= */
+const ICE_COL=['#05070B','#245BBC','#697582','#61DCF3','#FFFFFF'];
+const iceKeep=kind=>FX.find(o=>o.iceKind===kind&&!o.collapse&&!o.consumed);
+const icePoint=p=>({x:p.nx*W,y:groundY-p.alt*U});
+function iceCrystal(x,y,w,h,a=0,sc=1){
+  if(sc<=0)return;ctx.save();ctx.translate(x,y);ctx.rotate(a);ctx.scale(U*sc,U*sc);
+  for(const [k,col] of [[1,ICE_COL[0]],[.9,ICE_COL[1]],[.73,ICE_COL[3]]]){ctx.fillStyle=col;ctx.beginPath();ctx.moveTo(0,-h*k);ctx.lineTo(w*k,0);ctx.lineTo(0,h*k);ctx.lineTo(-w*k,0);ctx.closePath();ctx.fill()}
+  ctx.fillStyle=ICE_COL[2];ctx.beginPath();ctx.moveTo(0,-h*.9);ctx.lineTo(-w*.9,0);ctx.lineTo(0,h*.9);ctx.closePath();ctx.fill();
+  ctx.globalCompositeOperation='lighter';ctx.strokeStyle=ICE_COL[4];ctx.lineWidth=1.7;ctx.beginPath();ctx.moveTo(0,h*.86);ctx.lineTo(0,-h*.86);ctx.lineTo(w*.86,0);ctx.stroke();ctx.restore();
+}
+function iceBurst(x,y,n=24){
+  // 고정 개수. 긴 keep 대기 중에는 파티클을 생성하지 않는다.
+  for(let i=0;i<n;i++)P.push({t:'shard',x,y,vx:rnd(-540,540)*U,vy:rnd(-650,80)*U,g:1400*U,drag:1,floor:1,size:rnd(3,9)*U,rot:rnd(0,6),vr:rnd(-10,10),life:.75,max:.75,color:ICE_COL[i%5]});
+  smoke(x,y,4,ICE_COL[0],.7);P.push({t:'ring',x,y,r0:8*U,r1:160*U,w:5*U,sy:.5,life:.35,max:.35,color:ICE_COL[4]});
+}
+function releaseIce(o){o.collapse=true;o.dur=o.t+.35}
+function drawIceKeep(o){
+  if(o.consumed)return;const f=o.collapse?clamp((o.dur-o.t)/.35,0,1):clamp((o.dur-o.t)/.3,0,1);
+  for(const p of o.pieces){if(p.used)continue;const c=icePoint(p),rise=clamp((o.t-p.born)/.28,0,1);iceCrystal(c.x,c.y,p.w,p.h,p.a,(p.sc===undefined?1:p.sc)*easeOut(rise)*f)}
+}
+function castFrostcut(pm){
+  const c=m?mCenter(m):{x:monX,y:groundY-50*U},TR=tier();castLock=1.25;sfx.charge();
+  const pieces=[-1,0,1].map((d,i)=>({nx:(c.x+d*30*U)/W,alt:d?32:49,w:d?14:18,h:d?32:49,a:d*.12,born:.65+i*.07}));
+  return addFX({iceKind:'spikes',pieces,dur:1.65,up(dt,o){if(o.t<1.25){castLock=Math.max(castLock,.05);h.ang=o.t<.35?-1.6:.8;h.t=9}
+    at(o,.45,()=>{sfx.slash2();skillHit(2+.3*TR,pm,c.x,c.y,{light:1,col:ICE_COL[3],sid:'frostcut'})});
+    at(o,.9,()=>{iceBurst(c.x,groundY,20);sfx.glass();skillHit(7.5+.9*TR,pm,c.x,c.y,{heavy:1,name:'서리 월참',col:ICE_COL[3],fc:'255,255,255',sid:'frostcut'})});
+  },draw(o){drawIceKeep(o);if(o.t>.15&&o.t<.85){const k=clamp((o.t-.15)/.7,0,1),x=lerp(heroX,c.x,easeOut(k)),y=groundY-50*U,s=Math.sin(k*Math.PI);
+    ctx.save();ctx.translate(x,y);ctx.scale(U*s,U*s);for(const [col,r] of [[ICE_COL[0],80],[ICE_COL[1],74],[ICE_COL[3],66],[ICE_COL[4],58]]){ctx.fillStyle=col;if(col===ICE_COL[4])ctx.globalCompositeOperation='lighter';ctx.beginPath();ctx.moveTo(-r*.7,-r);ctx.quadraticCurveTo(r*1.8,0,-r*.7,r);ctx.quadraticCurveTo(r*.65,0,-r*.7,-r);ctx.fill()}ctx.restore()}}});
+}
+function castIceflower(pm){
+  const c=m?mCenter(m):{x:monX,y:groundY-50*U},TR=tier(),cx=heroX+40*U,cy=groundY-85*U;castLock=1.35;sfx.charge();
+  const pieces=Array.from({length:6},(_,i)=>{const a=i*Math.PI/3;return{nx:(cx+Math.sin(a)*60*U)/W,alt:(groundY-cy)/U+Math.cos(a)*60,w:14,h:31,a,born:.12+i*.04}});
+  return addFX({iceKind:'petals',pieces,dur:1.75,up(dt,o){if(o.t<1.35){castLock=Math.max(castLock,.05);h.ang=-1.6;h.t=9}
+    at(o,.6,()=>{sfx.glass();skillHit(2+.3*TR,pm,c.x,c.y,{light:1,col:ICE_COL[3],sid:'iceflower'})});
+    at(o,1,()=>{iceBurst(c.x,c.y,20);sfx.boom();skillHit(8+.9*TR,pm,c.x,c.y,{heavy:1,name:'빙화 장벽',col:ICE_COL[3],fc:'255,255,255',sid:'iceflower'})});
+  },draw(o){drawIceKeep(o);if(o.t>=.55&&o.t<1.2){const k=(o.t-.55)/.65;ctx.save();ctx.strokeStyle=ICE_COL[3];ctx.lineWidth=4*U*(1-k);ctx.beginPath();ctx.ellipse(lerp(cx,c.x,k),cy,18*U+30*U*k,80*U,0,0,7);ctx.stroke();ctx.globalCompositeOperation='lighter';ctx.strokeStyle=ICE_COL[4];ctx.lineWidth=1.5*U*(1-k);ctx.stroke();ctx.restore()}}});
+}
+function drawIceDragon(x,y,t,sc=1,a=0){
+  ctx.save();ctx.translate(x,y);ctx.rotate(a);ctx.scale(U*sc,U*sc);
+  for(const [k,col] of [[1,ICE_COL[0]],[.9,ICE_COL[1]],[.76,ICE_COL[3]],[.52,ICE_COL[4]]]){ctx.save();ctx.scale(1,k);ctx.fillStyle=col;if(col===ICE_COL[4])ctx.globalCompositeOperation='lighter';ctx.beginPath();ctx.moveTo(36,-8);ctx.lineTo(9,-18);ctx.lineTo(-12,-43);ctx.lineTo(-11,-17);
+    for(let i=0;i<9;i++){const x=-22-i*17,y=Math.sin(t*9-i*.65)*13;ctx.lineTo(x,y-18);ctx.lineTo(x-7,y-29)}ctx.lineTo(-206,0);
+    for(let i=8;i>=0;i--)ctx.lineTo(-22-i*17,Math.sin(t*9-i*.65)*13+12);ctx.lineTo(5,17);ctx.lineTo(27,10);ctx.lineTo(8,3);ctx.lineTo(36,-2);ctx.closePath();ctx.fill();ctx.restore()}
+  ctx.fillStyle=ICE_COL[0];ctx.beginPath();ctx.moveTo(6,-11);ctx.lineTo(19,-8);ctx.lineTo(8,-5);ctx.fill();ctx.restore();
+}
+function iceDragonFX(pm,kept){
+  const c=m?mCenter(m):{x:monX,y:groundY-50*U},TR=tier(),endX=kept?Math.max(...kept.pieces.map(p=>icePoint(p).x))+45*U:c.x+45*U;castLock=1.8;sfx.roar();
+  if(kept)kept.dur=kept.t+1.85;
+  return addFX({dur:1.8,kept,up(dt,o){castLock=Math.max(castLock,.05);const k=clamp((o.t-.25)/.85,0,1);o.x=lerp(heroX-35*U,endX,k*k);o.y=lerp(groundY-70*U,c.y,k);
+    if(kept&&o.t<1.15)for(const p of kept.pieces){const q=icePoint(p);if(!p.used&&o.x>=q.x){p.used=true;iceBurst(q.x,q.y,7);sfx.glass()}}
+    at(o,1.15,()=>{o.hit=true;if(kept)kept.consumed=true;iceBurst(c.x,c.y,kept?24:38);sfx.bigboom();stop=Math.max(stop,.14);zoom+=.045*FXS;
+      const mark=T.length;skillHit(14+1.9*TR,pm,c.x,c.y,{heavy:1,name:'백룡 돌진',col:ICE_COL[3],fc:'255,255,255',sid:'icedragon'});
+      if(kept&&T.length>mark){T[mark].x-=45*U;T[mark].y-=60*U;T[mark].size=26}
+      if(kept)skillHit(16,pm,c.x,c.y,{heavy:1,name:'빙룡쇄파',col:ICE_COL[4],fc:'255,255,255',crack:2,sid:'combo'})});
+  },draw(o){if(o.x===undefined)return;const f=o.t<.25?o.t/.25:o.t>1.15?clamp((1.6-o.t)/.45,0,1):1;drawIceDragon(o.x,o.y,o.t,f*(kept?1.2:1))}});
+}
+function castIcedragon(pm){return iceDragonFX(pm)}
+function comboIceDragon(pm=1,kept){if(kept)return iceDragonFX(pm,kept)}
+function iceSpiralFX(pm,kept){
+  const c=m?mCenter(m):{x:monX,y:groundY-50*U},TR=tier(),nx=c.x/W,alt=(groundY-c.y)/U;castLock=2;sfx.dark();
+  if(kept){kept.dur=kept.t+2.05;for(const p of kept.pieces){p.snx=p.nx;p.salt=p.alt}}
+  return addFX({dur:2,kept,up(dt,o){castLock=Math.max(castLock,.05);
+    if(kept)for(let i=0;i<kept.pieces.length;i++){const p=kept.pieces[i],k=clamp((o.t-.18-i*.045)/.85,0,1),a=i*Math.PI/3+k*Math.PI*2;
+      p.nx=lerp(p.snx,nx,k)+Math.sin(a)*38*U/W*Math.sin(k*Math.PI);p.alt=lerp(p.salt,alt,k)+Math.cos(a)*42*Math.sin(k*Math.PI);p.a=a;p.sc=1-k*.8;
+      if(k>=1&&!p.used){p.used=true;iceBurst(nx*W,groundY-alt*U,3)}}
+    for(let i=0;i<3;i++)at(o,.55+i*.2,()=>skillHit(1.5+.2*TR,pm,nx*W,groundY-alt*U,{light:1,col:ICE_COL[3],sid:'frostspiral'}));
+    at(o,1.3,()=>{o.hit=true;if(kept)kept.consumed=true;iceBurst(nx*W,groundY-alt*U,kept?22:38);sfx.glass();sfx.bigboom();stop=Math.max(stop,.15);zoom+=.045*FXS;
+      const mark=T.length;skillHit(10+1.3*TR,pm,nx*W,groundY-alt*U,{heavy:1,name:'동결 나선',col:ICE_COL[3],fc:'255,255,255',sid:'frostspiral'});
+      if(kept&&T.length>mark){T[mark].x-=45*U;T[mark].y-=60*U;T[mark].size=26}
+      if(kept)skillHit(16,pm,nx*W,groundY-alt*U,{heavy:1,name:'만화빙정',col:ICE_COL[4],fc:'255,255,255',crack:2,sid:'combo'})});
+  },draw(o){const k=clamp(o.t/1.2,0,1),f=o.t>1.3?clamp((1.9-o.t)/.6,0,1):1,x=lerp(heroX+40*U,nx*W,easeOut(k)),y=groundY-alt*U;
+    if(o.t>.6)iceCrystal(nx*W,groundY-(kept?118:84)*U,kept?48:33,kept?118:84,0,clamp((o.t-.6)/.6,0,1)*f);
+    ctx.save();for(let j=0;j<3;j++)for(const [col,w] of [[ICE_COL[0],10],[ICE_COL[3],6],[ICE_COL[4],2]]){ctx.globalCompositeOperation=col===ICE_COL[4]?'lighter':'source-over';ctx.strokeStyle=col;ctx.lineWidth=w*U*f;ctx.beginPath();ctx.ellipse(x,y+(j-1)*39*U,72*U*f,18*U*f,-.22,o.t*8+j*2,o.t*8+j*2+Math.PI*1.6);ctx.stroke()}ctx.restore()}});
+}
+function castFrostspiral(pm){return iceSpiralFX(pm)}
+function comboIceFlower(pm=1,kept){if(kept)return iceSpiralFX(pm,kept)}
+function awkFrostcrown(pm=1){
+  cutin('영원의 설관','각성 · 백룡이 휘감은 얼음 검',ICE_COL[3]);castLock=2.5;sfx.charge();
+  const c=m?mCenter(m):{x:monX,y:groundY-50*U},TR=tier(),nx=c.x/W,alt=(groundY-c.y)/U;
+  return addFX({dur:2.5,frostcrown:1,up(dt,o){castLock=Math.max(castLock,.05);dimT=Math.max(dimT,.35);if(o.t<.6){h.ang=-1.7;h.t=9}
+    for(let i=0;i<6;i++)at(o,.65+i*.13,()=>{sfx.glass();skillHit(2+.25*TR,pm,nx*W,groundY-alt*U,{light:1,col:ICE_COL[3],sid:'frostcrown'})});
+    at(o,1.6,()=>{o.hit=true;iceBurst(nx*W,groundY,60);sfx.bigboom();stop=Math.max(stop,.22);zoom+=.1*FXS;
+      skillHit(36+4.5*TR,pm,nx*W,groundY-alt*U,{heavy:1,name:'영원의 설관',col:ICE_COL[4],fc:'255,255,255',crack:2,sid:'frostcrown'})});
+  },draw(o){const t=o.t,x=nx*W,y=groundY-alt*U,top=Math.max(70*U,y-185*U),f=t>1.6?clamp((2.4-t)/.8,0,1):1;
+    if(t<1.6){const k=clamp(t/.55,0,1),sx=lerp(heroX,x,easeOut(k)),sy=lerp(groundY-100*U,top,easeOut(k));
+      if(t>.45){ctx.save();for(let j=0;j<3;j++){ctx.strokeStyle=ICE_COL[j===1?3:1];ctx.lineWidth=(13-j*2)*U;ctx.beginPath();ctx.ellipse(x,top+35*U+j*30*U,95*U,22*U,-.15,t*5+j,t*5+j+5.3);ctx.stroke();ctx.globalCompositeOperation='lighter';ctx.strokeStyle=ICE_COL[4];ctx.lineWidth=3*U;ctx.stroke();ctx.globalCompositeOperation='source-over'}ctx.restore();
+        const q=clamp((t-1.15)/.45,0,1);drawIceDragon(x+90*U*(1-q),lerp(top+60*U,y,q*q),t,.55,q*Math.PI/2)}
+      iceCrystal(sx,sy,12,78,0,k);ctx.save();ctx.fillStyle=ICE_COL[3];ctx.fillRect(sx-30*U,sy+45*U,60*U,5*U);ctx.fillRect(sx-3*U,sy+50*U,6*U,25*U);ctx.restore();
+      for(let i=0;i<6;i++)iceCrystal(sx+(i-2.5)*23*U,sy-65*U-Math.sin(i/5*Math.PI)*20*U,8,19,(i-2.5)*.12,k)}
+    else{for(let i=0;i<9;i++){const a=-Math.PI*.75+i*Math.PI*1.5/8;iceCrystal(x+Math.sin(a)*72*U,groundY-38*U-Math.cos(a)*35*U,15,65,a,f)}
+      iceCrystal(x,groundY-125*U,45,125,0,f);ctx.save();ctx.globalCompositeOperation='lighter';ctx.fillStyle=ICE_COL[4];ctx.fillRect(x-7*U*f,top,14*U*f,groundY-top);ctx.restore()}}});
+}
+
 /* ================= 각성기 ================= */
 let circleT=0;
 function awkCircle(pm=1){
@@ -1393,8 +1495,10 @@ const AWK=[
   {id:'circle',name:'암흑 마법진',unlock:15,c:'#b89aff',fn:awkCircle,d:'거대한 마법진과 검은 결정이 적을 짓누르고, 12초 동안 모든 스킬 재사용 대기가 2배 빨라진다.'},
   {id:'dragon',name:'그림자 용',unlock:25,c:'#5a7bff',fn:pm=>castDragon(pm*2.5),d:'먹물로 된 용이 하늘을 휘감고 내려와 적을 물어뜯는다.'},
   {id:'inferno',name:'염마 강림',unlock:35,c:'#ff8a2a',fn:pm=>castInferno(pm*2.5),d:'불꽃 마왕을 불러내 거대한 화염 기둥을 일으킨다.'},
+  {id:'frostcrown',name:'영원의 설관',unlock:45,c:'#61DCF3',fn:awkFrostcrown,d:'얼음 검과 여섯 결정의 설관을 세운다. 검을 휘감던 백룡이 내려꽂혀 거대한 빙정 가시를 터뜨린다.'},
 ];
 const AWK_IC={
+  frostcrown:'<svg viewBox="0 0 32 32"><path d="M4 10l6 5 6-11 6 11 6-5-4 16H8z" fill="#245BBC" stroke="#61DCF3"/><path d="M16 7v23M10 23h12" stroke="#FFFFFF" stroke-width="2"/><path d="M4 3l2 3-2 3-2-3m26-3 2 3-2 3-2-3" fill="#61DCF3"/></svg>',
   thousand:'<svg viewBox="0 0 32 32"><path d="M16 2l2 11 11-2-9 6 6 10-10-7-10 7 6-10-9-6 11 2z" fill="#ff2a3a" stroke="#fff" stroke-width="1"/></svg>',
   circle:'<svg viewBox="0 0 32 32"><ellipse cx="16" cy="16" rx="14" ry="14" fill="none" stroke="#b89aff" stroke-width="1.6"/><path d="M16 4l10.4 18H5.6zM16 28L5.6 10h20.8z" fill="none" stroke="#e0d4ff" stroke-width="1.4"/></svg>',
 };
@@ -1403,6 +1507,10 @@ const awkIcon=a=>AWK_IC[a.id]||IC[a.id];
 function castAwaken(){if(gauge<100||!fighting()||castLock>0)return false;gauge=0;S.awakes++;awkSel().fn(1);return true}
 function previewAwk(a){if(!fighting()||castLock>0)return false;a.fn(.1);return true}
 Object.assign(BR,{
+  frostcut:{a:['한파의 칼날','피해 +40%'],b:['서리 발도','재사용 대기 -30%'],gen:1},
+  icedragon:{a:['백룡의 송곳니','피해 +40%'],b:['빙하 질주','재사용 대기 -30%'],gen:1},
+  iceflower:{a:['육화 개화','피해 +40%'],b:['서리 만개','재사용 대기 -30%'],gen:1},
+  frostspiral:{a:['절대 빙점','피해 +40%'],b:['나선 순환','재사용 대기 -30%'],gen:1},
   whip:{a:['업화 사슬','피해 +40%'],b:['속결','재사용 대기 -30%'],gen:1},
   dslash:{a:['참월','피해 +40%'],b:['연참','재사용 대기 -30%'],gen:1},
   hands:{a:['사자의 악력','피해 +40%'],b:['끝없는 손','재사용 대기 -30%'],gen:1},
