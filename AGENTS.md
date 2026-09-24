@@ -101,6 +101,8 @@ addFX({dur:1.5, up(dt,o){...}, back(o){...}, draw(o){...}, post(o){...}, end(o){
 
 ## 5. 새 콘텐츠 추가 체크리스트
 
+> 스토리보드 시트로 스킬을 만들 때는 먼저 로컬 폴더의 `output/skill-storyboards-v2/GUIDE.md`를 읽는다(진행 순서, id·해금 배정, 시트 해석 규칙). 이 폴더는 저장소에 없고 커밋하지 않는다.
+
 ### 새 일반 스킬
 1. `skills.js`에 `castXxx(pm)` 작성. 규칙: `pm`을 `skillHit`에 전달, `castLock` 유지, 몬스터가 사라져도 안전, 마지막 큰 한 방은 `heavy`+`name`, `sid`에 스킬 id.
 2. `SK`에 `{id,name,unlock,cd,c,fn,d}` 추가(정렬은 `SK.sort`가 해 준다).
