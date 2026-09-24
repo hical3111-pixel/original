@@ -64,11 +64,11 @@ function resolveHit(p,weight=1,evade=null){
     if(br('shield')==='a'){P.push({t:'streak',x:hx+75*U,y:hy,x2:c.x,y2:c.y,life:.3,max:.3,w:16*U,color:'#e8dcff'});P.push({t:'glow',x:c.x,y:c.y,size:150*U,life:.3,max:.3,color:'#b7a6ff'});
       deal(ST.atk*ST.sk*6,true,'skill',c.x,c.y,{heavy:1,name:'반사 결정',col:'#e8dcff',fc:'210,195,255',crack:1,sid:'shield'})}
     P.push({t:'star',x:hx+75*U,y:hy-10*U,size:140*U,life:.15,max:.15});burst(hx+75*U,hy,['#e8dcff','#b7a6ff','#fff'],24,1000);
-    T.push({x:hx+40*U,y:hy-70*U,vx:0,vy:-90*U,text:'막기!',crit:1,label:'',size:40,life:1,max:1,color:'#d9ccff'});sfx.parry();stop=Math.max(stop,.1);addTrauma(.35);if(p.ty==='charge')m.kv+=900*U;return 'blocked'}
+    T.push({x:hx+40*U,y:hy-70*U,vx:0,vy:-90*U,text:'막기!',crit:1,label:'',size:40,life:1,max:1,color:'#d9ccff'});sfx.parry();stop=Math.max(stop,.1);addTrauma(.35);if(p.ty==='charge')m.kv+=900*U;triggerBloodBuff();return 'blocked'}
   if(p.parry){S.parries++;sfx.parry();flash(.8,'255,240,190');stop=Math.max(stop,.22);slowT=.8;gauge=Math.min(100,gauge+15*ST.gg);
     T.push({x:hx+30*U,y:hy-80*U,vx:0,vy:-70*U,text:'패링!',crit:1,label:'PERFECT',lcol:'#fff',size:56,life:1.2,max:1.2,color:'#ffe066'});
     P.push({t:'ring',x:hx+50*U,y:hy,r0:10*U,r1:200*U,w:8*U,life:.4,max:.4,color:'#ffe066'});P.push({t:'star',x:hx+60*U,y:hy,size:160*U,life:.16,max:.16});burst(hx+60*U,hy,['#ffe066','#fff'],30,1200);
-    m.stun=2.2;m.pat=null;parryLock=0;m.kv+=1100*U;deal(ST.atk*8,true,'hero',c.x,c.y,{heavy:1,name:'반격',col:'#ffe066'});return}
+    m.stun=2.2;m.pat=null;parryLock=0;m.kv+=1100*U;deal(ST.atk*8,true,'hero',c.x,c.y,{heavy:1,name:'반격',col:'#ffe066'});triggerBloodBuff();return}
   if(typeof focusTier==='function'&&focusTier('eclipse')>=3&&activeLink()){
     T.push({x:hx,y:hy-70*U,vx:0,vy:-60*U,text:'기절 무효!',crit:1,label:'',size:28,life:1,max:1,color:'#9a7bff'});
     return 'immune';
@@ -81,6 +81,7 @@ function resolveHit(p,weight=1,evade=null){
     sfx.parry();stop=Math.max(stop,.1);addTrauma(.3);
     if(focusTier('verdant')>=2)deal(ST.atk*6*ST.sk,true,'skill',c.x,c.y,{heavy:1,name:'녹광 반사',col:'#7dff5a',crack:1,sid:'verdant_refl'});
     if(focusTier('verdant')>=3)gauge=Math.min(100,gauge+15*ST.gg);
+    triggerBloodBuff();
     return 'blocked';
   }
   if(rv('phoenix')){for(let i=0;i<16;i++)P.push({t:'flame',x:hx+rnd(-40,40)*U,y:groundY-rnd(0,60)*U,vx:rnd(-40,40)*U,vy:-rnd(200,420)*U,drag:1,g:0,r:rnd(12,26)*U,cols:['#7a1606','#ff8a2a','#ffe08a'],life:rnd(.4,.8),max:.8});
@@ -91,6 +92,13 @@ function resolveHit(p,weight=1,evade=null){
   h.stun=weight===1?1.3:Math.max(0,h.stun)+1.3*weight;flash(.5*weight,'255,40,60');addTrauma(.8*weight);sfx.hurt();burst(hx,hy,['#ff2a3a','#fff'],18,900);
   T.push({x:hx,y:hy-80*U,vx:0,vy:-80*U,text:'기절!',crit:1,label:'',size:36,life:1.1,max:1.1,color:'#ff4f5e'});
   return 'hit';
+}
+
+function triggerBloodBuff(){
+  if(typeof hasRes==='function'&&hasRes('verdant_crimson')){
+    bloodBuffT=10;
+    T.push({x:heroX+30*U,y:groundY-100*U,vx:0,vy:-60*U,text:'역린혈공!',crit:1,label:'',size:28,life:1,max:1,color:'#ff4f5e'});
+  }
 }
 
 let verdantCD=0,parryLock=0,lastTooFast=0;
@@ -107,6 +115,7 @@ function resolveBossOrb(p,g){
   g.res=1;const n=p.orbs.length,hx=heroX+25*U,hy=groundY-60*U;
   if(shieldOn)g.result=resolveHit(g,1/n);
   else if(g.parry){g.result='parried';S.parries++;gauge=Math.min(100,gauge+15*ST.gg/n);sfx.parry();stop=Math.max(stop,.04);addTrauma(.18);flash(.2,'255,240,190');
+    triggerBloodBuff();
     burst(hx,hy,['#ffe066','#fff'],12,600);P.push({t:'ring',x:hx,y:hy,r0:10*U,r1:65*U,w:4*U,life:.25,max:.25,color:'#ffe066'});
     T.push({x:hx,y:hy-50*U,vx:0,vy:-60*U,text:`패링! ${p.orbs.filter(o=>o.result==='parried').length}/${n}`,crit:0,label:'',size:26,life:.32,max:.32,color:'#ffe066'});
   }else{if(p.evade===undefined&&!rv('phoenix'))p.evade=Math.random()<.55;g.result=resolveHit(g,1/n,p.evade??null);if(g.result==='hit')p.stunTotal=(p.stunTotal||0)+1.3/n}
@@ -251,6 +260,7 @@ function update(rdt){
   castLock=Math.max(0,castLock-dt);
   parryLock=Math.max(0,parryLock-dt);
   if(verdantCD>0)verdantCD-=dt;
+  if(bloodBuffT>0)bloodBuffT-=dt;
   if(frenzyT>0){frenzyT-=dt;
     if(Math.random()<dt*45)P.push({t:'flame',x:heroX+rnd(-24,24)*U,y:groundY-rnd(10,90)*U,vx:rnd(-20,20)*U,vy:-rnd(80,200)*U,drag:1,g:0,r:rnd(5,11)*U,cols:['#3a0620','#ff3d8b','#ffb0d8'],life:rnd(.3,.6),max:.6});}
   comboT-=dt;if(comboT<=0)combo=0;
@@ -309,7 +319,9 @@ function update(rdt){
       m.burn-=dt;m.burnTick=(m.burnTick||0)-dt;
       if(m.burnTick<=0){
         m.burnTick=.5;
-        if(fighting()){const c=mCenter(m);deal(ST.atk*.4*ST.sk,false,'dot',c.x,c.y,{light:1,col:'#ff5a2a',name:'화상'})}
+        if(fighting()){const c=mCenter(m);
+          const bMul=(m.vuln>0&&typeof hasRes==='function'&&hasRes('crimson_hellfire'))?2:1;
+          deal(ST.atk*.4*ST.sk*bMul,false,'dot',c.x,c.y,{light:1,col:'#ff5a2a',name:bMul>1?'홍련작':'화상'})}
       }
     }else{m.burnNotified=false}
     if(m.freeze>0)m.freeze-=dt;else{m.freezeCancel=false}
@@ -773,7 +785,7 @@ function buildSchoolCards(){
   for(const row of book.children)row.hidden=row.dataset.school!==schoolOpen;
 }
 function syncSchoolEffects(){
-  const state=schoolState(),entries=[...state.focus.map(id=>{const s=SCHOOLS.find(s=>s.id===id);const tr=focusTier(id);return{kind:'focus',id,name:s.name,label:'집중',c:s.c,desc:tr+'단계 · '+FOCUS_FX[id].slice(0,tr).join(' · ')}}),...state.resonance.map(id=>{const r=RESONANCES.find(r=>r.id===id);return{kind:'resonance',id,name:r.name,label:'공명',c:SCHOOLS.find(s=>s.id===r.a).c,desc:''}})];
+  const state=schoolState(),entries=[...state.focus.map(id=>{const s=SCHOOLS.find(s=>s.id===id);const tr=focusTier(id);return{kind:'focus',id,name:s.name,label:'집중',c:s.c,desc:tr+'단계 · '+FOCUS_FX[id].slice(0,tr).join(' · ')}}),...state.resonance.map(id=>{const r=RESONANCES.find(r=>r.id===id);return{kind:'resonance',id,name:r.name,label:'공명',c:SCHOOLS.find(s=>s.id===r.a).c,desc:(typeof RES_FX!=='undefined'&&RES_FX[id])||''}})];
   $('schoolEffects').innerHTML=entries.length?entries.map(e=>`<span class="effect-chip" data-kind="${e.kind}" data-effect="${e.id}" style="--c:${e.c}"><i aria-hidden="true"></i><span>${e.label} · ${e.name}</span><small class="effect-desc" data-effect-description="${e.id}">${e.desc}</small></span>`).join(''):'<span class="effect-empty">켜진 집중·공명 없음</span>';
   const badges=$('battleEffects');badges.hidden=!entries.length;badges.innerHTML=entries.map(e=>`<span class="battle-badge" data-kind="${e.kind}" data-effect="${e.id}" style="--c:${e.c}" aria-label="${e.label} · ${e.name}" title="${e.label} · ${e.name}"><i aria-hidden="true"></i>${e.name}</span>`).join('');
   schoolUIKey=JSON.stringify([S.best,S.loadout,state,state.focus.map(focusTier)]);

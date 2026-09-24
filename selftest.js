@@ -465,7 +465,7 @@
         S.best=best;setLoadout(ids);buildBook();const state=schoolState(),expected=[...state.focus.map(id=>'focus:'+id),...state.resonance.map(id=>'resonance:'+id)];
         ok(equal(shown($('schoolEffects')),expected),'편성 칩은 schoolState 그대로: '+ids.join('/')+' @'+best);
         ok(equal(shown($('battleEffects')),expected)&&$('battleEffects').hidden===!expected.length,'전투 배지도 같은 상태/빈 상태 숨김');
-        ok([...$('schoolEffects').querySelectorAll('.effect-chip')].every(e=>{const focus=e.dataset.kind==='focus',d=(focus?SCHOOLS:RESONANCES).find(d=>d.id===e.dataset.effect);const tr=focus?focusTier(d.id):0;return e.querySelector('span').textContent===(focus?'집중':'공명')+' · '+d.name&&e.querySelector('.effect-desc').textContent===(focus?tr+'단계 · '+FOCUS_FX[d.id].slice(0,tr).join(' · '):'')}),'칩: 활성 이름 + 집중은 켜진 단계 효과 설명(공명 설명은 D단계)');
+        ok([...$('schoolEffects').querySelectorAll('.effect-chip')].every(e=>{const focus=e.dataset.kind==='focus',d=(focus?SCHOOLS:RESONANCES).find(d=>d.id===e.dataset.effect);const tr=focus?focusTier(d.id):0;return e.querySelector('span').textContent===(focus?'집중':'공명')+' · '+d.name&&e.querySelector('.effect-desc').textContent===(focus?tr+'단계 · '+FOCUS_FX[d.id].slice(0,tr).join(' · '):RES_FX[d.id])}),'칩: 활성 이름 + 집중/공명 효과 설명');
       }
       S.best=63;setLoadout(['swords','frostcut']);buildBook();S.best=64;uiTick();ok(shown($('schoolEffects')).includes('resonance:abyss_frost'),'해금 순간 uiTick에서 공명 칩 자동 갱신');
       ok(!$('schoolCards').querySelector('[data-skill="icedragon"]').classList.contains('locked'),'해금 순간 카드 잠금 자동 갱신');
@@ -479,7 +479,7 @@
 
   section('계열 C · 집중 효과 · 숙련');
   guard('계열 C',()=>{
-    const reset=()=>{S=fresh();S.best=999;S.stage=72;S.auto=false;S.sound=false;ST=stats();CH=null;BI=null;BF=null;CUT=null;BN=null;FX=[];P=[];T=[];B=[];PR=[];C=[];relicQ=[];shieldOn=null;stop=0;slowT=0;castLock=0;frenzyT=0;circleT=0;gauge=0;lastCast=null;pendingCombo=null;spawnT=100;miniQ=0;h.stun=0;atkT=1e6;verdantCD=0;
+    const reset=()=>{S=fresh();S.best=999;S.stage=72;S.auto=false;S.sound=false;ST=stats();CH=null;BI=null;BF=null;CUT=null;BN=null;FX=[];P=[];T=[];B=[];PR=[];C=[];relicQ=[];shieldOn=null;stop=0;slowT=0;castLock=0;frenzyT=0;circleT=0;gauge=0;lastCast=null;pendingCombo=null;spawnT=100;miniQ=0;h.stun=0;atkT=1e6;verdantCD=0;bloodBuffT=0;
       m=makeMonster(1);m.state='fight';m.x=monX;m.sh=0;m.hp=m.max=1e12;for(const s of SK)cds[s.id]=0};
     const equal=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
     try{
@@ -620,6 +620,105 @@
       }
       reset();S.best=59;S.stage=59;S.kills=KPS-1;schoolSeenState=null;uiTick();kill();uiTick();ok(BN?.text==='새 계열: 빙정','STAGE 60 동시 해금: 계열 안내 우선');BN=null;uiTick();ok(BN?.text==='새 각성기 해금'&&BN.sub.includes('천벌 병기'),'동시 해금: 각성기 안내도 잃지 않고 다음 배너로 표시');
     }finally{skillHit=hit;deal=damage;Math.random=random;reset();m=null;buildBar();buildBook()}
+  });
+
+  section('계열 D · 공명 효과 7종');
+  guard('계열 D',()=>{
+    const reset=()=>{S=fresh();S.best=999;S.stage=72;S.auto=false;S.sound=false;ST=stats();CH=null;BI=null;BF=null;CUT=null;BN=null;FX=[];P=[];T=[];B=[];PR=[];C=[];relicQ=[];shieldOn=null;stop=0;slowT=0;castLock=0;frenzyT=0;circleT=0;gauge=0;lastCast=null;pendingCombo=null;spawnT=100;miniQ=0;h.stun=0;atkT=1e6;verdantCD=0;bloodBuffT=0;
+      m=makeMonster(1);m.state='fight';m.x=monX;m.sh=0;m.hp=m.max=1e12;for(const s of SK)cds[s.id]=0};
+    try{
+      ok(Object.keys(RES_FX).length===7&&RESONANCES.every(r=>typeof RES_FX[r.id]==='string'&&RES_FX[r.id].length>0),'7공명 효과 설명 데이터 구비');
+
+      // 7종 각각 켜짐/꺼짐 판정 (schoolState().resonance 기반)
+      reset();
+      setLoadout(['breath','hands']);ok(hasRes('crimson_hellfire'),'홍련작 켜짐: 진홍+업화');
+      setLoadout(['breath','demon']);ok(!hasRes('crimson_hellfire'),'홍련작 꺼짐: 진홍 2쌍 (업화 없음)');
+
+      setLoadout(['hands','shadow']);ok(hasRes('hellfire_eclipse'),'그림자 왈츠 켜짐: 업화+월식');
+      setLoadout(['hands','whip']);ok(!hasRes('hellfire_eclipse'),'그림자 왈츠 꺼짐: 업화 2쌍 (월식 없음)');
+
+      setLoadout(['shadow','swords']);ok(hasRes('eclipse_abyss'),'칠흑 켜짐: 월식+심연');
+      setLoadout(['shadow','archers']);ok(!hasRes('eclipse_abyss'),'칠흑 꺼짐: 월식 2쌍 (심연 없음)');
+
+      setLoadout(['swords','frostcut']);ok(hasRes('abyss_frost'),'절대영도 켜짐: 심연+빙정');
+      setLoadout(['swords','gravity']);ok(!hasRes('abyss_frost'),'절대영도 꺼짐: 심연 2쌍 (빙정 없음)');
+
+      setLoadout(['frostcut','dash']);ok(hasRes('frost_storm'),'초전도 켜짐: 빙정+뇌전');
+      setLoadout(['frostcut','iceflower']);ok(!hasRes('frost_storm'),'초전도 꺼짐: 빙정 2쌍 (뇌전 없음)');
+
+      setLoadout(['dash','orb']);ok(hasRes('storm_verdant'),'질풍신 켜짐: 뇌전+녹광');
+      setLoadout(['dash','spear']);ok(!hasRes('storm_verdant'),'질풍신 꺼짐: 뇌전 2쌍 (녹광 없음)');
+
+      setLoadout(['orb','breath']);ok(hasRes('verdant_crimson'),'역린혈공 켜짐: 녹광+진홍');
+      setLoadout(['orb','shield']);ok(!hasRes('verdant_crimson'),'역린혈공 꺼짐: 녹광 2쌍 (진홍 없음)');
+
+      // 1. 칠흑 (eclipse_abyss) 수치 검증
+      reset();setLoadout(['shadow','swords']);
+      ok(comboWin()===10,'칠흑: 연계 창 +2초 (기본 8초 + 2초 = 10초)');
+      const baseCdm=(1-.05*rv('frost'));
+      ok(Math.abs(stats().cdm-baseCdm*.92)<1e-5,'칠흑: 모든 쿨타임 -8%');
+      setLoadout(['shadow','archers','swords']);
+      ok(comboWin()===13,'월식 집중(+3초)과 칠흑(+2초) 중첩: 연계 창 13초');
+
+      // 2. 홍련작 (crimson_hellfire) 수치 및 발동 검증
+      reset();setLoadout(['breath','hands']);cds.breath=0;cds.cannon=0;
+      cast(skOf('breath'));castLock=0;cast(skOf('cannon'));
+      ok(m.burn===3,'홍련작: 연계기 발동 시 화상 3초 부여');
+      m.vuln=2;m.burn=3;m.burnTick=0;let hpB=m.hp;update(0.01);const dealtVuln=hpB-m.hp;
+      m.vuln=0;m.burn=3;m.burnTick=0;let hpB2=m.hp;update(0.01);const dealtNorm=hpB2-m.hp;
+      ok(Math.abs(dealtVuln-dealtNorm*2*1.3)<1e-4,'홍련작: 속박 중인 적에게 화상 DoT 피해 2배');
+
+      // 3. 그림자 왈츠 (hellfire_eclipse) 발동 검증
+      reset();setLoadout(['hands','shadow']);cds.hands=0;cds.skulls=0;
+      cast(skOf('hands'));castLock=0;cast(skOf('skulls'));
+      ok(m.vuln===2,'그림자 왈츠: 연계기 발동 시 속박 2초 부여');
+      const hpBeforeClone=m.hp;tick(20);
+      ok(hpBeforeClone>m.hp,'그림자 왈츠: 그림자 분신 추가타 적중');
+
+      // 4. 절대영도 (abyss_frost) 및 집중과의 중복 없는 지속 갱신 검증
+      reset();setLoadout(['swords','frostcut']);cds.swords=0;cds.portal=0;
+      cast(skOf('swords'));castLock=0;cast(skOf('portal'));
+      ok(Math.abs(m.freeze-2)<1e-4,'절대영도: 미빙결 적에게 연계 시 빙결 2초');
+      reset();setLoadout(['swords','frostcut']);m.freeze=2.0;cds.swords=0;cds.portal=0;
+      cast(skOf('swords'));castLock=0;cast(skOf('portal'));
+      ok(Math.abs(m.freeze-3.0)<1e-4,'절대영도: 이미 빙결(2초)인 적에게 연계 시 지속 +50% (3초)');
+      // 집중과 중복 검증: 빙정 2쌍(빙정 집중 3.5초) + 절대영도
+      reset();setLoadout(['frostcut','iceflower','swords']);cds.frostcut=0;cds.icedragon=0;
+      cast(skOf('frostcut'));castLock=0;cast(skOf('icedragon'));
+      ok(Math.abs(m.freeze-3.5)<1e-4,'빙정 집중(3.5초)과 절대영도 동시 활성 시 집중의 3.5초 보존 (중복 덮어쓰기 없음)');
+
+      // 5. 초전도 (frost_storm) 수치 검증
+      reset();setLoadout(['frostcut','dash']);m.freeze=3;
+      const hp0=m.hp;deal(100,false,'skill',m.x,m.y);const dealtFrz=hp0-m.hp;
+      m.freeze=0;const hp1=m.hp;deal(100,false,'skill',m.x,m.y);const dealtUnfrz=hp1-m.hp;
+      ok(Math.abs(dealtFrz-dealtUnfrz*1.15)<1e-4,'초전도: 빙결된 적이 받는 스킬 피해 +15%');
+      m.freeze=3;const hpBeforeFin=m.hp;deal(100,false,'skill',m.x,m.y,{sid:'combo',heavy:1});
+      tick(20);ok(m.hp<hpBeforeFin-100*1.15,'초전도: 빙결된 적에게 연계기 적중 시 낙뢰 1회 추가타');
+
+      // 6. 질풍신 (storm_verdant) 검증
+      reset();setLoadout(['dash','orb']);gauge=10;cds.dash=0;cds.neon=0;
+      cast(skOf('dash'));castLock=0;cast(skOf('neon'));
+      ok(gauge>=10+20+5,'질풍신: 연계기 발동 시 각성 게이지 +5 추가 충전');
+
+      // 7. 역린혈공 (verdant_crimson) 막기/패링 4종 및 피해 증폭 검증
+      reset();setLoadout(['orb','breath']);bloodBuffT=0;
+      resolveHit({ty:'slam',parry:true});
+      ok(bloodBuffT===10,'역린혈공: 일반 패링 성공 시 발동 (10초)');
+      bloodBuffT=0;shieldOn={blocked:false};resolveHit({ty:'slam',parry:false});
+      ok(bloodBuffT===10,'역린혈공: 결정 방패 막기 성공 시 발동');
+      bloodBuffT=0;shieldOn=null;S.mastery.verdant=0;setLoadout(['orb','shield','breath']);verdantCD=0;resolveHit({ty:'slam',parry:false});
+      ok(bloodBuffT===10,'역린혈공: 녹광 방호 성공 시 발동');
+      bloodBuffT=0;resolveBossOrb({orbs:[{imp:1,res:0,parry:true}]},{imp:1,res:0,parry:true});
+      ok(bloodBuffT===10,'역린혈공: 추적탄 패링 성공 시 발동');
+      // 피해 증폭 검증
+      reset();setLoadout(['orb','breath']);const origR=Math.random;
+      try{
+        Math.random=()=>0.5;ST.cc=0;
+        bloodBuffT=0;let hpB=m.hp;skillHit(10,1,m.x,m.y,{sid:'combo'});const normCombo=hpB-m.hp;
+        bloodBuffT=10;hpB=m.hp;skillHit(10,1,m.x,m.y,{sid:'combo'});const buffCombo=hpB-m.hp;
+        ok(Math.abs(buffCombo-normCombo*1.2)<1e-4,'역린혈공: 버프 지속 중 연계기 피해 +20%');
+      }finally{Math.random=origR;ST=stats()}
+    }finally{reset();m=null;buildBar();buildBook()}
   });
 
   section('정리');

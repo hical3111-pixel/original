@@ -126,7 +126,7 @@ function stats(lv=S.lv){
     sn:hasMod('spirit')?6:Math.min(6,lv.spirit),sd:atk*.35*(1+.15*Math.max(0,lv.spirit-1))*(lv.spirit||hasMod('spirit')?1:0),
     ar:lv.archer?atk*.3*Math.pow(lv.archer,.9):0,mg:lv.mage?atk*1.4*Math.pow(lv.mage,.9):0,
     gm:(1+.2*lv.greed)*soul*(1+.08*rv('coin')),sk:(1+.25*lv.skill)*(1+.4*rv('abyss')),
-    cdm:Math.max(.4,(1-.05*rv('frost'))*(typeof focusTier==='function'&&focusTier('abyss')>=1?.85:1)),gg:1+.25*rv('shard'),cdx};
+    cdm:Math.max(.4,(1-.05*rv('frost'))*(typeof focusTier==='function'&&focusTier('abyss')>=1?.85:1)*(typeof hasRes==='function'&&hasRes('eclipse_abyss')?.92:1)),gg:1+.25*rv('shard'),cdx};
 }
 let ST=stats();
 const tier=()=>S.lv.skill>=20?3:S.lv.skill>=10?2:S.lv.skill>=5?1:0;
@@ -214,7 +214,7 @@ let m=null,spawnT=.6,miniQ=0,miniX=0,P=[],T=[],C=[],B=[],PR=[],FX=[],CR=[],BN=nu
 let trauma=0,zoom=1,flashA=0,flashC='255,255,255',stop=0,slowT=0,gt=0,bgX=0,invertT=0,desat=0;
 let dimT=0,dimCur=0,tintA=0,tintC='255,120,40',tintCur=0;
 let combo=0,comboT=0,comboPop=0,atkT=0,lastTap=0,bossT=30,castLock=0,gauge=0;
-let frenzyT=0,spiritA=0,spiritT=[0,0,0,0,0,0],shieldOn=null;
+let frenzyT=0,spiritA=0,spiritT=[0,0,0,0,0,0],shieldOn=null,bloodBuffT=0;
 let inkT=-1,inkB=[],zoneShown=0;
 const h={t:9,from:-.55,to:-.55,ang:-.55,dir:1,lunge:0,bob:0,lean:0,ox:null,oy:0,dx:0,hide:false,stun:0,dodgeT:-1};
 const comp={arT:.5,mgT:1.3,arShot:0,mgCast:0};
@@ -314,6 +314,7 @@ function deal(d,crit,src,x,y,o={}){
   d*=chMul(src,crit,o);
   if(m.vuln>0)d*=1.3*(typeof focusTier==='function'&&focusTier('hellfire')>=1?1.3:1);
   if(m.freeze>0&&typeof focusTier==='function'&&focusTier('frost')>=2)d*=1.2;
+  if(m.freeze>0&&src==='skill'&&typeof hasRes==='function'&&hasRes('frost_storm'))d*=1.15;
   const light=o.light||src==='spirit'||src==='ally',heavy=o.heavy;
   let col=o.col||(src==='spirit'?'#8ff6ff':src==='ally'?'#c8ffb0':crit?'#ffe066':'#ffffff');
   if(m.sh>0){m.sh-=d;col='#7fe8ff';if(Math.random()<.5)P.push({t:'ring',x,y,r0:6*U,r1:40*U,w:3*U,life:.2,max:.2,color:'#7fe8ff'});
@@ -342,6 +343,12 @@ function deal(d,crit,src,x,y,o={}){
         deal(ST.atk*ST.sk*1.5*(gc?ST.cm:1),gc,'skill',bx,c.y,{light:1,col:'#ffe853',name:'추가 낙뢰',sid:'storm_bolt',_extra:1});
         if(i===0)T.push({x:c.x,y:(m?mTop(m):c.y)-45*U,vx:0,vy:-50*U,text:'추가 낙뢰!',crit:gc?1:0,label:'',size:22,life:1,max:1,color:'#ffe853'});
         if(gv&&i===0)T.push({x:c.x,y:(m?mTop(m):c.y)-70*U,vx:0,vy:-40*U,text:'속박!',crit:0,label:'',size:18,life:1,max:1,color:'#ffe853'})}});
+    }
+    if(m&&m.freeze>0&&typeof hasRes==='function'&&hasRes('frost_storm')){
+      later(.1,()=>{if(fighting()){const c=mCenter(m),bx=c.x+rnd(-25,25)*U;
+        P.push({t:'bolt',pts:genBolt(bx,0,bx,c.y),life:.25,max:.25,color:'#61dcf3'});sfx.boom();stop=Math.max(stop,.04);
+        deal(ST.atk*3*ST.sk,false,'skill',bx,c.y,{light:1,col:'#61dcf3',name:'초전도 낙뢰',sid:'superconduct_bolt',_extra:1});
+        T.push({x:c.x,y:(m?mTop(m):c.y)-50*U,vx:0,vy:-50*U,text:'초전도!',crit:0,label:'',size:22,life:1,max:1,color:'#61dcf3'})}});
     }
   }
   if(heavy){stop=Math.max(stop,.1);addTrauma(.6);zoom+=.07*FXS;flash(.42,o.fc||'255,255,255')}
@@ -389,7 +396,10 @@ function triggerBossFinisher(fin,o){
 function skillHit(mult,pm,x,y,o){
   const crit=Math.random()<ST.cc;
   if(o&&o.sid&&BR[o.sid]&&BR[o.sid].gen&&br(o.sid)==='a')mult*=1.4;
-  if(o&&o.sid==='combo'&&typeof focusTier==='function'&&focusTier('crimson')>=1)mult*=1.3;
+  if(o&&o.sid==='combo'){
+    if(typeof focusTier==='function'&&focusTier('crimson')>=1)mult*=1.3;
+    if(typeof bloodBuffT!=='undefined'&&bloodBuffT>0)mult*=1.2;
+  }
   const isAwk=o&&(o.sid==='awaken'||o.sid==='awk'||(typeof AWK!=='undefined'&&AWK.some(a=>a.id===o.sid)));
   if(isAwk&&typeof isFocusAwk==='function'&&isFocusAwk())mult*=1.5;
   deal(ST.atk*ST.sk*mult*pm*(crit?ST.cm:1)*rnd(.9,1.1),crit,'skill',x,y,o);
