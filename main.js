@@ -722,6 +722,55 @@ for(const u of UP){
   rows[u.id]={lv:el.querySelector('.lv'),desc:el.querySelector('.up-desc'),btn:el.querySelector('.buy'),n:el.querySelector('.n'),c:el.querySelector('.c span')};
   rows[u.id].btn.addEventListener('click',()=>buy(u));
 }
+/* ================= 계열 UI — 활성 조건과 편성 데이터는 skills.js를 사용 ================= */
+let schoolOpen=null,loadoutPickerSlot=null,schoolUIKey='',schoolSeenState=null,schoolSeenBest=0,schoolNotices=[];
+const schoolSkills=s=>s.pairs.flatMap(id=>{const c=COMBOS.find(c=>c.a===id);return[skOf(c.a),skOf(c.b)]});
+const pairIcons=c=>`<span class="pair-icons">${IC[c.a]}<em>→</em>${IC[c.b]}</span>`;
+function buildSchoolCards(){
+  const cards=$('schoolCards'),book=$('book');cards.after(book);book.hidden=true;cards.innerHTML='';
+  for(const s of SCHOOLS){const skills=schoolSkills(s),a=AWK.find(a=>a.id===s.awk),neighbors=RESONANCES.filter(r=>r.a===s.id||r.b===s.id).map(r=>SCHOOLS.find(n=>n.id===(r.a===s.id?r.b:r.a)).name),open=schoolOpen===s.id,card=document.createElement('section');
+    card.className='school-card';card.dataset.school=s.id;card.style.setProperty('--c',s.c);
+    card.innerHTML=`<button type="button" class="school-toggle" id="school-toggle-${s.id}" aria-expanded="${open}" aria-controls="school-body-${s.id}"><span class="school-heading"><b>${s.name}</b><small>${skills.filter(unlocked).length}/4 해금 · ${open?'접기':'펼치기'}</small></span><span class="school-icons">`+
+      skills.map(sk=>`<span class="school-skill${unlocked(sk)?'':' locked'}" data-skill="${sk.id}" title="${sk.name}${unlocked(sk)?'':' · STAGE '+sk.unlock}" aria-label="${sk.name}${unlocked(sk)?'':' · 잠금 · STAGE '+sk.unlock}">${IC[sk.id]}${unlocked(sk)?'':`<span class="school-lock" aria-hidden="true">🔒${sk.unlock}</span>`}</span>`).join('')+
+      `</span><span class="school-meta"><span class="school-awakening">전용 각성기 · ${a?a.name+(S.best<a.unlock?' (STAGE '+a.unlock+')':''):'미정'}</span><span class="school-neighbors">공명 이웃 · ${neighbors.join(' · ')}</span></span></button><div class="school-body" id="school-body-${s.id}" role="region" aria-labelledby="school-toggle-${s.id}"${open?'':' hidden'}></div>`;
+    card.querySelector('.school-toggle').addEventListener('click',()=>{schoolOpen=schoolOpen===s.id?null:s.id;buildSchoolCards();$('school-toggle-'+s.id).focus()});cards.appendChild(card);
+    if(open){card.querySelector('.school-body').appendChild(book);book.hidden=false}
+  }
+  // 하나의 실제 스킬 목록을 펼친 카드로 옮긴다. 행/버튼을 복제하지 않아 분기·시연 상태도 동일하다.
+  for(const row of book.children)row.hidden=row.dataset.school!==schoolOpen;
+}
+function syncSchoolEffects(){
+  const state=schoolState(),entries=[...state.focus.map(id=>{const s=SCHOOLS.find(s=>s.id===id);return{kind:'focus',id,name:s.name,label:'집중',c:s.c}}),...state.resonance.map(id=>{const r=RESONANCES.find(r=>r.id===id);return{kind:'resonance',id,name:r.name,label:'공명',c:SCHOOLS.find(s=>s.id===r.a).c}})];
+  $('schoolEffects').innerHTML=entries.length?entries.map(e=>`<span class="effect-chip" data-kind="${e.kind}" data-effect="${e.id}" style="--c:${e.c}"><i aria-hidden="true"></i><span>${e.label} · ${e.name}</span><small class="effect-desc" data-effect-description="${e.id}"></small></span>`).join(''):'<span class="effect-empty">켜진 집중·공명 없음</span>';
+  const badges=$('battleEffects');badges.hidden=!entries.length;badges.innerHTML=entries.map(e=>`<span class="battle-badge" data-kind="${e.kind}" data-effect="${e.id}" style="--c:${e.c}" aria-label="${e.label} · ${e.name}" title="${e.label} · ${e.name}"><i aria-hidden="true"></i>${e.name}</span>`).join('');
+  schoolUIKey=JSON.stringify([S.best,S.loadout,state]);
+}
+function buildLoadoutUI(){
+  const grid=$('loadoutGrid');grid.innerHTML='';for(let i=0;i<4;i++){const c=COMBOS.find(c=>c.a===S.loadout[i]),s=c&&SCHOOLS.find(s=>s.id===c.school),b=document.createElement('button');
+    b.type='button';b.className='loadout-slot';b.dataset.loadoutSlot=i;b.setAttribute('aria-label',`${i+1}번 편성: ${c?c.name+' · 누르면 해제':'빈칸 · 연계 쌍 선택'}`);
+    if(c){b.dataset.pair=c.a;b.style.setProperty('--c',s.c)}
+    b.innerHTML=c?`${pairIcons(c)}<b>${c.name}</b><small>${s.name} · ${comboReady(c)?'해제':'STAGE '+Math.max(skOf(c.a).unlock,skOf(c.b).unlock)+' 연계 해금'}</small>`:`<small>${i+1}번 편성</small><b>＋ 연계 쌍 선택</b>`;
+    b.addEventListener('click',()=>{if(c)toggleEquip(c.a);else openLoadoutPicker(i)});grid.appendChild(b)}
+  syncSchoolEffects();
+}
+function openLoadoutPicker(slot){
+  loadoutPickerSlot=slot;$('pairPickerTitle').textContent='연계 쌍 선택';const list=$('pairOptions');list.innerHTML='';
+  for(const s of SCHOOLS)for(const id of s.pairs){const c=COMBOS.find(c=>c.a===id),a=skOf(c.a),b=skOf(c.b),used=S.loadout.includes(id),btn=document.createElement('button');btn.type='button';btn.className='pair-option';btn.dataset.pair=id;btn.disabled=used;btn.style.setProperty('--c',s.c);
+    btn.innerHTML=`${pairIcons(c)}<span><b>${c.name}</b><small>${s.name} · ${a.name} → ${b.name}</small><small>${used?'편성됨':comboReady(c)?'연계 사용 가능':'🔒 STAGE '+Math.max(a.unlock,b.unlock)+' 연계 해금'}</small></span>`;
+    btn.addEventListener('click',()=>{if(S.loadout.length>=4||S.loadout.includes(id))return;const next=S.loadout.slice();next.splice(Math.min(slot,next.length),0,id);setLoadout(next);$('pairPicker').close();buildBar();buildBook();save()});list.appendChild(btn)}
+  if(!$('pairPicker').open)$('pairPicker').showModal();
+}
+$('closePairPicker').addEventListener('click',()=>$('pairPicker').close());
+$('pairPicker').addEventListener('click',e=>{if(e.target===$('pairPicker'))$('pairPicker').close()});
+$('pairPicker').addEventListener('close',()=>{const slot=loadoutPickerSlot;loadoutPickerSlot=null;if(slot!==null)$('loadoutGrid').children[Math.min(slot,S.loadout.length)]?.focus()});
+function watchSchoolUnlocks(){
+  if(schoolSeenState!==S||S.best<schoolSeenBest){schoolSeenState=S;schoolSeenBest=S.best;schoolNotices=[];return}
+  if(S.best>schoolSeenBest){for(const s of SCHOOLS){const stages=schoolSkills(s).map(sk=>sk.unlock),first=Math.min(...stages),full=Math.max(...stages);
+      if(first>schoolSeenBest&&first<=S.best)schoolNotices.push({stage:first,text:'새 계열: '+s.name,sub:'계열 카드에서 스킬을 확인하세요',c:s.c});
+      if(full>schoolSeenBest&&full<=S.best)schoolNotices.push({stage:full,text:s.name+' 완성 · 집중 가능',sub:'두 연계 쌍을 편성하면 집중이 켜집니다',c:s.c})}
+    schoolNotices.sort((a,b)=>a.stage-b.stage);schoolSeenBest=S.best}
+  if(schoolNotices.length&&(!BN||BN.text==='새 스킬 해금')){const n=schoolNotices.shift();banner(n.text,n.sub,n.c,2.2)}
+}
 function barOrder(){const o=[];for(const id of S.equip){const c=comboOf(id);if(c)for(const sid of [c.a,c.b]){const s=skOf(sid);if(equipped(s)&&!o.includes(s))o.push(s)}}return o}
 function buildBar(){
   const bar=$('skBar');bar.innerHTML='';
@@ -733,7 +782,7 @@ function buildBar(){
   const a=document.createElement('button');a.className='skill awk';a.id='awk';a.setAttribute('aria-label','각성: 천검멸');
   const A=awkSel();a.setAttribute('aria-label','각성기: '+A.name);a.innerHTML=awkIcon(A)+'<span class="k">'+A.name+'</span><span class="cd"></span>';
   a.addEventListener('click',()=>{ensureAudio();if(!castAwaken()){try{a.animate([{transform:'translateX(-3px)'},{transform:'translateX(3px)'},{transform:'none'}],{duration:150})}catch(e){}}});
-  bar.appendChild(a);
+  bar.appendChild(a);buildLoadoutUI();
 }
 function toggleEquip(id){const c=comboOf(id);if(!c)return false;const next=S.loadout.slice(),i=next.indexOf(c.a);
   if(i>=0)next.splice(i,1);else{if(next.length>=4){banner('편성이 가득 찼습니다','다른 연계 쌍을 먼저 해제하세요','#9d95c4',1.4);return false}next.push(c.a)}
@@ -742,7 +791,7 @@ $('recommendBtn').addEventListener('click',()=>{setLoadout(recommendLoadout());b
 function buildBook(){
   buildAwk();
   const el=$('book'),TR=tier();el.innerHTML='';$('slotTxt').textContent=`편성 ${S.loadout.length}/4쌍 · 연출 ${'★'.repeat(TR)}${'☆'.repeat(3-TR)}`;
-  for(const s of SK){const r=document.createElement('div'),lk=!unlocked(s),eq=equipped(s);r.className='bk'+(lk?' locked':'');r.style.setProperty('--c',s.c);
+  for(const s of SK){const r=document.createElement('div'),lk=!unlocked(s),eq=equipped(s);r.className='bk'+(lk?' locked':'');r.dataset.school=comboOf(s.id).school;r.dataset.skill=s.id;r.style.setProperty('--c',s.c);
     r.innerHTML=`<i></i><div><b>${s.name}</b><small>${s.d}${comboTag(s)}</small>${awkHTML(s)}</div><div class="st">${lk?'STAGE '+s.unlock:''}<span class="btns"><button type="button" class="eq${eq?' on':''}" aria-pressed="${eq}" aria-label="${comboOf(s.id).name} 쌍 ${eq?'해제':'편성'}">${eq?'쌍 해제':'쌍 편성'}</button><button type="button" class="pv">시연</button></span></div>`;
     r.querySelectorAll('[data-br]').forEach(x=>x.addEventListener('click',()=>{setBranch(s,x.dataset.br);buildBook()}));
     const ab=r.querySelector('.awkbuy');if(ab)ab.addEventListener('click',()=>{ensureAudio();if(buyAwk(s))buildBook()});
@@ -759,6 +808,7 @@ function buildBook(){
       `<div class="cbs"><span class="${ok&&both?'ok':''}">${st}</span><button type="button">시연</button></div>`;
     d.querySelector('button').addEventListener('click',()=>{ensureAudio();if(!previewCombo(c))banner('지금은 시연할 수 없음','몬스터와 싸우는 중에 다시 눌러 주세요','#9d95c4',1.4)});
     cb.appendChild(d)}
+  buildSchoolCards();buildLoadoutUI();
 }
 function eul(w){const c=w.charCodeAt(w.length-1)-0xAC00;return c>=0&&c<11172&&c%28?'을':'를'}
 function comboTag(s){
@@ -847,6 +897,7 @@ document.querySelectorAll('.seg button').forEach(b=>b.addEventListener('click',(
   mode=b.dataset.m==='max'?'max':+b.dataset.m;document.querySelectorAll('.seg button').forEach(x=>x.setAttribute('aria-pressed',x===b));uiTick(true)}));
 let lastDesc='';
 function uiTick(force){
+  watchSchoolUnlocks();if(schoolUIKey!==JSON.stringify([S.best,S.loadout,schoolState()]))buildBook();
   $('goldTxt').textContent=fmt(dispGold);
   $('dpsTxt').textContent=fmt(dps());
   $('critTxt').textContent=Math.round(ST.cc*100)+'% · ×'+ST.cm.toFixed(1);
@@ -859,7 +910,7 @@ function uiTick(force){
     r.btn.classList.toggle('max',max);r.btn.classList.toggle('can',!max&&S.gold>=p.c);r.btn.disabled=max;
     r.n.textContent=max?'완료':'+'+p.n;r.c.textContent=max?'—':fmt(p.c)}
   lastDesc=key;
-  {const sr=stageEl.getBoundingClientRect(),bb=$('skBar').getBoundingClientRect();if(bb.height>0)hintY=bb.top-sr.top-Math.max(20,16*U)}
+  {const sr=stageEl.getBoundingClientRect(),bb=$('combatLoadout').getBoundingClientRect();if(bb.height>0)hintY=bb.top-sr.top-Math.max(20,16*U)}
   const LK=activeLink();
   for(const s of SK){const b=s.el;if(!b)continue;b.classList.toggle('link',!!LK&&LK.c.b===s.id&&cds[s.id]<=0);const sl=sealed(s),lk=!unlocked(s)||sl,cd=cds[s.id],act=s.buff&&frenzyT>0,mx=s.cd*ST.cdm;
     b.classList.toggle('locked',lk);b.style.setProperty('--p',lk?1:act?0:Math.min(1,cd/mx));

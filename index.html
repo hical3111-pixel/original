@@ -110,6 +110,30 @@ button:focus-visible,input:focus-visible+span{outline:2px solid var(--spirit);ou
 .loadout-recommend{display:flex;gap:10px;align-items:center;margin-bottom:10px;flex-wrap:wrap}
 .loadout-recommend button{border:1px solid var(--line);border-radius:8px;padding:8px 12px;background:var(--panel2);color:var(--ink);font-weight:700;cursor:pointer}
 .loadout-recommend small{font-size:11px;color:var(--mute)}
+.formation{margin:16px 0;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--panel2)}
+.formation .loadout-recommend{justify-content:space-between;margin:0 0 10px}.formation h2{margin:0;font-size:15px}
+.formation-help{font-size:11px;color:var(--mute);margin:8px 0 0}
+.effect-chips{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px;min-height:24px}
+.effect-chip,.battle-badge{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line);border-radius:7px;padding:4px 6px;font-size:11px;background:var(--bg)}
+.effect-chip i,.battle-badge i{width:6px;height:6px;border-radius:50%;background:var(--c);flex-shrink:0}
+.effect-desc:empty{display:none}.effect-empty{color:var(--mute);font-size:11px}
+.loadout-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.loadout-slot{min-width:0;min-height:92px;display:grid;gap:5px;text-align:left;border:1px solid var(--c,var(--line));border-radius:9px;background:var(--bg);padding:9px;cursor:pointer}
+.loadout-slot b{font-size:12px;overflow-wrap:anywhere}.loadout-slot small{font-size:10px;color:var(--mute)}
+.pair-icons{display:flex;align-items:center;gap:5px}.pair-icons svg{width:25px;height:25px}.pair-icons em{font-size:11px;font-style:normal;color:var(--mute)}
+.school-cards{display:grid;gap:9px}.school-card{min-width:0;border:1px solid var(--line);border-left:3px solid var(--c);border-radius:12px;overflow:hidden;background:var(--panel2)}
+.school-toggle{display:grid;gap:8px;width:100%;padding:12px;background:none;border:0;text-align:left;cursor:pointer}
+.school-heading{display:flex;justify-content:space-between;align-items:center;gap:8px}.school-heading b{color:var(--c);font-size:15px}.school-heading small{font-size:11px;color:var(--mute)}
+.school-icons{display:flex;gap:8px}.school-skill{position:relative;display:grid;place-items:center;width:39px;height:39px;border-radius:8px;background:var(--bg);border:1px solid var(--line)}
+.school-skill svg{width:28px;height:28px}.school-skill.locked svg{filter:grayscale(1) brightness(.45)}.school-lock{position:absolute;right:-2px;bottom:-4px;font-size:9px;background:var(--bg);border-radius:3px;padding:0 2px}
+.school-meta{font-size:11px;line-height:1.6;color:var(--mute)}.school-meta span{display:block}.school-body .list{border-radius:0;border-top:1px solid var(--line)}
+#pairPicker{width:min(440px,calc(100vw - 24px));max-height:80vh;padding:14px;border:1px solid var(--line);border-radius:14px;background:var(--panel);color:var(--ink)}
+#pairPicker::backdrop{background:rgba(0,0,0,.7)}.picker-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}.picker-head b{font-size:15px}.picker-head button{border:1px solid var(--line);border-radius:7px;background:var(--bg);padding:7px 10px;cursor:pointer}
+.pair-options{display:grid;gap:7px}.pair-option{display:grid;grid-template-columns:auto 1fr;gap:8px;align-items:center;padding:10px;text-align:left;background:var(--panel2);border:1px solid var(--line);border-left:3px solid var(--c);border-radius:8px;cursor:pointer}
+.pair-option b{font-size:12px}.pair-option small{display:block;font-size:10px;color:var(--mute);margin-top:3px}.pair-option:disabled{opacity:.45;cursor:default}
+.combat-loadout{position:absolute;left:12px;right:12px;bottom:12px;display:flex;gap:7px;align-items:flex-end;pointer-events:none}
+.combat-loadout .skills{position:static;flex:1;min-width:0}.battle-effects{display:grid;gap:4px;max-width:86px;flex-shrink:0}.battle-badge{font-size:9px;line-height:1.3;padding:4px;white-space:nowrap}
+@media(max-width:600px){.combat-loadout{left:8px;right:8px;bottom:8px;gap:5px}.battle-effects{max-width:75px}.battle-badge{font-size:8px;gap:3px}.school-card .bk{gap:7px;padding:10px 8px}.school-card .btns{flex-wrap:wrap;justify-content:flex-end}.school-card .st{max-width:94px}}
 .combos{display:grid;gap:8px}
 .cbrule{font-size:12px;color:var(--mute);line-height:1.6;background:var(--bg);border-radius:10px;padding:10px 12px}
 .cbrule b{color:var(--gold)}
@@ -234,7 +258,7 @@ details.fold>*+*{margin-top:10px}
         <label class="switch"><input type="checkbox" id="autoSk" checked><span></span>자동 스킬</label>
       </div>
     </div>
-    <div class="skills" id="skBar"></div>
+    <div class="combat-loadout" id="combatLoadout"><div id="battleEffects" class="battle-effects" aria-label="활성 집중·공명" hidden></div><div class="skills" id="skBar"></div></div>
   </section>
 
   <aside id="panel">
@@ -258,10 +282,16 @@ details.fold>*+*{margin-top:10px}
     </div>
     <div class="ups" id="ups"></div>
 
+    <section class="formation" aria-labelledby="formationTitle">
+      <div class="loadout-recommend"><h2 id="formationTitle">편성</h2><button type="button" id="recommendBtn">추천 편성</button></div>
+      <div id="schoolEffects" class="effect-chips" aria-label="켜진 집중·공명" aria-live="polite"></div>
+      <div id="loadoutGrid" class="loadout-grid" aria-label="연계 쌍 편성 4칸"></div>
+      <p class="formation-help">빈칸에서 쌍 선택 · 편성된 칸을 누르면 해제<br>빈칸은 앞쪽부터 채웁니다.</p>
+    </section>
     <details class="fold" open>
-      <summary class="sec-h"><h2>스킬</h2><small id="slotTxt"></small></summary>
-      <div class="loadout-recommend"><button type="button" id="recommendBtn">추천 편성</button><small>연계 쌍 단위로 편성 · 잠긴 스킬은 해금 후 사용</small></div>
-      <div class="list" id="book"></div>
+      <summary class="sec-h"><h2>계열</h2><small id="slotTxt"></small></summary>
+      <div id="schoolCards" class="school-cards"></div>
+      <div class="list" id="book" hidden></div>
     </details>
     <details class="fold" open>
       <summary class="sec-h"><h2>각성기</h2><small>게이지 100%에서 발동 · 하나 선택</small></summary>
@@ -303,6 +333,7 @@ details.fold>*+*{margin-top:10px}
   </div>
 </div>
 
+<dialog id="pairPicker" aria-labelledby="pairPickerTitle"><div class="picker-head"><b id="pairPickerTitle">연계 쌍 선택</b><button type="button" id="closePairPicker">닫기</button></div><div id="pairOptions" class="pair-options"></div></dialog>
 <script src="core.js"></script>
 <script src="skills.js"></script>
 <script src="main.js"></script>
