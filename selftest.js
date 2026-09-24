@@ -229,7 +229,7 @@
 
   section('보스 그림자 추적탄');
   guard('추적탄 독립 패링/피해/방패',()=>{
-    const reset=(stage=20,enraged=false)=>{S=fresh();S.best=999;S.stage=stage;S.auto=false;S.sound=false;ST=stats();CH=null;BI=null;BF=null;FX=[];P=[];T=[];C=[];B=[];PR=[];relicQ=[];shieldOn=null;stop=0;slowT=0;castLock=0;gauge=0;lastCast=null;pendingCombo=null;h.stun=0;h.dodgeT=-1;atkT=1e6;
+    const reset=(stage=20,enraged=false)=>{S=fresh();S.best=999;S.stage=stage;S.auto=false;S.sound=false;ST=stats();CH=null;BI=null;BF=null;FX=[];P=[];T=[];C=[];B=[];PR=[];relicQ=[];shieldOn=null;stop=0;slowT=0;castLock=0;parryLock=0;gauge=0;lastCast=null;pendingCombo=null;h.stun=0;h.dodgeT=-1;atkT=1e6;
       m=makeMonster(stage);m.state='fight';m.yo=0;m.sh=0;m.hp=m.max=1e12;m.enraged=enraged;m.ph2=true;m.atkT=100;for(const s of SK)cds[s.id]=0};
     const begin=()=>{const random=Math.random;try{Math.random=()=>.999;m.atkT=0;bossAI(1/60)}finally{Math.random=random}return m.pat};
     const advance=(p,t)=>{for(let i=0;i<900&&m&&m.pat===p&&p.t<t;i++)tick(1)};
@@ -270,6 +270,24 @@
         ok(evade?!!CH&&p.orbs.every(g=>g.result==='dodged'):!CH&&m.state==='flee'&&p.orbs.filter(g=>g.res).length===1,'유리 대포에서도 묶음 단위 회피/피격 실패: '+evade)}
       reset();const random=Math.random;try{Math.random=()=>.9;resolveHit({ty:'slam',parry:false});ok(h.stun===1.3,'기존 단타 패턴 기절 1.3초 유지')}finally{Math.random=random}
       reset();p=begin();parries(p,[true,true,true]);m=null;spawnT=100;settle(200);ok(FX.length===0,'반사 중 보스 소멸 시 안전 정리');
+      reset();p=begin();p.evade=false;
+      advance(p,.2);tap();ok(T.some(t=>t.text==='너무 빨라!'),'패링 창 밖 탭 시 너무 빨라! 텍스트 출력');
+      for(let t=p.t+.05;t<=p.orbs.at(-1).imp+.05;t+=.05){advance(p,t);tap()}
+      advance(p,p.orbs.at(-1).imp+.1);
+      ok(!p.returning&&p.orbs.filter(g=>g.result==='parried').length<p.orbs.length,'연타 시 추적탄 완벽 반사 실패');
+      reset();p=begin();p.evade=false;
+      for(let i=0;i<p.orbs.length;i++){const g=p.orbs[i];advance(p,g.imp-.15);tap();advance(p,g.imp+.01)}
+      ok(S.parries===3&&p.orbs.every(g=>g.result==='parried')&&p.returning,'타이밍 맞춰 1회 탭 시 3/3 패링 성공');
+      ok(!T.some(t=>t.text==='너무 빨라!'),'타이밍 성공 시 너무 빨라! 미출력');
+      reset(1);m.pat=null;castLock=0;lastTap=0;const hp0=m.hp;
+      const r=cv.getBoundingClientRect();
+      cv.dispatchEvent(new PointerEvent('pointerdown',{clientX:r.left+heroX,clientY:r.top+groundY-60*U}));
+      ok(m.hp<hp0,'경고 없을 때 탭 공격으로 피해 적용');
+      ok(parryLock===0,'경고 없을 때 패링 잠금 미발생');
+      ok(!T.some(t=>t.text==='너무 빨라!'),'경고 없을 때 너무 빨라! 미출력');
+      reset(20);m.pat=null;castLock=0;lastTap=0;const bhp0=m.hp;
+      cv.dispatchEvent(new PointerEvent('pointerdown',{clientX:r.left+heroX,clientY:r.top+groundY-60*U}));
+      ok(m.hp<bhp0&&parryLock===0,'보스 공격 경고 없을 때도 탭 공격 정상 동작');
     }finally{reset(5);m=null;spawnT=100;buildBar()}
   });
 
