@@ -1,3 +1,9 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="이펙트와 타격감에 집중한 방치형 웹 게임. 스킬 14종, 연계기, 보스 패링, 유물 뽑기.">
 <title>끝없는 검로</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -10,8 +16,8 @@
   --gold:#ffc94a; --ember:#ff6a3d; --spirit:#6ff2ff; --crit:#ff4fa3; --blood:#ff4f5e;
   --disp:"Black Han Sans","Noto Sans KR",system-ui,sans-serif;
 }
-html{height:100%;box-sizing:border-box}
-body{height:100%;background:var(--bg);color:var(--ink);font-family:"Noto Sans KR",system-ui,sans-serif;overflow:hidden;-webkit-tap-highlight-color:transparent}
+html{height:100%;box-sizing:border-box;padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)}
+body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:"Noto Sans KR",system-ui,sans-serif;overflow:hidden;-webkit-tap-highlight-color:transparent}
 *,*::before,*::after{box-sizing:border-box}
 [hidden]{display:none!important}
 button{font:inherit;color:inherit}
@@ -156,6 +162,8 @@ details.fold>*+*{margin-top:10px}
 }
 @media (prefers-reduced-motion:reduce){#retry,.skill.awk.full{animation:none}}
 </style>
+</head>
+<body>
 
 <div id="app">
   <section id="stage" aria-label="전투 화면">
@@ -239,3 +247,5 @@ details.fold>*+*{margin-top:10px}
 <script src="core.js"></script>
 <script src="skills.js"></script>
 <script src="main.js"></script>
+</body>
+</html>
