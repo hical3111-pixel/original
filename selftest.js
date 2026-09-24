@@ -50,6 +50,15 @@
     const c=COMBOS.find(x=>x.a!=='shield'&&!skOf(x.a).buff),a=skOf(c.a),b=skOf(c.b);toFight();m.hp=m.max=1e15;castLock=0;
     for(const s of SK)cds[s.id]=0;cds[b.id]=30;lastCast=null;pendingCombo=null;cast(a);ok(cds[b.id]<=PRIME_CD,'연계 준비: 짝 쿨타임이 '+PRIME_CD+'초 이하로 줄지 않음');
     tick(10);ok(!!activeLink()&&activeLink().c===c,'연계 창이 열리지 않음');tick(400);
+    // 뇌창 투척 -> 천뢰 낙하 -> 뇌신 강림 자동 연계 검증
+    const tc=COMBOS.find(x=>x.name==='뇌신 강림'),ta=skOf(tc.a),tb=skOf(tc.b);
+    S.equip=[ta.id,tb.id];buildBar();toFight();m.hp=m.max=1e15;castLock=0;for(const s of SK)cds[s.id]=0;cds[tb.id]=30;lastCast=null;pendingCombo=null;
+    cast(ta);ok(cds[tb.id]<=PRIME_CD,'뇌창 투척 후 천뢰 낙하 쿨타임이 '+PRIME_CD+'초 이하로 줄지 않음');
+    ok(!!activeLink()&&activeLink().c===tc,'뇌신 강림 연계 창이 열리지 않음');
+    S.auto=true;cds[tb.id]=0;castLock=0;gauge=0;autoCast();
+    ok(!!pendingCombo&&pendingCombo===tc,'자동 스킬에서 뇌신 강림 발동 실패');
+    tickCombo();ok(castLock>0,'뇌신 강림 시전 잠금 미적용');tick(300);
+    S.auto=false;S.equip=SK.slice(0,8).map(s=>s.id);buildBar();
   });
 
   section('각성기');
