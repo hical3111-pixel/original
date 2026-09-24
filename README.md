@@ -20,3 +20,7 @@
 - `core.js`: 상태, 스탯, 전투, 몬스터
 - `skills.js`: 스킬, 연계기, 각성, 유물 상자
 - `main.js`: 게임 루프, 렌더링, 보스 패턴, UI
+
+- `selftest.js`: 구조 자가 점검 (`?selftest`로 실행)
+
+개발 규칙과 설계 방향은 [AGENTS.md](AGENTS.md)에 있습니다.
