@@ -703,7 +703,7 @@ function recommendLoadout(best=S.best,keep=[]){
     for(let j=i;j<=pool.length-(n-picked.length);j++)visit(j+1,picked.concat(pool[j].a))};
   visit(0,[]);return result;
 }
-function syncEquip(){S.loadout=cleanLoadout(S.loadout);S.equip=S.loadout.flatMap(id=>{const c=COMBOS.find(c=>c.a===id);return[c.a,c.b]})}
+function syncEquip(){S.loadout=cleanLoadout(S.loadout);S.equip=S.loadout.flatMap(id=>{const c=COMBOS.find(c=>c.a===id);return[c.a,c.b]});if(typeof stats==='function')ST=stats()}
 function restoreLoadout(raw){
   if(Array.isArray(raw?.loadout))S.loadout=cleanLoadout(raw.loadout);
   else{const equip=Array.isArray(raw?.equip)?raw.equip:[],inferred=equip.map(id=>comboOf(id)?.a);
@@ -713,7 +713,22 @@ function restoreLoadout(raw){
 function setLoadout(ids){S.loadout=cleanLoadout(ids);syncEquip()}
 function autoEquipPair(id){const c=comboOf(id);if(c&&S.loadout.length<4&&!S.loadout.includes(c.a))setLoadout(S.loadout.concat(c.a))}
 
-const comboWin=()=>hasMod('chain')?16:8;
+/* ================= 집중 효과 (7계열 × 3단계) & 숙련 ================= */
+const FOCUS_FX={
+  crimson:['연계기 피해 +30%','치명타 시 화상(추가 피해)','연계기 마지막 강타 1회 추가'],
+  eclipse:['연계 창 +3초','연계 시 분신 1체가 추가타','연계 창 동안 받는 기절 무효'],
+  verdant:['보스 공격 1회를 자동으로 막음(쿨 20초)','막을 때 반사 피해','막을 때 각성 게이지 +15'],
+  abyss:['모든 쿨타임 -15%','연계 발동 시 시작 스킬 쿨 즉시 초기화 확률 30%','각성기 지속 +50%'],
+  storm:['연계기마다 추가 낙뢰 3회','낙뢰가 속박 부여','낙뢰 치명타 확정'],
+  hellfire:['속박 적에게 피해 +30%','연계 시 속박 부여','속박 중 적 공격 속도 -30%'],
+  frost:['연계 시 빙결(적 공격 느려짐)','빙결 적이 받는 피해 +20%','빙결 중 적 패턴 1회 취소'],
+};
+function masteryTier(id){const m=(S&&S.mastery&&S.mastery[id])||0;return m>=25?3:m>=10?2:1}
+function focusTier(id){return(typeof schoolState==='function'&&schoolState().focus.includes(id))?masteryTier(id):0}
+function addMastery(schoolId,amount=1){if(!schoolId||!S||!S.mastery)return;S.mastery[schoolId]=(S.mastery[schoolId]||0)+amount}
+function isFocusAwk(){if(!S||!S.awkSel)return false;const s=SCHOOLS.find(s=>s.awk&&s.awk===S.awkSel);return!!(s&&focusTier(s.id)>=1)}
+
+const comboWin=()=>(hasMod('chain')?16:8)+(typeof focusTier==='function'&&focusTier('eclipse')>=1?3:0);
 let lastCast=null,pendingCombo=null;
 const skOf=id=>SK.find(s=>s.id===id);
 function comboReady(c){return unlocked(skOf(c.a))&&unlocked(skOf(c.b))}
@@ -850,7 +865,31 @@ function cast(s,preview){
     const cb=COMBOS.find(c=>lastCast&&c.a===lastCast.id&&c.b===s.id&&gt-lastCast.t<comboWin()&&(!c.keep||c.keep.get()));
     if(cb){pendingCombo=cb;sfx.link();
       cds[cb.a]*=.5;gauge=Math.min(100,gauge+20*ST.gg);
+      addMastery(cb.school,3);
+      if(focusTier('eclipse')>=2){
+        later(.2,()=>{if(fighting()){const c=mCenter(m);P.push({t:'ghost',x:heroX+50*U,y:groundY-45*U,vx:200*U,vy:0,life:.4,max:.4,color:'#9a7bff'});
+          deal(ST.atk*3*ST.sk,false,'skill',c.x,c.y,{light:1,col:'#9a7bff',name:'그림자 분신',sid:'shadow_strike'});
+          T.push({x:c.x,y:(m?mTop(m):c.y)-40*U,vx:0,vy:-50*U,text:'분신 추가타!',crit:0,label:'',size:22,life:1,max:1,color:'#9a7bff'})}});
+      }
+      if(focusTier('abyss')>=2&&Math.random()<.3){
+        cds[cb.a]=0;
+        T.push({x:heroX,y:groundY-160*U,vx:0,vy:-50*U,text:'쿨타임 초기화!',crit:1,label:'',size:22,life:1.1,max:1.1,color:'#b06bff'});
+      }
+      if(focusTier('hellfire')>=2&&m){
+        m.vuln=Math.max(m.vuln||0,3);const c=mCenter(m);
+        T.push({x:c.x,y:(m?mTop(m):c.y)-45*U,vx:0,vy:-45*U,text:'속박!',crit:0,label:'',size:24,life:1.2,max:1.2,color:'#ffa05a'});
+      }
+      if(focusTier('frost')>=1&&m){
+        m.freeze=3.5;const c=mCenter(m);
+        T.push({x:c.x,y:(m?mTop(m):c.y)-45*U,vx:0,vy:-50*U,text:'빙결!',crit:0,label:'',size:24,life:1.2,max:1.2,color:'#61dcf3'});
+        if(focusTier('frost')>=3&&m.pat&&!m.freezeCancel){
+          m.freezeCancel=true;m.pat=null;parryLock=0;m.atkT=3.5;
+          T.push({x:c.x,y:(m?mTop(m):c.y)-75*U,vx:0,vy:-60*U,text:'패턴 취소!',crit:1,label:'',size:26,life:1.2,max:1.2,color:'#61dcf3'});
+          sfx.glass();
+        }
+      }
       T.push({x:heroX,y:groundY-140*U,vx:0,vy:-60*U,text:'연계!',crit:1,label:cb.name,lcol:'#fff',size:34,life:1.2,max:1.2,color:cb.col})}
+    addMastery(comboOf(s.id)?.school,1);
     lastCast={id:s.id,t:gt};
     const nx=COMBOS.find(c=>c.a===s.id);
     if(nx&&comboReady(nx)){const b=skOf(nx.b);sfx.link();
@@ -1594,7 +1633,7 @@ function awkCircle(pm=1){
       P.push({t:'bolt',pts:genBolt(c.x+rnd(-40,40)*U,-20,c.x,c.y),life:.25,max:.25});skillHit(1.5,pm,c.x,c.y,{col:'#e0d4ff',sid:'awk'})});
     at(o,2,()=>{flash(.8,'200,180,255');stop=Math.max(stop,.14);addCrack(c.x,c.y,true);sfx.bigboom();burst(c.x,c.y,['#b89aff','#fff','#5a34c0'],60,1800);
       skillHit(9,pm,c.x,c.y,{heavy:1,name:'암흑 마법진',col:'#e0d4ff',fc:'200,180,255',sid:'awk'});
-      if(pm>=1){circleT=12;banner('마력 폭주','12초 동안 스킬 재사용 대기 2배 속도','#b89aff',1.6)}});
+      if(pm>=1){const dur=12*(typeof focusTier==='function'&&focusTier('abyss')>=3?1.5:1);circleT=dur;banner('마력 폭주',`${Math.round(dur)}초 동안 스킬 재사용 대기 2배 속도`,'#b89aff',1.6)}});
   },back(o){const t=o.t,k=easeOut(Math.min(1,t/.8)),al=t>2.1?Math.max(0,1-(t-2.1)/.4):1;if(al<=0)return;const rx=W*.45*k,ry=rx*.22;
     ctx.save();ctx.translate(cx,groundY);ctx.globalAlpha=al;ctx.globalCompositeOperation='lighter';ctx.strokeStyle='#b89aff';ctx.lineWidth=2.5*U;
     for(const s of [1,.82,.55]){ctx.beginPath();ctx.ellipse(0,0,rx*s,ry*s,0,0,7);ctx.stroke()}

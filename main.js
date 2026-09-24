@@ -14,6 +14,13 @@ function resize(){
 /* ================= boss patterns ================= */
 let bossMax=30;
 function startPat(){
+  if(!m||!m.boss||m.hp<=0)return;
+  if(m.freeze>0&&typeof focusTier==='function'&&focusTier('frost')>=3&&!m.freezeCancel){
+    m.freezeCancel=true;m.atkT=3.5;const c=mCenter(m);
+    T.push({x:c.x,y:(m?mTop(m):c.y)-75*U,vx:0,vy:-60*U,text:'패턴 취소!',crit:1,label:'',size:26,life:1.2,max:1.2,color:'#61dcf3'});
+    P.push({t:'ring',x:c.x,y:c.y,r0:10*U,r1:180*U,w:8*U,life:.4,max:.4,color:'#61dcf3'});
+    sfx.glass();return;
+  }
   parryLock=0;const pool=m.enraged?['slam','beam','charge','rain','rain']:['slam','beam','charge'];if(S.stage>=20)pool.push('orbs');const ty=pool[Math.floor(Math.random()*pool.length)];
   m.pat={ty,t:0,imp:{slam:1.5,beam:1.25,charge:1.4,rain:1.5}[ty],end:{slam:1.9,beam:1.75,charge:1.9,rain:1.9}[ty],res:0,parry:false};sfx.warn();
   if(ty==='orbs'){const p=m.pat,n=m.enraged?4:3;p.orbs=Array.from({length:n},(_,i)=>({imp:1.2+i*.4,res:0,parry:false}));p.imp=1.2;p.end=p.orbs[n-1].imp+.6;
@@ -23,8 +30,9 @@ function startPat(){
 function bossAI(dt){
   if(!m||!m.boss||m.state!=='fight')return;
   if(m.stun>0){m.stun-=dt;m.pat=null;parryLock=0;return}
-  if(!m.pat){m.atkT-=dt;if(m.atkT<=0)startPat();return}
-  const p=m.pat;p.t+=dt*(p.ty==='orbs'?1:m.enraged?1.3:1);const R=m.rb*U;
+  const slow=(m.freeze>0?.6:1)*(m.vuln>0&&typeof focusTier==='function'&&focusTier('hellfire')>=3?.7:1);
+  if(!m.pat){m.atkT-=dt*slow;if(m.atkT<=0)startPat();return}
+  const p=m.pat;p.t+=dt*(p.ty==='orbs'?1:m.enraged?1.3:1)*slow;const R=m.rb*U;
   if(p.ty==='orbs'){
     for(const g of p.orbs){if(!m||m.pat!==p||!fighting())return;if(!g.res&&p.t>=g.imp)resolveBossOrb(p,g)}
     const next=p.orbs.find(g=>!g.res);p.imp=next?next.imp:p.orbs[p.orbs.length-1].imp;p.res=next?0:1;
@@ -61,6 +69,20 @@ function resolveHit(p,weight=1,evade=null){
     T.push({x:hx+30*U,y:hy-80*U,vx:0,vy:-70*U,text:'패링!',crit:1,label:'PERFECT',lcol:'#fff',size:56,life:1.2,max:1.2,color:'#ffe066'});
     P.push({t:'ring',x:hx+50*U,y:hy,r0:10*U,r1:200*U,w:8*U,life:.4,max:.4,color:'#ffe066'});P.push({t:'star',x:hx+60*U,y:hy,size:160*U,life:.16,max:.16});burst(hx+60*U,hy,['#ffe066','#fff'],30,1200);
     m.stun=2.2;m.pat=null;parryLock=0;m.kv+=1100*U;deal(ST.atk*8,true,'hero',c.x,c.y,{heavy:1,name:'반격',col:'#ffe066'});return}
+  if(typeof focusTier==='function'&&focusTier('eclipse')>=3&&activeLink()){
+    T.push({x:hx,y:hy-70*U,vx:0,vy:-60*U,text:'기절 무효!',crit:1,label:'',size:28,life:1,max:1,color:'#9a7bff'});
+    return 'immune';
+  }
+  if(typeof focusTier==='function'&&focusTier('verdant')>=1&&verdantCD<=0){
+    verdantCD=20;
+    burst(hx+75*U,hy,['#7dff5a','#b7ffa6','#fff'],20,900);
+    P.push({t:'star',x:hx+75*U,y:hy-10*U,size:130*U,life:.15,max:.15});
+    T.push({x:hx+40*U,y:hy-70*U,vx:0,vy:-80*U,text:'녹광 방호!',crit:1,label:'',size:36,life:1.1,max:1.1,color:'#7dff5a'});
+    sfx.parry();stop=Math.max(stop,.1);addTrauma(.3);
+    if(focusTier('verdant')>=2)deal(ST.atk*6*ST.sk,true,'skill',c.x,c.y,{heavy:1,name:'녹광 반사',col:'#7dff5a',crack:1,sid:'verdant_refl'});
+    if(focusTier('verdant')>=3)gauge=Math.min(100,gauge+15*ST.gg);
+    return 'blocked';
+  }
   if(rv('phoenix')){for(let i=0;i<16;i++)P.push({t:'flame',x:hx+rnd(-40,40)*U,y:groundY-rnd(0,60)*U,vx:rnd(-40,40)*U,vy:-rnd(200,420)*U,drag:1,g:0,r:rnd(12,26)*U,cols:['#7a1606','#ff8a2a','#ffe08a'],life:rnd(.4,.8),max:.8});
     T.push({x:hx,y:hy-80*U,vx:0,vy:-80*U,text:'불사조!',crit:1,label:'',size:40,life:1,max:1,color:'#ffb040'});
     deal(ST.atk*4*rv('phoenix')*weight,false,'relic',c.x,c.y,{heavy:1,name:'불사조 반격',col:'#ffb040',fc:'255,190,110'});return 'phoenix'}
@@ -71,7 +93,7 @@ function resolveHit(p,weight=1,evade=null){
   return 'hit';
 }
 
-let parryLock=0,lastTooFast=0;
+let verdantCD=0,parryLock=0,lastTooFast=0;
 function bossParryTarget(p){return p.ty==='orbs'?p.orbs.find(g=>!g.res):p}
 function tryBossParry(){
   if(!fighting()||!m||!m.pat||m.pat.res)return false;const p=m.pat,g=bossParryTarget(p);if(!g||g.res)return false;
@@ -226,6 +248,7 @@ function update(rdt){
   for(const s of SK)cds[s.id]=Math.max(0,cds[s.id]-dt*(circleT>0?2:1));if(circleT>0)circleT-=dt;
   castLock=Math.max(0,castLock-dt);
   parryLock=Math.max(0,parryLock-dt);
+  if(verdantCD>0)verdantCD-=dt;
   if(frenzyT>0){frenzyT-=dt;
     if(Math.random()<dt*45)P.push({t:'flame',x:heroX+rnd(-24,24)*U,y:groundY-rnd(10,90)*U,vx:rnd(-20,20)*U,vy:-rnd(80,200)*U,drag:1,g:0,r:rnd(5,11)*U,cols:['#3a0620','#ff3d8b','#ffb0d8'],life:rnd(.3,.6),max:.6});}
   comboT-=dt;if(comboT<=0)combo=0;
@@ -280,6 +303,14 @@ function update(rdt){
     m.px+=(m.pxT-m.px)*Math.min(1,dt*m.pxF);m.pxT=0;m.pxF=6;
     m.sc+=(m.scT-m.sc)*Math.min(1,dt*6);m.scT=1;
     m.flash=Math.max(0,m.flash-dt*9);m.hurt-=dt;if(m.vuln>0)m.vuln-=dt;
+    if(m.burn>0){
+      m.burn-=dt;m.burnTick=(m.burnTick||0)-dt;
+      if(m.burnTick<=0){
+        m.burnTick=.5;
+        if(fighting()){const c=mCenter(m);deal(ST.atk*.4*ST.sk,false,'dot',c.x,c.y,{light:1,col:'#ff5a2a',name:'화상'})}
+      }
+    }else{m.burnNotified=false}
+    if(m.freeze>0)m.freeze-=dt;else{m.freezeCancel=false}
     if(m.chipT>0)m.chipT-=dt;else m.chip+=(m.hp-m.chip)*Math.min(1,dt*7);
     if(m.state==='enter'){
       if(m.mini){const k=Math.min(1,m.t/.32);m.yo=lerp(-150*U,0,easeIn(k));if(k>=1){m.state='fight';m.sqv=7;P.push({t:'ring',x:m.x,y:groundY,r0:6*U,r1:60*U,w:4*U,sy:.25,life:.3,max:.3,color:'#fff'})}}

@@ -24,9 +24,10 @@ const KEY='blade-road-v1';
 const freshLv=()=>({atk:0,spd:0,crit:0,critd:0,skill:0,spirit:0,archer:0,mage:0,greed:0});
 const fresh=()=>({gold:0,stage:1,kills:0,maxStage:1,best:1,farm:false,farmKills:0,lv:freshLv(),souls:0,auto:true,sound:true,t:Date.now(),totalKills:0,
   relics:{},ach:{},title:'',loadout:['dash'],equip:['dash','neon'],maxCombo:0,bossKills:0,parries:0,legends:0,rebirths:0,combos:0,awakes:0,eclBoss:0,pulls:0,
-  awk:{},daily:{key:'',done:false},dailyWins:0,phase2:0,awkSel:'thousand',codex:{}});
+  awk:{},daily:{key:'',done:false},dailyWins:0,phase2:0,awkSel:'thousand',codex:{},
+  mastery:{crimson:0,eclipse:0,verdant:0,abyss:0,storm:0,hellfire:0,frost:0}});
 let S=fresh();
-function load(d){try{const raw=d||JSON.parse(localStorage.getItem(KEY)||'null');if(raw){S=Object.assign(fresh(),raw);S.lv=Object.assign(freshLv(),raw.lv||{});S.relics=Object.assign({},raw.relics||{});S.ach=Object.assign({},raw.ach||{});S.awk=Object.assign({},raw.awk||{});S.daily=Object.assign({key:'',done:false},raw.daily||{});S.codex=Object.assign({},raw.codex||{});restoreLoadout(raw)}}catch(e){}}
+function load(d){try{const raw=d||JSON.parse(localStorage.getItem(KEY)||'null');if(raw){S=Object.assign(fresh(),raw);S.lv=Object.assign(freshLv(),raw.lv||{});S.relics=Object.assign({},raw.relics||{});S.ach=Object.assign({},raw.ach||{});S.awk=Object.assign({},raw.awk||{});S.daily=Object.assign({key:'',done:false},raw.daily||{});S.codex=Object.assign({},raw.codex||{});S.mastery=Object.assign({crimson:0,eclipse:0,verdant:0,abyss:0,storm:0,hellfire:0,frost:0},raw.mastery||{});restoreLoadout(raw)}}catch(e){}}
 function save(){S.t=Date.now();const out=CH?Object.assign({},S,CH.saved):S;try{localStorage.setItem(KEY,JSON.stringify(out))}catch(e){}}
 
 /* ================= daily challenge ================= */
@@ -125,7 +126,7 @@ function stats(lv=S.lv){
     sn:hasMod('spirit')?6:Math.min(6,lv.spirit),sd:atk*.35*(1+.15*Math.max(0,lv.spirit-1))*(lv.spirit||hasMod('spirit')?1:0),
     ar:lv.archer?atk*.3*Math.pow(lv.archer,.9):0,mg:lv.mage?atk*1.4*Math.pow(lv.mage,.9):0,
     gm:(1+.2*lv.greed)*soul*(1+.08*rv('coin')),sk:(1+.25*lv.skill)*(1+.4*rv('abyss')),
-    cdm:Math.max(.6,1-.05*rv('frost')),gg:1+.25*rv('shard'),cdx};
+    cdm:Math.max(.4,(1-.05*rv('frost'))*(typeof focusTier==='function'&&focusTier('abyss')>=1?.85:1)),gg:1+.25*rv('shard'),cdx};
 }
 let ST=stats();
 const tier=()=>S.lv.skill>=20?3:S.lv.skill>=10?2:S.lv.skill>=5?1:0;
@@ -310,7 +311,9 @@ function heroStrike(tap){
 
 function deal(d,crit,src,x,y,o={}){
   if(!fighting())return;
-  d*=chMul(src,crit,o);if(m.vuln>0)d*=1.3;
+  d*=chMul(src,crit,o);
+  if(m.vuln>0)d*=1.3*(typeof focusTier==='function'&&focusTier('hellfire')>=1?1.3:1);
+  if(m.freeze>0&&typeof focusTier==='function'&&focusTier('frost')>=2)d*=1.2;
   const light=o.light||src==='spirit'||src==='ally',heavy=o.heavy;
   let col=o.col||(src==='spirit'?'#8ff6ff':src==='ally'?'#c8ffb0':crit?'#ffe066':'#ffffff');
   if(m.sh>0){m.sh-=d;col='#7fe8ff';if(Math.random()<.5)P.push({t:'ring',x,y,r0:6*U,r1:40*U,w:3*U,life:.2,max:.2,color:'#7fe8ff'});
@@ -322,6 +325,25 @@ function deal(d,crit,src,x,y,o={}){
   const size=src==='spirit'||src==='ally'?17:light?22:heavy?54:crit?44:src==='tap'?32:src==='skill'?34:28;
   T.push({x:x+rnd(-26,26)*U,y:y-m.rb*U*.5,vx:rnd(-50,50)*U,vy:-rnd(150,210)*U,text:fmt(d),crit:crit||heavy,
     label:crit?'치명타':heavy&&o.name?o.name:'',lcol:crit?'#ff4fa3':col,size,life:heavy?1.1:.9,max:heavy?1.1:.9,color:col});
+  if(crit&&m&&typeof focusTier==='function'&&focusTier('crimson')>=2){
+    m.burn=3;if(!m.burnNotified){m.burnNotified=true;T.push({x:x,y:y-m.rb*U*.6,vx:0,vy:-50*U,text:'화상!',crit:0,label:'',size:22,life:1,max:1,color:'#ff4f5e'})}
+  }
+  if(o.sid==='combo'&&heavy&&!o._extra){
+    if(typeof focusTier==='function'&&focusTier('crimson')>=3){
+      later(.12,()=>{if(fighting()){const c=mCenter(m);sfx.slash2();stop=Math.max(stop,.08);flash(.3,'255,100,100');
+        deal(d*.8,crit,'skill',c.x,c.y,Object.assign({},o,{_extra:1,name:(o.name||'연계')+' · 추격',col:'#ff2a3a',crack:1}));
+        T.push({x:c.x,y:(m?mTop(m):c.y)-50*U,vx:0,vy:-60*U,text:'추가 강타!',crit:1,label:'',size:28,life:1.1,max:1.1,color:'#ff2a3a'})}});
+    }
+    if(typeof focusTier==='function'&&focusTier('storm')>=1){
+      const gc=focusTier('storm')>=3,gv=focusTier('storm')>=2;
+      for(let i=0;i<3;i++)later(.1+i*.12,()=>{if(fighting()){const c=mCenter(m),bx=c.x+rnd(-35,35)*U;
+        P.push({t:'bolt',pts:genBolt(bx,0,bx,c.y),life:.25,max:.25,color:'#ffe853'});sfx.boom();stop=Math.max(stop,.04);
+        if(gv)m.vuln=Math.max(m.vuln||0,2);
+        deal(ST.atk*ST.sk*1.5*(gc?ST.cm:1),gc,'skill',bx,c.y,{light:1,col:'#ffe853',name:'추가 낙뢰',sid:'storm_bolt',_extra:1});
+        if(i===0)T.push({x:c.x,y:(m?mTop(m):c.y)-45*U,vx:0,vy:-50*U,text:'추가 낙뢰!',crit:gc?1:0,label:'',size:22,life:1,max:1,color:'#ffe853'});
+        if(gv&&i===0)T.push({x:c.x,y:(m?mTop(m):c.y)-70*U,vx:0,vy:-40*U,text:'속박!',crit:0,label:'',size:18,life:1,max:1,color:'#ffe853'})}});
+    }
+  }
   if(heavy){stop=Math.max(stop,.1);addTrauma(.6);zoom+=.07*FXS;flash(.42,o.fc||'255,255,255')}
   else if(crit&&!light){stop=Math.max(stop,.075);addTrauma(.32);zoom+=.045*FXS;flash(.18,'255,150,210')}
   else if(light)addTrauma(.04);
@@ -367,6 +389,9 @@ function triggerBossFinisher(fin,o){
 function skillHit(mult,pm,x,y,o){
   const crit=Math.random()<ST.cc;
   if(o&&o.sid&&BR[o.sid]&&BR[o.sid].gen&&br(o.sid)==='a')mult*=1.4;
+  if(o&&o.sid==='combo'&&typeof focusTier==='function'&&focusTier('crimson')>=1)mult*=1.3;
+  const isAwk=o&&(o.sid==='awaken'||o.sid==='awk'||(typeof AWK!=='undefined'&&AWK.some(a=>a.id===o.sid)));
+  if(isAwk&&typeof isFocusAwk==='function'&&isFocusAwk())mult*=1.5;
   deal(ST.atk*ST.sk*mult*pm*(crit?ST.cm:1)*rnd(.9,1.1),crit,'skill',x,y,o);
 }
 function shieldBreak(){

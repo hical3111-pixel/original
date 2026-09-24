@@ -398,7 +398,7 @@
       load({best:72,loadout:[],equip:['dash']});ok(S.loadout.length===0&&S.equip.length===0,'빈 편성을 추천으로 덮어쓰지 않음');
       load({best:72,loadout:['dash','dash','bad',null,'swords','breath','shadow','gravity']});ok(equal(S.loadout,['dash','swords','breath','shadow']),'손상된 편성의 중복/잘못된 id/초과 칸 정리');
       load({best:72,loadout:'broken',equip:['meteor']});ok(S.loadout[0]==='gravity'&&S.loadout.length===4,'배열 아닌 편성은 예전 장착에서 복원');
-      reset();ok(equal(S.loadout,['dash'])&&equal(S.equip,derived())&&!('mastery' in S),'새 게임 기본 쌍/파생 equip, 숙련 필드 미추가');
+      reset();ok(equal(S.loadout,['dash'])&&equal(S.equip,derived())&&('mastery' in S)&&SCHOOLS.every(s=>S.mastery[s.id]===0),'새 게임 기본 쌍/파생 equip, 숙련 필드 초기화');
       const both=['frostcut','iceflower','dash','spear'];let state=schoolState(both,72);
       ok(equal(state.focus,['storm','frost'])&&equal(state.resonance,['frost_storm']),'빙정 2쌍+뇌전 2쌍: 집중 2/초전도');
       state=schoolState(both,71);ok(equal(state.focus,['storm'])&&state.counts.frost===1,'짝 하나 미해금이면 빙정 집중 꺼짐');
@@ -428,6 +428,103 @@
       reset();S.stage=S.best=2;S.kills=KPS-1;kill();ok(S.best===3&&equal(S.loadout,['dash','swords'])&&equal(S.equip,derived()),'진행 중 새 스킬 해금도 쌍 단위 자동 편성');
       reset();S.stage=S.best=16;S.kills=KPS-1;kill();ok(S.best===17&&equal(S.loadout,['dash'])&&equal(S.equip,derived()),'편성한 잠긴 짝 해금 시 중복 칸 없음');
       reset();setLoadout(['dash','breath','gravity','frostcut']);S.stage=S.best=2;S.kills=KPS-1;kill();ok(!S.loadout.includes('swords')&&equal(S.equip,derived()),'빈칸 없는 해금은 기존 편성 보존');
+    }finally{reset();m=null;buildBar();buildBook()}
+  });
+
+  section('계열 C · 집중 효과 · 숙련');
+  guard('계열 C',()=>{
+    const reset=()=>{S=fresh();S.best=999;S.stage=72;S.auto=false;S.sound=false;ST=stats();CH=null;BI=null;BF=null;CUT=null;BN=null;FX=[];P=[];T=[];B=[];PR=[];C=[];relicQ=[];shieldOn=null;stop=0;slowT=0;castLock=0;frenzyT=0;circleT=0;gauge=0;lastCast=null;pendingCombo=null;spawnT=100;miniQ=0;h.stun=0;atkT=1e6;verdantCD=0;
+      m=makeMonster(1);m.state='fight';m.x=monX;m.sh=0;m.hp=m.max=1e12;for(const s of SK)cds[s.id]=0};
+    const equal=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
+    try{
+      ok(Object.keys(FOCUS_FX).length===7&&SCHOOLS.every(s=>Array.isArray(FOCUS_FX[s.id])&&FOCUS_FX[s.id].length===3),'7계열 3단계 효과 설명 데이터 구비');
+      reset();load({best:72,equip:['dash']});
+      ok(S.mastery&&typeof S.mastery==='object'&&SCHOOLS.every(s=>S.mastery[s.id]===0),'숙련 필드 없는 옛 저장에 기본값(0) 병합');
+      load({best:72,mastery:{crimson:12,frost:28}});
+      ok(S.mastery.crimson===12&&S.mastery.frost===28&&S.mastery.storm===0,'저장된 숙련치 복원 및 누락 계열 0 병합');
+
+      reset();const mBefore=JSON.stringify(S.mastery);showOffline(3600);
+      ok(JSON.stringify(S.mastery)===mBefore,'오프라인 보상 정산 중 숙련치 불변');
+
+      reset();S.mastery.crimson=20;Object.assign(S,{gold:0,stage:1,kills:0,maxStage:1,farm:false,farmKills:0,lv:freshLv()});
+      ok(S.mastery.crimson===20,'환생 시에도 계열 숙련도 유지');
+
+      for(const s of SCHOOLS){
+        reset();setLoadout([]);
+        ok(focusTier(s.id)===0,s.name+': 미편성 시 집중 꺼짐 (0단계)');
+        setLoadout(s.pairs);
+        ok(focusTier(s.id)===1,s.name+': 2쌍 편성 시 1단계 활성화');
+        S.mastery[s.id]=9;ok(focusTier(s.id)===1,s.name+': 숙련 9는 여전히 1단계');
+        S.mastery[s.id]=10;ok(focusTier(s.id)===2,s.name+': 숙련 10 도달 시 2단계 전환');
+        S.mastery[s.id]=24;ok(focusTier(s.id)===2,s.name+': 숙련 24는 여전히 2단계');
+        S.mastery[s.id]=25;ok(focusTier(s.id)===3,s.name+': 숙련 25 도달 시 3단계 전환');
+        setLoadout([s.pairs[0]]);
+        ok(focusTier(s.id)===0,s.name+': 1쌍만 편성 시 집중 꺼짐');
+      }
+
+      reset();setLoadout(['dash']);cds.dash=0;cds.neon=0;
+      ok(S.mastery.storm===0,'뇌전 초기 숙련 0');
+      cast(skOf('dash'));
+      ok(S.mastery.storm===1,'시작 스킬 시전 시 그 계열 숙련 +1');
+      castLock=0;cast(skOf('neon'));
+      ok(S.mastery.storm===5,'마무리 스킬 시전(+1) 및 연계기 성공(+3)으로 숙련 +4 누적');
+      const stPre=S.mastery.storm;previewCombo(COMBOS[0]);
+      ok(S.mastery.storm===stPre,'시연 시에는 숙련도 증가 안 함');
+
+      reset();
+      const origRandom=Math.random;
+      try{
+        Math.random=()=>0.5;ST.cc=0;
+        setLoadout(['dash']);let hpB=m.hp;skillHit(10,1,monX,groundY,{sid:'combo'});
+        const baseDealt=hpB-m.hp;
+        setLoadout(['breath','demon']);hpB=m.hp;skillHit(10,1,monX,groundY,{sid:'combo'});
+        const boostedDealt=hpB-m.hp;
+        ok(Math.abs(boostedDealt-baseDealt*1.3)<1e-4,'진홍 집중 1단계: 연계기 피해 +30%');
+
+        S.awkSel='inferno';
+        setLoadout(['dash']);hpB=m.hp;skillHit(20,1,monX,groundY,{sid:'inferno'});
+        const awkBase=hpB-m.hp;
+        setLoadout(['breath','demon']);hpB=m.hp;skillHit(20,1,monX,groundY,{sid:'inferno'});
+        const awkBoosted=hpB-m.hp;
+        ok(Math.abs(awkBoosted-awkBase*1.5)<1e-4,'진홍 집중 + 전용 각성기(염마 강림): 각성 위력 +50%');
+
+        S.awkSel='thousand';hpB=m.hp;skillHit(20,1,monX,groundY,{sid:'thousand'});
+        const thMult=hpB-m.hp;
+        ok(Math.abs(thMult-awkBase)<1e-4,'기본 각성기(천검멸)는 계열 보너스 미적용');
+      }finally{Math.random=origRandom;ST=stats()}
+
+      reset();setLoadout(['dash']);const baseCdm=stats().cdm;
+      setLoadout(['swords','gravity']);const abyssCdm=stats().cdm;
+      ok(Math.abs(abyssCdm-baseCdm*.85)<1e-6,'심연 집중 1단계: 쿨타임 -15% (cdm)');
+
+      reset();setLoadout(['dash']);ok(comboWin()===8,'일반 연계 창 8초');
+      setLoadout(['shadow','archers']);ok(comboWin()===11,'월식 집중 1단계: 연계 창 11초 (+3초)');
+
+      reset();setLoadout(['orb','shield']);
+      ok(verdantCD===0,'녹광 방호 쿨타임 준비');
+      const res1=resolveHit({ty:'slam',parry:false});
+      ok(res1==='blocked'&&verdantCD===20&&h.stun===0,'녹광 집중 1단계: 보스 공격 자동 방호 성공 (쿨 20초)');
+      const res2=resolveHit({ty:'slam',parry:false},1,false);
+      ok(res2==='hit'&&h.stun>0,'방호 쿨타임 중 피격 정상 처리');
+      reset();setLoadout(['orb','shield']);S.mastery.verdant=25;gauge=0;
+      const hpBeforeRefl=m.hp;
+      resolveHit({ty:'slam',parry:false});
+      ok(hpBeforeRefl>m.hp,'녹광 2단계: 방호 시 반사 피해');
+      ok(gauge>=15,'녹광 3단계: 방호 시 각성 게이지 +15');
+
+      reset();setLoadout(['whip','hands']);m.vuln=2;
+      const hp0=m.hp;deal(100,false,'hero',m.x,m.y);
+      const hellDealt=hp0-m.hp;
+      ok(Math.abs(hellDealt-100*1.3*1.3)<1e-4,'업화 집중 1단계: 속박 적에게 피해 추가 1.3배');
+
+      reset();setLoadout(['frostcut','iceflower']);S.mastery.frost=10;m.freeze=3;
+      const hp1=m.hp;deal(100,false,'hero',m.x,m.y);
+      const frostDealt=hp1-m.hp;
+      ok(Math.abs(frostDealt-100*1.2)<1e-4,'빙정 집중 2단계: 빙결 적 받는 피해 +20%');
+
+      reset();setLoadout(['frostcut','iceflower']);S.mastery.frost=25;m.freeze=3;m.atkT=0;m.boss=true;
+      startPat();
+      ok(!m.pat&&m.freezeCancel,'빙정 집중 3단계: 빙결 중 적 패턴 1회 취소');
     }finally{reset();m=null;buildBar();buildBook()}
   });
 
