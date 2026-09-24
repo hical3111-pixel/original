@@ -24,9 +24,9 @@ const KEY='blade-road-v1';
 const freshLv=()=>({atk:0,spd:0,crit:0,critd:0,skill:0,spirit:0,archer:0,mage:0,greed:0});
 const fresh=()=>({gold:0,stage:1,kills:0,maxStage:1,best:1,farm:false,farmKills:0,lv:freshLv(),souls:0,auto:true,sound:true,t:Date.now(),totalKills:0,
   relics:{},ach:{},title:'',equip:null,maxCombo:0,bossKills:0,parries:0,legends:0,rebirths:0,combos:0,awakes:0,eclBoss:0,pulls:0,
-  awk:{},daily:{key:'',done:false},dailyWins:0,phase2:0,awkSel:'thousand'});
+  awk:{},daily:{key:'',done:false},dailyWins:0,phase2:0,awkSel:'thousand',codex:{}});
 let S=fresh();
-function load(d){try{const raw=d||JSON.parse(localStorage.getItem(KEY)||'null');if(raw){S=Object.assign(fresh(),raw);S.lv=Object.assign(freshLv(),raw.lv||{});S.relics=Object.assign({},raw.relics||{});S.ach=Object.assign({},raw.ach||{});S.awk=Object.assign({},raw.awk||{});S.daily=Object.assign({key:'',done:false},raw.daily||{});}}catch(e){}}
+function load(d){try{const raw=d||JSON.parse(localStorage.getItem(KEY)||'null');if(raw){S=Object.assign(fresh(),raw);S.lv=Object.assign(freshLv(),raw.lv||{});S.relics=Object.assign({},raw.relics||{});S.ach=Object.assign({},raw.ach||{});S.awk=Object.assign({},raw.awk||{});S.daily=Object.assign({key:'',done:false},raw.daily||{});S.codex=Object.assign({},raw.codex||{});}}catch(e){}}
 function save(){S.t=Date.now();const out=CH?Object.assign({},S,CH.saved):S;try{localStorage.setItem(KEY,JSON.stringify(out))}catch(e){}}
 
 /* ================= daily challenge ================= */
@@ -62,6 +62,24 @@ const PAL=[
   ['#130606','#3d1210','#9a4318','#4a1a14','#2c0f0d','#170808','#ffb35a'],
   ['#0a1022','#1c2c55','#6186b8','#2a3d6b','#1a2748','#0e1530','#d6ecff']];
 const zoneOf=s=>Math.floor((s-1)/10)%4;
+const TYPES=['슬라임','골렘','눈알귀','박쥐'];
+const ZTYPES=[[0,2,3],[1,3,0],[2,1,3],[0,1,2,3]];
+const ZHUES=[14,165,33,208];
+function bossTypeOf(s){
+  const z=zoneOf(s),pool=ZTYPES[z];
+  const bidx=Math.floor((s-1)/40)*2+Math.floor(((s-1)%10)/5);
+  return pool[bidx%pool.length];
+}
+const CODEX=[];
+ZONES.forEach((zn,z)=>{
+  ZTYPES[z].forEach(t=>{
+    let fs=0;
+    for(let s=5;s<=400;s+=5){if(zoneOf(s)===z&&bossTypeOf(s)===t){fs=s;break}}
+    CODEX.push({id:`${z}_${t}`,z,t,zone:zn,type:TYPES[t],name:`군주 ${TYPES[t]}`,first:fs});
+  });
+});
+function codexCount(){let n=0;for(const c of CODEX)if(S.codex&&S.codex[c.id]>0)n++;return n}
+function codexBonus(){return codexCount()*.02}
 
 /* ================= relics & achievements ================= */
 const RAR=[{n:'일반',c:'#cfcae3',w:.6},{n:'희귀',c:'#4fa8ff',w:.28},{n:'영웅',c:'#b36bff',w:.1},{n:'전설',c:'#ffc94a',w:.02}];
@@ -101,13 +119,13 @@ const ACH=[
 
 /* ================= stats ================= */
 function stats(lv=S.lv){
-  const soul=1+0.1*S.souls,am=1+.03*Object.keys(S.ach).length;
-  const atk=4*(1+lv.atk)*Math.pow(1.08,lv.atk)*soul*(1+.06*rv('whet'))*(1+.25*rv('crown'))*am;
+  const soul=1+0.1*S.souls,am=1+.03*Object.keys(S.ach).length,cdx=1+codexBonus();
+  const atk=4*(1+lv.atk)*Math.pow(1.08,lv.atk)*soul*(1+.06*rv('whet'))*(1+.25*rv('crown'))*am*cdx;
   return{atk,aps:(1.2+0.12*lv.spd)*(1+.03*rv('boots')),cc:Math.min(.8,.05+.02*lv.crit+.02*rv('hawk')),cm:2+.3*lv.critd,
     sn:hasMod('spirit')?6:Math.min(6,lv.spirit),sd:atk*.35*(1+.15*Math.max(0,lv.spirit-1))*(lv.spirit||hasMod('spirit')?1:0),
     ar:lv.archer?atk*.3*Math.pow(lv.archer,.9):0,mg:lv.mage?atk*1.4*Math.pow(lv.mage,.9):0,
     gm:(1+.2*lv.greed)*soul*(1+.08*rv('coin')),sk:(1+.25*lv.skill)*(1+.4*rv('abyss')),
-    cdm:Math.max(.6,1-.05*rv('frost')),gg:1+.25*rv('shard')};
+    cdm:Math.max(.6,1-.05*rv('frost')),gg:1+.25*rv('shard'),cdx};
 }
 let ST=stats();
 const tier=()=>S.lv.skill>=20?3:S.lv.skill>=10?2:S.lv.skill>=5?1:0;
@@ -207,13 +225,12 @@ let BI=null;
 
 /* ================= monsters ================= */
 const PRE=['끈적한','성난','심연의','타오르는','얼어붙은','황금빛','독기 어린','폭풍의','굶주린','뒤틀린'];
-const TYPES=['슬라임','골렘','눈알귀','박쥐'];
-const ZTYPES=[[0,2,3],[1,3,0],[2,1,3],[0,1,2,3]];
 function makeMonster(s,mini){
-  const boss=!mini&&isBoss(s)&&!S.farm,pool=ZTYPES[zoneOf(s)];
-  const type=mini?0:boss?pool[Math.floor(s/5)%pool.length]:pool[Math.floor(Math.random()*pool.length)];
+  const z=zoneOf(s);
+  const boss=!mini&&isBoss(s)&&!S.farm,pool=ZTYPES[z];
+  const type=mini?0:boss?bossTypeOf(s):pool[Math.floor(Math.random()*pool.length)];
   const hp=monHp(s)*(boss?7:mini?.3:1);
-  const o={type,boss,mini:!!mini,hue:(s*47+200)%360,rb:boss?72:mini?28:46,hp,max:hp,chip:hp,chipT:0,
+  const o={type,zone:z,boss,mini:!!mini,hue:(s*47+200)%360,rb:boss?72:mini?28:46,hp,max:hp,chip:hp,chipT:0,
     x:boss?monX:W+140*U,yo:boss?-H:0,ly:0,lyT:0,px:0,pxT:0,pxF:6,sc:1,scT:1,state:'enter',t:0,sq:0,sqv:0,kx:0,kv:0,flash:0,hurt:0,deadT:0,ph:rnd(0,6),
     sh:0,shMax:0,split:false,atkT:3.5,pat:null,stun:0,lastSrc:''};
   if(!boss&&!mini){if(type===0&&s>=4&&Math.random()<.3)o.split=true;if(s>=8&&Math.random()<.18)o.shMax=o.sh=hp*.5}
@@ -380,7 +397,8 @@ function kill(fin){
   const o=m,b=o.boss;o.hp=0;
   if(b){o.state='split';o.deadT=0;o.cutA=rnd(-.7,-.25);o.fx=0;
     triggerBossFinisher(fin||getFinisherInfo('hero'),o);
-    S.bossKills++;if(o.lastSrc==='eclipse')S.eclBoss++;if(o.enraged)S.phase2++;}
+    S.bossKills++;if(o.lastSrc==='eclipse')S.eclBoss++;if(o.enraged)S.phase2++;
+    recordCodex(o);}
   else{o.state='dead';o.deadT=0;stop=Math.max(stop,.1);addTrauma(.55);zoom+=.07*FXS;flash(.35);killFx(o)}
   if(o.split){miniQ=2;miniX=mCenter(o).x}
   S.totalKills++;
@@ -395,6 +413,24 @@ function kill(fin){
   for(const s of SK)if(s.unlock>prevBest&&s.unlock<=S.best){banner('새 스킬 해금',s.name,s.c,2.2);sfx.chime();if(S.equip.length<8&&!S.equip.includes(s.id))S.equip.push(s.id);buildBar();buildBook()}
   for(const a of AWK)if(a.unlock>prevBest&&a.unlock<=S.best){banner('새 각성기 해금',a.name+' · 패널에서 선택하세요',a.c,2.4);sfx.chime();buildBook()}
   stageUI();
+}
+
+function recordCodex(o){
+  if(!o||!o.boss)return;
+  const z=o.zone!==undefined?o.zone:zoneOf(CH?CH.stage:S.stage);
+  const t=o.type!==undefined?o.type:0;
+  const cid=`${z}_${t}`;
+  if(!S.codex)S.codex={};
+  const isNew=!S.codex[cid];
+  S.codex[cid]=(S.codex[cid]||0)+1;
+  if(isNew){
+    ST=stats();
+    later(CH?.6:1.0,()=>{
+      banner('도감 등록!',`${ZONES[z]} · 군주 ${TYPES[t]} (피해 +2%)`,'#ffc94a',2.4);
+      sfx.chime();
+    });
+  }
+  if(typeof buildCodex==='function')buildCodex();
 }
 
 function banner(text,sub,color,dur=1.7){BN={text,sub,color,t:0,dur}}

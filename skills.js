@@ -769,7 +769,7 @@ const SK=[
 SK.sort((a,b)=>a.unlock-b.unlock);
 const cds={};SK.forEach(s=>cds[s.id]=0);
 const unlocked=s=>S.best>=s.unlock;
-const equipped=s=>S.equip.includes(s.id);
+const equipped=s=>Array.isArray(S.equip)&&S.equip.includes(s.id);
 function canCast(s){return fighting()&&(s.buff?frenzyT<=0:castLock<=0)}
 const PRIME_CD=3;            // 시작 스킬을 쓰면 짝 스킬 재사용 대기가 이 값 이하로 줄어든다
 const HOLD_FOR=6;            // 시작 스킬이 이 시간 안에 준비되면 자동 스킬은 마무리 스킬을 아껴 둔다

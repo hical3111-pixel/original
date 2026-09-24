@@ -85,6 +85,44 @@
     for(let k=0;k<300&&!(m&&m.boss&&m.state==='fight');k++){if(BI)skipBossIntro();tick(10)}ok(m&&m.boss&&bossMax===60,'도전 보스/제한 시간 이상');
     bossT=.01;tick(5);ok(!CH&&S.stage===stBefore,'도전 실패 후 원래 스테이지로 복귀하지 않음')});
 
+  section('보스 도감');
+  guard('도감 호환 및 처치 반영',()=>{
+    ok(CODEX.length===13,'도감 총 항목 수가 13개가 아님: '+CODEX.length);
+    const oldSave={gold:50,stage:3,lv:freshLv(),relics:{},ach:{},title:''};
+    load(oldSave);
+    ok(S.codex&&typeof S.codex==='object'&&Object.keys(S.codex).length===0,'도감 필드 없는 예전 세이브 load 시 빈 도감 미생성');
+    ok(codexCount()===0,'빈 도감 수집 수가 0이 아님');
+    ok(codexBonus()===0,'빈 도감 보너스가 0이 아님');
+    S=fresh();S.best=999;S.gold=1e300;S.auto=false;S.sound=false;S.equip=SK.slice(0,8).map(s=>s.id);buildBar();
+    const atk0=stats().atk;
+    S.codex={};ST=stats();
+    S.farm=false;S.stage=5;m=null;spawnT=0;stop=0;BI=null;BF=null;
+    for(let k=0;k<120&&!(m&&BI);k++)tick(1);
+    tick(260);ok(m&&m.boss&&m.state==='fight','도감 테스트용 보스 소환 실패');
+    const expectedCid=`${m.zone}_${m.type}`;
+    m.sh=0;m.hp=1;deal(100,false,'hero',m.x,groundY-60*U);
+    ok(S.codex[expectedCid]===1,'보스 처치 후 해당 칸 처치 횟수 기록 실패: '+expectedCid);
+    ok(codexCount()===1,'보스 처치 후 도감 열린 칸 수가 1이 아님');
+    ok(Math.abs(codexBonus()-.02)<1e-5,'열린 칸 1개 보너스가 +2%가 아님: '+codexBonus());
+    ok(stats().atk>atk0,'보스 도감 보너스가 stats().atk에 반영되지 않음');
+    ok(Math.abs(stats().atk/(atk0*1.02)-1)<1e-3,'stats().atk 증가율이 +2%와 일치하지 않음');
+    const z=m.zone,t=m.type;
+    recordCodex({boss:true,zone:z,type:t});
+    ok(S.codex[expectedCid]===2,'동일 보스 처치 시 처치 횟수 2회 누적 실패');
+    ok(codexCount()===1,'동일 보스 재처치 시 칸 수가 1 유지 실패');
+    for(const c of CODEX)S.codex[c.id]=1;
+    ok(codexCount()===13,'전체 도감 수집 수가 13이 아님');
+    ok(Math.abs(codexBonus()-.26)<1e-5,'13칸 전부 열었을 때 보너스가 +26%가 아님: '+codexBonus());
+    ok(Math.abs(stats().atk/(atk0*1.26)-1)<1e-3,'전체 해금 시 stats().atk 증가율이 +26%와 일치하지 않음');
+    // 스테이지 5~400 보스 출현 순회 검사 (13칸 모두 출현 & 100 스테이지 이내 출현)
+    const seen=new Set();
+    for(let s=5;s<=400;s+=5){seen.add(`${zoneOf(s)}_${bossTypeOf(s)}`)}
+    ok(seen.size===CODEX.length,'스테이지 5~400에서 도감 13칸 중 미출현 보스 존재: '+seen.size+'/'+CODEX.length);
+    ok(CODEX.every(c=>seen.has(c.id)&&c.first<=100),'100 스테이지 이내 미출현 도감 보스 존재');
+    ok($('comboTxt').textContent.includes(String(COMBOS.length)),'연계기 헤더에 COMBOS.length 미반영: '+$('comboTxt').textContent);
+    S.codex={};ST=stats();
+  });
+
   section('정리');
   guard('정리',()=>{tick(600);ok(FX.length===0,'연출이 끝나지 않고 남아 있음: '+FX.length+'개');ok(castLock<=0,'castLock이 풀리지 않음')});
 
