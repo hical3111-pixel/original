@@ -130,7 +130,7 @@ function drawBossIntro(){
 /* ================= combo link hint ================= */
 function drawLinkHint(){
   const L=activeLink();if(!L||BI)return;const c=L.c,a=skOf(c.a),b=skOf(c.b),eq=equipped(b);
-  const txt=eq?`${b.name} 사용 시`:`${b.name} 미장착`,fs=Math.round(Math.max(12,14*U)),y=H-(W<560?64:90);
+  const txt=eq?`${b.name} 사용 시`:`${b.name} 미장착`,fs=Math.round(Math.max(12,14*U)),y=hintY||H-(W<560?64:90);
   ctx.save();ctx.font=`700 ${fs}px "Noto Sans KR",sans-serif`;const w1=ctx.measureText(txt).width;ctx.font=`${fs+3}px "Black Han Sans",sans-serif`;const w2=ctx.measureText(c.name).width;
   const pad=12,w=Math.min(W-20,w1+w2+pad*3+44),hh=fs*2.4,x=W/2-w/2,pul=L.left<2?1+.04*Math.sin(gt*30):1;
   ctx.translate(W/2,y);ctx.scale(pul,pul);ctx.translate(-W/2,-y);
@@ -164,7 +164,7 @@ function updAllies(dt,fg){
 }
 
 /* ================= update ================= */
-let dispGold=0,uiAcc=0,saveAcc=0,achAcc=0,lastBump=0;
+let hintY=0,dispGold=0,uiAcc=0,saveAcc=0,achAcc=0,lastBump=0;
 function update(rdt){
   trauma=Math.max(0,trauma-rdt*1.7);
   zoom+=(1-zoom)*Math.min(1,rdt*7);zoom=Math.min(zoom,1.25);
@@ -722,6 +722,7 @@ function uiTick(force){
     r.btn.classList.toggle('max',max);r.btn.classList.toggle('can',!max&&S.gold>=p.c);r.btn.disabled=max;
     r.n.textContent=max?'완료':'+'+p.n;r.c.textContent=max?'—':fmt(p.c)}
   lastDesc=key;
+  {const sr=stageEl.getBoundingClientRect(),bb=$('skBar').getBoundingClientRect();if(bb.height>0)hintY=bb.top-sr.top-Math.max(20,16*U)}
   const LK=activeLink();
   for(const s of SK){const b=s.el;if(!b)continue;b.classList.toggle('link',!!LK&&LK.c.b===s.id&&cds[s.id]<=0);const sl=sealed(s),lk=!unlocked(s)||sl,cd=cds[s.id],act=s.buff&&frenzyT>0,mx=s.cd*ST.cdm;
     b.classList.toggle('locked',lk);b.style.setProperty('--p',lk?1:act?0:Math.min(1,cd/mx));
