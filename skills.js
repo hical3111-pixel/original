@@ -723,12 +723,50 @@ const FOCUS_FX={
   hellfire:['속박 적에게 피해 +30%','연계 시 속박 부여','속박 중 적 공격 속도 -30%'],
   frost:['연계 시 빙결(적 공격 느려짐)','빙결 적이 받는 피해 +20%','빙결 중 적 패턴 1회 취소'],
 };
+/* ================= 공명 효과 (고리 7쌍) ================= */
+const RES_FX={
+  crimson_hellfire:'연계기 발동 시 적에게 화상 3초(0.5초마다 공격력 ×0.4). 화상 중인 적이 속박 상태면 화상 피해 2배',
+  hellfire_eclipse:'연계기 발동 시 적을 속박 2초 + 그림자 분신 추가타(공격력 ×3)',
+  eclipse_abyss:'연계 창 +2초, 모든 쿨타임 -8%',
+  abyss_frost:'연계기 발동 시 적 빙결 2초(이미 빙결이면 지속 +50%)',
+  frost_storm:'빙결된 적에게 연계기가 적중하면 낙뢰 1회(공격력 ×3), 빙결 적이 받는 스킬 피해 +15%',
+  storm_verdant:'연계기마다 각성 게이지 +5',
+  verdant_crimson:'막기(결정 방패·녹광 방호) 또는 패링 성공 시 10초간 연계기 피해 +20%',
+};
 function masteryTier(id){const m=(S&&S.mastery&&S.mastery[id])||0;return m>=25?3:m>=10?2:1}
 function focusTier(id){return(typeof schoolState==='function'&&schoolState().focus.includes(id))?masteryTier(id):0}
+function hasRes(id){return typeof schoolState==='function'&&schoolState().resonance.includes(id)}
 function addMastery(schoolId,amount=1){if(!schoolId||!S||!S.mastery)return;S.mastery[schoolId]=(S.mastery[schoolId]||0)+amount}
 function isFocusAwk(){if(!S||!S.awkSel)return false;const s=SCHOOLS.find(s=>s.awk&&s.awk===S.awkSel);return!!(s&&focusTier(s.id)>=1)}
 
-const comboWin=()=>(hasMod('chain')?16:8)+(typeof focusTier==='function'&&focusTier('eclipse')>=1?3:0);
+function triggerResonanceCombo(cb,wasFrz,prevFrz){
+  if(!fighting()||!m)return;
+  const c=mCenter(m);
+  if(hasRes('crimson_hellfire')){
+    m.burn=Math.max(m.burn||0,3);
+    T.push({x:c.x,y:(m?mTop(m):c.y)-50*U,vx:0,vy:-50*U,text:'홍련작!',crit:0,label:'',size:24,life:1.2,max:1.2,color:'#ff4f5e'});
+  }
+  if(hasRes('hellfire_eclipse')){
+    m.vuln=Math.max(m.vuln||0,2);
+    later(.2,()=>{if(fighting()){const c2=mCenter(m);P.push({t:'ghost',x:heroX+50*U,y:groundY-45*U,vx:200*U,vy:0,life:.4,max:.4,color:'#9a7bff'});
+      deal(ST.atk*3*ST.sk,false,'skill',c2.x,c2.y,{light:1,col:'#9a7bff',name:'그림자 왈츠',sid:'shadow_waltz'});
+      T.push({x:c2.x,y:(m?mTop(m):c2.y)-40*U,vx:0,vy:-50*U,text:'그림자 왈츠!',crit:0,label:'',size:22,life:1,max:1,color:'#9a7bff'})}});
+  }
+  if(hasRes('eclipse_abyss')){
+    T.push({x:heroX,y:groundY-175*U,vx:0,vy:-50*U,text:'칠흑!',crit:0,label:'',size:22,life:1,max:1,color:'#b06bff'});
+  }
+  if(hasRes('abyss_frost')){
+    if(wasFrz)m.freeze=Math.max(m.freeze||0,prevFrz*1.5);
+    else m.freeze=Math.max(m.freeze||0,2);
+    T.push({x:c.x,y:(m?mTop(m):c.y)-65*U,vx:0,vy:-55*U,text:'절대영도!',crit:0,label:'',size:24,life:1.2,max:1.2,color:'#61dcf3'});
+  }
+  if(hasRes('storm_verdant')){
+    gauge=Math.min(100,gauge+5*(ST?.gg||1));
+    T.push({x:heroX,y:groundY-155*U,vx:0,vy:-50*U,text:'질풍신!',crit:0,label:'',size:22,life:1,max:1,color:'#7dff5a'});
+  }
+}
+
+const comboWin=()=>(hasMod('chain')?16:8)+(typeof focusTier==='function'&&focusTier('eclipse')>=1?3:0)+(typeof hasRes==='function'&&hasRes('eclipse_abyss')?2:0);
 let lastCast=null,pendingCombo=null;
 const skOf=id=>SK.find(s=>s.id===id);
 function comboReady(c){return unlocked(skOf(c.a))&&unlocked(skOf(c.b))}
@@ -879,6 +917,7 @@ function cast(s,preview){
         m.vuln=Math.max(m.vuln||0,3);const c=mCenter(m);
         T.push({x:c.x,y:(m?mTop(m):c.y)-45*U,vx:0,vy:-45*U,text:'속박!',crit:0,label:'',size:24,life:1.2,max:1.2,color:'#ffa05a'});
       }
+      const wasFrz=m&&m.freeze>0,prevFrz=(m&&m.freeze)||0;
       if(focusTier('frost')>=1&&m){
         m.freeze=3.5;const c=mCenter(m);
         T.push({x:c.x,y:(m?mTop(m):c.y)-45*U,vx:0,vy:-50*U,text:'빙결!',crit:0,label:'',size:24,life:1.2,max:1.2,color:'#61dcf3'});
@@ -888,6 +927,7 @@ function cast(s,preview){
           sfx.glass();
         }
       }
+      triggerResonanceCombo(cb,wasFrz,prevFrz);
       T.push({x:heroX,y:groundY-140*U,vx:0,vy:-60*U,text:'연계!',crit:1,label:cb.name,lcol:'#fff',size:34,life:1.2,max:1.2,color:cb.col})}
     addMastery(comboOf(s.id)?.school,1);
     lastCast={id:s.id,t:gt};
