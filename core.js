@@ -23,10 +23,33 @@ function fmt(n){
 const KEY='blade-road-v1';
 const freshLv=()=>({atk:0,spd:0,crit:0,critd:0,skill:0,spirit:0,archer:0,mage:0,greed:0});
 const fresh=()=>({gold:0,stage:1,kills:0,maxStage:1,best:1,farm:false,farmKills:0,lv:freshLv(),souls:0,auto:true,sound:true,t:Date.now(),totalKills:0,
-  relics:{},ach:{},title:'',equip:null,maxCombo:0,bossKills:0,parries:0,legends:0,rebirths:0,combos:0,awakes:0,eclBoss:0,pulls:0});
+  relics:{},ach:{},title:'',equip:null,maxCombo:0,bossKills:0,parries:0,legends:0,rebirths:0,combos:0,awakes:0,eclBoss:0,pulls:0,
+  awk:{},daily:{key:'',done:false},dailyWins:0,phase2:0});
 let S=fresh();
-function load(d){try{const raw=d||JSON.parse(localStorage.getItem(KEY)||'null');if(raw){S=Object.assign(fresh(),raw);S.lv=Object.assign(freshLv(),raw.lv||{});S.relics=Object.assign({},raw.relics||{});S.ach=Object.assign({},raw.ach||{});}}catch(e){}}
-function save(){S.t=Date.now();try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+function load(d){try{const raw=d||JSON.parse(localStorage.getItem(KEY)||'null');if(raw){S=Object.assign(fresh(),raw);S.lv=Object.assign(freshLv(),raw.lv||{});S.relics=Object.assign({},raw.relics||{});S.ach=Object.assign({},raw.ach||{});S.awk=Object.assign({},raw.awk||{});S.daily=Object.assign({key:'',done:false},raw.daily||{});}}catch(e){}}
+function save(){S.t=Date.now();const out=CH?Object.assign({},S,CH.saved):S;try{localStorage.setItem(KEY,JSON.stringify(out))}catch(e){}}
+
+/* ================= daily challenge ================= */
+let CH=null;
+const DMODS=[
+  {id:'crit',n:'급소만 노려라',d:'치명타가 아닌 피해 -85%',c:'#ff6fb5'},
+  {id:'seal',n:'봉인된 비기',d:'장착한 앞쪽 2개 스킬만 사용 가능',c:'#9d95c4'},
+  {id:'fury',n:'광폭한 보스',d:'보스가 2배 자주 공격 · 패링 반격 피해 2배',c:'#ff4f5e'},
+  {id:'glass',n:'유리 대포',d:'주는 피해 3배 · 한 번 기절하면 실패',c:'#7fe8ff'},
+  {id:'chain',n:'끝없는 연계',d:'연계 시간 16초 · 연계기 피해 2배',c:'#ffd166'},
+  {id:'spirit',n:'검령 축제',d:'검령 6기 · 검령 피해 3배 · 기사 피해 절반',c:'#6ff2ff'},
+];
+function todayKey(){const d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()}
+function dailyMods(){let s=7;for(const ch of todayKey())s=(s*31+ch.charCodeAt(0))>>>0;const r=()=>{s=(s*1664525+1013904223)>>>0;return s/4294967296};
+  const a=Math.floor(r()*DMODS.length);let b=Math.floor(r()*(DMODS.length-1));if(b>=a)b++;return[DMODS[a],DMODS[b]]}
+const hasMod=id=>!!CH&&CH.mods.some(x=>x.id===id);
+const dailyDone=()=>S.daily.key===todayKey()&&S.daily.done;
+const chStage=()=>Math.max(5,Math.floor(S.best*.8/5)*5);
+const bossTime=()=>CH?60:30+3*rv('sand');
+function chMul(src,crit,o){if(!CH)return 1;let k=1;
+  if(hasMod('crit')&&!crit&&src!=='spirit')k*=.15;if(hasMod('glass'))k*=3;
+  if(hasMod('spirit')&&(src==='hero'||src==='tap'))k*=.5;if(hasMod('spirit')&&src==='spirit')k*=3;
+  if(hasMod('chain')&&o.sid==='combo')k*=2;if(hasMod('fury')&&o.name==='반격')k*=2;return k}
 
 const KPS=8;
 const isBoss=s=>s%5===0;
@@ -72,6 +95,8 @@ const ACH=[
   {id:'reb',name:'다시 걷는 길',title:'윤회자',desc:'환생 1회',p:()=>[S.rebirths,1]},
   {id:'cmb',name:'합의 극의',title:'연계의 달인',desc:'연계기 5회 발동',p:()=>[S.combos,5]},
   {id:'awk',name:'천검',title:'천검의 주인',desc:'각성 10회 발동',p:()=>[S.awakes,10]},
+  {id:'ph2',name:'진노를 넘어',title:'분노 진압자',desc:'2페이즈 보스 10회 처치',p:()=>[S.phase2,10]},
+  {id:'dly',name:'시련의 길',title:'시련 돌파자',desc:'일일 도전 3회 성공',p:()=>[S.dailyWins,3]},
 ];
 
 /* ================= stats ================= */
@@ -79,7 +104,7 @@ function stats(lv=S.lv){
   const soul=1+0.1*S.souls,am=1+.03*Object.keys(S.ach).length;
   const atk=4*(1+lv.atk)*Math.pow(1.08,lv.atk)*soul*(1+.06*rv('whet'))*(1+.25*rv('crown'))*am;
   return{atk,aps:(1.2+0.12*lv.spd)*(1+.03*rv('boots')),cc:Math.min(.8,.05+.02*lv.crit+.02*rv('hawk')),cm:2+.3*lv.critd,
-    sn:Math.min(6,lv.spirit),sd:lv.spirit?atk*.35*(1+.15*(lv.spirit-1)):0,
+    sn:hasMod('spirit')?6:Math.min(6,lv.spirit),sd:atk*.35*(1+.15*Math.max(0,lv.spirit-1))*(lv.spirit||hasMod('spirit')?1:0),
     ar:lv.archer?atk*.3*Math.pow(lv.archer,.9):0,mg:lv.mage?atk*1.4*Math.pow(lv.mage,.9):0,
     gm:(1+.2*lv.greed)*soul*(1+.08*rv('coin')),sk:(1+.25*lv.skill)*(1+.4*rv('abyss')),
     cdm:Math.max(.6,1-.05*rv('frost')),gg:1+.25*rv('shard')};
@@ -159,6 +184,7 @@ const sfx={
   open(r){const base=[523,659,784,988][r];for(let i=0;i<3+r*2;i++)tone(r>2?'square':'triangle',base*Math.pow(1.26,i%5)*(i>4?2:1),base*Math.pow(1.26,i%5)*(i>4?2:1),.18,.07,i*.07);if(r>2)noise(1.2,.2,6000,.5,'highpass',.2)},
   cutin(){noise(.35,.4,2500,.6);tone('sawtooth',300,1200,.3,.07)},
   siren(){for(let i=0;i<3;i++){tone('sawtooth',420,880,.28,.07,i*.56);tone('sawtooth',880,420,.28,.07,i*.56+.28)}},
+  beat(){tone("sine",70,38,.28,.9);noise(.15,.3,120,.8,"lowpass")},
   link(){[784,1047,1319].forEach((f,i)=>tone('triangle',f,f,.12,.08,i*.05))},
 };
 
@@ -192,7 +218,8 @@ function makeMonster(s,mini){
     sh:0,shMax:0,split:false,atkT:3.5,pat:null,stun:0,lastSrc:''};
   if(!boss&&!mini){if(type===0&&s>=4&&Math.random()<.3)o.split=true;if(s>=8&&Math.random()<.18)o.shMax=o.sh=hp*.5}
   if(boss&&s>=10)o.shMax=o.sh=hp*.25;
-  o.name=mini?'작은 슬라임':(boss?'군주 ':'')+(o.split?'분열하는 ':'')+(o.shMax&&!boss?'가호받은 ':'')+PRE[(s+type)%PRE.length]+' '+TYPES[type];
+  if(boss&&CH){o.hp=o.max=o.chip=hp*1.5;o.shMax=o.sh=o.shMax*1.5}
+  o.name=mini?'작은 슬라임':(boss&&CH?'시련의 ':'')+(boss?'군주 ':'')+(o.split?'분열하는 ':'')+(o.shMax&&!boss?'가호받은 ':'')+PRE[(s+type)%PRE.length]+' '+TYPES[type];
   return o;
 }
 function mCenter(o){const r=o.rb*U,b=Math.sin(gt*2+o.ph)*6*U;
@@ -266,6 +293,7 @@ function heroStrike(tap){
 
 function deal(d,crit,src,x,y,o={}){
   if(!fighting())return;
+  d*=chMul(src,crit,o);
   const light=o.light||src==='spirit'||src==='ally',heavy=o.heavy;
   let col=o.col||(src==='spirit'?'#8ff6ff':src==='ally'?'#c8ffb0':crit?'#ffe066':'#ffffff');
   if(m.sh>0){m.sh-=d;col='#7fe8ff';if(Math.random()<.5)P.push({t:'ring',x,y,r0:6*U,r1:40*U,w:3*U,life:.2,max:.2,color:'#7fe8ff'});
@@ -316,10 +344,11 @@ function killFx(o){
 function kill(){
   const o=m,b=o.boss;o.hp=0;
   if(b){o.state='split';o.deadT=0;o.cutA=rnd(-.7,-.25);o.fx=0;stop=Math.max(stop,.32);addTrauma(.5);flash(.7);sfx.slash2();slowT=1.2;
-    S.bossKills++;if(o.lastSrc==='eclipse')S.eclBoss++;}
+    S.bossKills++;if(o.lastSrc==='eclipse')S.eclBoss++;if(o.enraged)S.phase2++;}
   else{o.state='dead';o.deadT=0;stop=Math.max(stop,.1);addTrauma(.55);zoom+=.07*FXS;flash(.35);killFx(o)}
   if(o.split){miniQ=2;miniX=mCenter(o).x}
   S.totalKills++;
+  if(CH){if(b)chWin(o);stageUI();return}
   const prevBest=S.best;
   if(!o.mini){
     if(b){S.stage++;S.kills=0;stageBanner()}
@@ -352,6 +381,35 @@ function retryBoss(){
   stageBanner();stageUI();
 }
 function bossFail(){
+  if(CH){chFail('제한 시간 안에 쓰러뜨리지 못했습니다');return}
   m.state='flee';m.pat=null;S.farm=true;S.farmKills=0;S.stage=Math.max(1,S.stage-1);S.kills=0;
   banner('시간 초과','검을 더 벼리고 다시 도전하자','#9d95c4',2);stageUI();
+}
+
+/* ================= daily challenge flow ================= */
+function startChallenge(){
+  if(CH||dailyDone())return false;
+  const st=chStage();
+  CH={mods:dailyMods(),saved:{stage:S.stage,kills:S.kills,farm:S.farm,farmKills:S.farmKills},stage:st,win:false};
+  S.stage=st;S.farm=false;S.kills=0;BI=null;miniQ=0;
+  if(m&&m.state!=='dead'&&m.state!=='split'){m.state='flee';m.pat=null;m.yo=0}else{m=null;spawnT=.4}
+  for(const s of SK)cds[s.id]=0;lastCast=null;pendingCombo=null;ST=stats();
+  banner('일일 도전 · 시련',CH.mods.map(x=>x.n).join('  ·  '),'#ffd166',2.2);sfx.fanfare();
+  stageUI();chUI();return true;
+}
+function chWin(o){
+  CH.win=true;S.daily={key:todayKey(),done:true};S.dailyWins++;
+  const c=mCenter(o),g=goldDrop(CH.stage)*25*ST.gm;
+  for(let i=0;i<30;i++)C.push({x:c.x,y:c.y,vx:rnd(-400,500)*U,vy:rnd(-900,-400)*U,ph:0,wait:rnd(.5,1),spin:rnd(0,6),v:g/30});
+  banner('시련 돌파!','보상: 골드 +'+fmt(g)+' · 희귀 등급 이상 유물','#ffd166',2.6);sfx.fanfare();
+}
+function chFail(msg){
+  if(!CH)return;
+  banner('시련 실패',msg+' · 오늘 안에 다시 도전할 수 있어요','#9d95c4',2.4);sfx.hurt();
+  if(m&&m.state!=='dead'&&m.state!=='split'){m.state='flee';m.pat=null}
+  endChallenge();
+}
+function endChallenge(){
+  if(!CH)return;const sv=CH.saved;CH=null;Object.assign(S,sv);ST=stats();
+  for(const s of SK)cds[s.id]=0;BI=null;stageUI();chUI();save();
 }
