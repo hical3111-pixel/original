@@ -663,7 +663,7 @@ const COMBOS=[
   {a:'archers',b:'wolf',name:'사냥의 밤',fn:comboHunt,col:'#7fd8ff',d:'달빛 아래 화살비가 적을 묶고, 그림자 늑대 셋이 번갈아 물어뜯는다.'},
   {a:'hands',b:'skulls',name:'망자의 연회',fn:comboFeast,col:'#c9a8ff',d:'거대한 그림자 손이 적을 움켜쥐고, 해골 망령 열 개가 차례로 파고든다.'},
   {a:'whip',b:'dslash',name:'업화 난무',fn:comboPyre,col:'#ffa05a',d:'불꽃 채찍이 사방으로 휘몰아친 뒤, 거대한 참격파 두 줄기가 X자로 교차한다.'},
-  {a:'spear',b:'thunder',name:'뇌신 강림',fn:comboThunderGod,col:'#ffe853',d:'박힌 뇌창이 피뢰침이 되어 연속 낙뢰를 부르고, 번개 폭풍으로 대폭발을 일으킨다.'},
+  {a:'spear',b:'thunder',name:'뇌신 강림',fn:comboThunderGod,col:'#ffe853',keep:{get:()=>thunderSpear(),ready:1.2,release:releaseSpear},d:'박힌 뇌창이 피뢰침이 되어 연속 낙뢰를 부르고, 번개 폭풍으로 대폭발을 일으킨다.'},
   {a:'gravity',b:'meteor',name:'천붕',fn:comboSkyfall,col:'#ff9470',keep:{get:()=>gravityWell(),ready:1.8,release:releaseGravity},d:'중력 구속의 남은 구체가 운석을 휘어 끌어당긴다. 같은 구체와 충돌해 하얀 중심의 대폭발을 일으킨다.'}];
 const comboWin=()=>hasMod('chain')?16:8;
 let lastCast=null,pendingCombo=null;
@@ -1117,11 +1117,20 @@ function castUpper(pm){
   },end(){h.ox=null;h.oy=0;h.lean=0}});
 }
 
+function thunderSpear(){return FX.find(o=>o.thunderSpear&&!o.collapse&&!o.consumed)}
+function spearPoint(o){return{x:o.sp?o.sp.x:monX,y:o.sp?o.sp.y:groundY-50*U}}
+function releaseSpear(o){
+  if(o.collapse)return;o.collapse=true;o.dur=o.t+.35;sfx.glass();
+  const p=spearPoint(o);
+  for(let i=0;i<8;i++)P.push({t:'shard',x:p.x,y:p.y,vx:rnd(-220,220)*U,vy:rnd(-260,80)*U,g:1200*U,drag:1,floor:1,size:rnd(3,7)*U,rot:rnd(0,6),vr:rnd(-10,10),life:.5,max:.5,color:i%2?'#444a56':'#ffe853'});
+  for(let i=0;i<4;i++)P.push({t:'spark',x:p.x,y:p.y,vx:rnd(-100,100)*U,vy:rnd(-100,100)*U,w:2*U,life:.2,max:.2,color:'#5ce1e6'});
+}
 function castSpear(pm){
-  const TR=tier(),c0=mCenter(m),R=m?m.rb*U:44*U,ox=heroX+50*U,oy=groundY-65*U;
-  castLock=1.4;sfx.charge();h.ang=-.35;h.lunge=-8;
+  const TR=tier(),c0=m?mCenter(m):{x:monX,y:groundY-50*U},target=m,R=m?m.rb*U:44*U,ox=heroX+50*U,oy=groundY-65*U;
+  castLock=1.2;sfx.charge();h.ang=-.35;h.lunge=-8;
   const sp={x:ox,y:oy,ang:0,st:0,t0:0,rx:0,ry:0,tx:c0.x,ty:c0.y};
-  addFX({dur:1.4,up(dt,o){const t=o.t,c=m?mCenter(m):c0;castLock=Math.max(castLock,.05);
+  return addFX({thunderSpear:1,sp,pm,dur:1.55,up(dt,o){const t=o.t,c=m?mCenter(m):c0;
+    if(t<1.15){castLock=Math.max(castLock,.05)}
     if(t<.15){sp.x=ox;sp.y=oy;sp.ang=Math.atan2(c.y-oy,c.x-ox);
       if(Math.random()<dt*50)P.push({t:'spark',x:ox+rnd(-15,15)*U,y:oy+rnd(-15,15)*U,vx:rnd(-100,100)*U,vy:rnd(-100,100)*U,w:2*U,life:.2,max:.2,color:'#5ce1e6'});
       at(o,.02,()=>{P.push({t:'ring',x:ox,y:oy,r0:45*U,r1:5*U,w:3*U,life:.2,max:.2,color:'#ffe853'});P.push({t:'star',x:ox,y:oy,size:40*U,life:.14,max:.14})})}
@@ -1135,18 +1144,24 @@ function castSpear(pm){
       P.push({t:'star',x:c.x,y:c.y,size:120*U,life:.16,max:.16});
       P.push({t:'ring',x:c.x,y:c.y,r0:8*U,r1:120*U,w:6*U,life:.3,max:.3,color:'#ffe853'});
       skillHit(2.8+TR*.4,pm,c.x,c.y,{col:'#ffe853',sid:'spear'})}
-    else if(sp.st===2){sp.x=c.x+sp.rx;sp.y=c.y+sp.ry;
+    else if(sp.st===2){
+      if(m&&m===target&&fighting()){sp.x=c.x+sp.rx;sp.y=c.y+sp.ry}
       for(const [atT,dmg] of [[.52,.6],[.72,.6],[.92,.7]])at(o,atT,()=>{sfx.zap();addTrauma(.12);
         P.push({t:'bolt',pts:genBolt(sp.x+rnd(-20,20)*U,sp.y-35*U,sp.x+rnd(-40,40)*U,sp.y+rnd(-25,25)*U),life:.22,max:.22});
         P.push({t:'spark',x:sp.x,y:sp.y,vx:rnd(-180,180)*U,vy:rnd(-180,90)*U,w:3*U,life:.22,max:.22,color:'#5ce1e6'});
         skillHit(dmg+TR*.1,pm,c.x,c.y,{light:1,col:'#70e0ff',sid:'spear'})});
-      at(o,1.15,()=>{sp.st=3;sfx.boom();addTrauma(.4);flash(.4,'210,240,255');stop=Math.max(stop,.08);
+      at(o,1.15,()=>{sfx.boom();addTrauma(.4);flash(.4,'210,240,255');stop=Math.max(stop,.08);
         burst(c.x,c.y,['#ffe853','#5ce1e6','#ffffff'],28,1350);
         P.push({t:'ring',x:c.x,y:c.y,r0:10*U,r1:150*U,w:7*U,life:.32,max:.32,color:'#5ce1e6'});
-        skillHit(3.5+TR*.5,pm,c.x,c.y,{heavy:1,name:'뇌창 투척',col:'#ffe853',fc:'210,240,255',crack:1,sid:'spear'})})}
-  },draw(o){const t=o.t;if(sp.st===3)return;
-    const al=t>1.15?Math.max(0,1-(t-1.15)/.15):1,gl=sp.st===2?1.2:.8;
-    drawSpear(sp.x,sp.y,sp.ang,85*U,al,gl)},
+        skillHit(3.5+TR*.5,pm,c.x,c.y,{heavy:1,name:'뇌창 투척',col:'#ffe853',fc:'210,240,255',crack:1,sid:'spear'})});
+      if(t>=1.2&&!o.collapse&&!o.consumed&&!o.claimed){
+        if(Math.random()<dt*8)P.push({t:'spark',x:sp.x+rnd(-12,12)*U,y:sp.y+rnd(-12,12)*U,vx:rnd(-60,60)*U,vy:rnd(-60,60)*U,w:2*U,life:.2,max:.2,color:'#5ce1e6'});
+        if(Math.random()<dt*2)P.push({t:'bolt',pts:genBolt(sp.x+rnd(-10,10)*U,sp.y-18*U,sp.x+rnd(-18,18)*U,sp.y+rnd(-10,10)*U),life:.16,max:.16})}
+    }
+  },draw(o){if(o.consumed)return;
+    const fade=o.collapse?clamp((o.dur-o.t)/.35,0,1):1;if(fade<=0)return;
+    const gl=o.collapse?0:(o.claimed?2+Math.sin(o.t*20)*.5:(sp.st===2?1.2+Math.sin(o.t*6)*.2:.8));
+    drawSpear(sp.x,sp.y,sp.ang,85*U,fade,gl)},
   end(){h.ang=0;h.lunge=0}});
 }
 
@@ -1251,35 +1266,40 @@ function comboRefract(pm=1){
         for(const [col,lw] of [[i%2?'#b7a6ff':'#7dff5a',7],['#fff',2]]){ctx.strokeStyle=col;ctx.lineWidth=lw*U*f;ctx.beginPath();ctx.moveTo(px,py);ctx.quadraticCurveTo(cx,cy,c.x,c.y);ctx.stroke()}}
       ctx.globalCompositeOperation='source-over'}}});
 }
-function comboThunderGod(pm=1){
+function comboThunderGod(pm=1,spear=null){
   castLock=2.5;const c0=mCenter(m),R=m?m.rb*U:44*U;
-  addFX({dur:2.5,up(dt,o){const t=o.t,c=m?mCenter(m):c0;dimT=Math.max(dimT,.75);tintA=Math.max(tintA,.18);tintC='30,60,110';castLock=Math.max(castLock,.05);
-    at(o,.05,()=>{sfx.whoosh();sfx.land();addTrauma(.4);burst(c.x,c.y,['#ffe853','#5ce1e6','#fff'],25,1200);rubble(c.x,R*1.5,6);
-      skillHit(2,pm,c.x,c.y,{light:1,col:'#ffe853',sid:'combo'})});
+  if(spear){spear.claimed=true;spear.dur=spear.t+2.6}
+  addFX({dur:2.5,spear,up(dt,o){const t=o.t,c=m?mCenter(m):c0;dimT=Math.max(dimT,.75);tintA=Math.max(tintA,.18);tintC='30,60,110';castLock=Math.max(castLock,.05);
+    const sx=spear?spear.sp.x:c.x,sy=spear?spear.sp.y:c.y;
+    at(o,.05,()=>{sfx.whoosh();sfx.land();addTrauma(.4);burst(sx,sy,['#ffe853','#5ce1e6','#fff'],25,1200);rubble(sx,R*1.5,6);
+      skillHit(2,pm,sx,sy,{light:1,col:'#ffe853',sid:'combo'})});
     for(const [atT,dmg] of [[.35,.9],[.55,.9],[.75,1],[.95,1]])at(o,atT,()=>{sfx.thunder();sfx.zap();addTrauma(.35);flash(.35,'210,240,255');
-      P.push({t:'bolt',pts:genBolt(c.x+rnd(-25,25)*U,-20,c.x,c.y-45*U),life:.25,max:.25});
-      P.push({t:'bolt',pts:genBolt(c.x,c.y-45*U,c.x+rnd(-70,70)*U,groundY),life:.22,max:.22});
-      burst(c.x,c.y,['#5ce1e6','#ffe853','#fff'],14,950);rubble(c.x,R,3);
-      skillHit(dmg,pm,c.x,c.y,{light:1,col:'#70e0ff',sid:'combo'})});
-    at(o,1.35,()=>{desat=Math.max(desat,.3);invertT=.08;flash(.85,'220,245,255');stop=Math.max(stop,.16);addCrack(c.x,c.y,true);
-      sfx.bigboom();sfx.thunder();sfx.beam();
-      P.push({t:'bolt',pts:genBolt(c.x-90*U,-30,c.x,c.y),life:.4,max:.4});
-      P.push({t:'bolt',pts:genBolt(c.x+90*U,-30,c.x,c.y),life:.4,max:.4});
-      P.push({t:'bolt',pts:genBolt(c.x,-30,c.x,c.y),life:.45,max:.45});
-      ink(c.x,c.y,28,'#060a18');rubble(c.x,R*2.4,12);
-      burst(c.x,c.y,['#ffe600','#5ce1e6','#ffffff','#22223a'],65,1800);
-      P.push({t:'star',x:c.x,y:c.y,size:260*U,life:.2,max:.2});
-      P.push({t:'ring',x:c.x,y:groundY,r0:10*U,r1:280*U,w:12*U,sy:.25,life:.5,max:.5,color:'#ffe600'});
-      P.push({t:'ring',x:c.x,y:c.y,r0:10*U,r1:220*U,w:9*U,life:.4,max:.4,color:'#5ce1e6'});
-      P.push({t:'glow',x:c.x,y:c.y,size:300*U,life:.45,max:.45,color:'#ffe600'});
-      skillHit(10,pm,c.x,c.y,{heavy:1,name:'뇌신 강림',col:'#ffe600',fc:'220,245,255',crack:2,sid:'combo'})});
-  },draw(o){const t=o.t,c=m?mCenter(m):c0,al=t>1.35?Math.max(0,1-(t-1.35)/.35):1;
-    if(al>0){const sy=c.y-10*U,k=Math.min(1,t/.08),y=lerp(-60*U,sy,easeIn(k));
-      drawSpear(c.x,y,Math.PI/2,100*U,al,1.2+t*1.2)}
+      P.push({t:'bolt',pts:genBolt(sx+rnd(-25,25)*U,-20,sx,sy-25*U),life:.25,max:.25});
+      P.push({t:'bolt',pts:genBolt(sx,sy-25*U,sx+rnd(-70,70)*U,groundY),life:.22,max:.22});
+      burst(sx,sy,['#5ce1e6','#ffe853','#fff'],14,950);rubble(sx,R,3);
+      skillHit(dmg,pm,sx,sy,{light:1,col:'#70e0ff',sid:'combo'})});
+    at(o,1.35,()=>{desat=Math.max(desat,.3);invertT=.08;flash(.85,'220,245,255');stop=Math.max(stop,.16);addCrack(sx,sy,true);
+      if(spear)spear.consumed=true;
+      sfx.bigboom();sfx.thunder();sfx.beam();sfx.glass();
+      for(let i=0;i<16;i++)P.push({t:'shard',x:sx,y:sy,vx:rnd(-500,500)*U,vy:rnd(-600,100)*U,g:1400*U,drag:1,floor:1,size:rnd(4,10)*U,rot:rnd(0,6),vr:rnd(-12,12),life:.9,max:.9,color:i%2?'#444a56':'#ffe853'});
+      P.push({t:'bolt',pts:genBolt(sx-90*U,-30,sx,sy),life:.4,max:.4});
+      P.push({t:'bolt',pts:genBolt(sx+90*U,-30,sx,sy),life:.4,max:.4});
+      P.push({t:'bolt',pts:genBolt(sx,-30,sx,sy),life:.45,max:.45});
+      ink(sx,sy,28,'#060a18');rubble(sx,R*2.4,12);
+      burst(sx,sy,['#ffe600','#5ce1e6','#ffffff','#22223a'],65,1800);
+      P.push({t:'star',x:sx,y:sy,size:260*U,life:.2,max:.2});
+      P.push({t:'ring',x:sx,y:groundY,r0:10*U,r1:280*U,w:12*U,sy:.25,life:.5,max:.5,color:'#ffe600'});
+      P.push({t:'ring',x:sx,y:sy,r0:10*U,r1:220*U,w:9*U,life:.4,max:.4,color:'#5ce1e6'});
+      P.push({t:'glow',x:sx,y:sy,size:300*U,life:.45,max:.45,color:'#ffe600'});
+      skillHit(10,pm,sx,sy,{heavy:1,name:'뇌신 강림',col:'#ffe600',fc:'220,245,255',crack:2,sid:'combo'})});
+  },draw(o){const t=o.t,c=m?mCenter(m):c0,sx=spear?spear.sp.x:c.x;
+    if(!spear){const al=t>1.35?Math.max(0,1-(t-1.35)/.35):1;
+      if(al>0){const sy=c.y-10*U,k=Math.min(1,t/.08),y=lerp(-60*U,sy,easeIn(k));
+        drawSpear(c.x,y,Math.PI/2,100*U,al,1.2+t*1.2)}}
     if(t>=1.35&&t<1.7){const f=1-(t-1.35)/.35;ctx.save();ctx.globalCompositeOperation='lighter';
-      ctx.fillStyle='rgba(255,255,255,'+(.95*f)+')';ctx.fillRect(c.x-22*U*f,0,44*U*f,groundY);
-      ctx.fillStyle='rgba(255,230,0,'+(.6*f)+')';ctx.fillRect(c.x-60*U*f,0,120*U*f,groundY);
-      ctx.fillStyle='rgba(92,225,230,'+(.4*f)+')';ctx.fillRect(c.x-110*U*f,0,220*U*f,groundY);ctx.restore()}}});
+      ctx.fillStyle='rgba(255,255,255,'+(.95*f)+')';ctx.fillRect(sx-22*U*f,0,44*U*f,groundY);
+      ctx.fillStyle='rgba(255,230,0,'+(.6*f)+')';ctx.fillRect(sx-60*U*f,0,120*U*f,groundY);
+      ctx.fillStyle='rgba(92,225,230,'+(.4*f)+')';ctx.fillRect(sx-110*U*f,0,220*U*f,groundY);ctx.restore()}}});
 }
 
 /* ================= 중력 · 운석 ================= */

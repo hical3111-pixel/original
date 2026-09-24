@@ -64,6 +64,34 @@
     S.auto=false;S.equip=SK.slice(0,8).map(s=>s.id);buildBar();
   });
 
+  section('뇌창 투척 · 천뢰 낙하 · 뇌신 강림');
+  guard('뇌신 강림 keep 연계',()=>{
+    const tc=comboOf('spear'),ta=skOf('spear'),tb=skOf('thunder');
+    const reset=()=>{S=fresh();S.best=999;S.auto=false;S.sound=false;S.equip=['spear','thunder'];ST=stats();CH=null;BI=null;BF=null;FX=[];P=[];T=[];B=[];PR=[];C=[];relicQ=[];stop=0;slowT=0;castLock=0;frenzyT=0;gauge=0;lastCast=null;pendingCombo=null;spawnT=100;miniQ=0;
+      m=makeMonster(1);m.state='fight';m.x=monX;m.hp=m.max=1e15;atkT=1e6;for(const s of SK)cds[s.id]=0;buildBar()};
+    const until=fn=>{for(let i=0;i<1500&&!fn();i++)tick(1)};
+    ok(ta.unlock===44&&tb.unlock===48,'뇌창/천뢰 해금 스테이지');ok(ta.cd===18&&tb.cd===24,'뇌창/천뢰 기본 쿨타임');
+    reset();cds.thunder=30;ok(cast(ta),'뇌창 투척 실전 시전');const sp=thunderSpear();
+    ok(cds.thunder===PRIME_CD,'뇌창 투척 연계 준비 쿨타임');ok(activeLink()?.c===tc,'뇌신 강림 연계 창');
+    until(()=>castLock<=0);ok(thunderSpear()===sp&&FX.includes(sp),'시작 연출 종료 후 박힌 창 유지');ok(!sp.collapse,'연계 대기 중 창 붕괴 금지');
+    until(()=>gt-lastCast.t>=7.8);cds.thunder=0;gauge=0;const cd=cds.spear;
+    ok(cast(tb),'8초 직전 수동 천뢰 연계');ok(pendingCombo===tc,'뇌신 강림 예약');ok(Math.abs(cds.spear-cd*.5)<1e-9,'시작 스킬 쿨타임 절반 보상');ok(gauge===20*ST.gg,'각성 게이지 연계 보상');
+    until(()=>sp.claimed);const god=FX.find(o=>o.spear===sp);ok(god?.spear===sp,'뇌신 강림이 박힌 동일 창 인계');
+    ok(FX.filter(o=>o.thunderSpear).length===1,'창 중복 소환 금지');
+    until(()=>sp.consumed);ok(sp.consumed&&stop>=.16,'번개 폭풍 적중 시 창 소모와 히트스톱');ok(S.combos===1,'뇌신 강림 발동 횟수');tick(200);ok(!thunderSpear()&&castLock<=0,'뇌신 강림 종료 정리');
+    reset();cast(ta);const autoSp=thunderSpear();cds.thunder=PRIME_CD;S.auto=true;until(()=>autoSp.claimed);S.auto=false;
+    ok(autoSp.claimed&&S.combos===1,'자동 뇌신 강림 창 인계');
+    reset();cast(ta);const expired=thunderSpear();tick(550);ok(!FX.includes(expired),'8초 만료 시 창 전기를 잃고 붕괴/제거');
+    reset();cast(ta);until(()=>castLock<=0);cast(skOf('dash'));tick(40);ok(!thunderSpear(),'다른 스킬로 연계 중단 시 창 정리');
+    reset();S.best=44;cast(ta);tick(160);ok(!thunderSpear(),'천뢰 미해금 시 창 붕괴');
+    reset();cast(ta,true);tick(160);ok(!thunderSpear(),'뇌창 단독 시연 종료 후 창 붕괴');
+    reset();CH={mods:[DMODS.find(x=>x.id==='chain')]};cast(ta);const longSp=thunderSpear();until(()=>gt-lastCast.t>=15.7);
+    ok(thunderSpear()===longSp&&activeLink()?.left>0,'일일 도전 16초 연계 창 동안 동일 창 유지');cast(tb);until(()=>longSp.claimed);ok(longSp.claimed,'16초 직전 뇌신 강림 인계');
+    reset();cast(ta);const lost=thunderSpear();m=null;lastCast=null;tick(180);ok(!FX.includes(lost),'대상 소멸/연계 초기화 시 안전 정리');
+    reset();ok(previewCombo(tc),'뇌신 강림 전체 과정 시연');const demoSp=thunderSpear();tick(300);
+    ok(demoSp.claimed&&demoSp.consumed,'뇌신 강림 시연도 시작 창을 인계/소모');
+  });
+
   section('중력 구속 · 운석 낙하 · 천붕');
   guard('중력 연계',()=>{
     const gc=comboOf('gravity'),ga=skOf('gravity'),gb=skOf('meteor');
