@@ -1,9 +1,9 @@
 'use strict';
 /* 구조 자가 점검 — 주소 뒤에 ?selftest 를 붙이면 index.html이 이 파일을 불러온다.
    저장을 끄고 새 상태에서 모든 스킬·연계기·각성기·보스·도전을 실제로 돌려 본 뒤 결과를 화면에 띄운다.
-   결과는 window.__selftest 에도 남는다: {pass, fail, lines}. 규칙은 AGENTS.md 참고. */
+   결과는 window.__selftest 에도 남는다: {pass, fail, lines, elapsedMs}. 규칙은 AGENTS.md 참고. */
 (()=>{
-  const lines=[];let pass=0,fail=0;
+  const startedAt=performance.now(),lines=[];let pass=0,fail=0;
   const ok=(cond,msg)=>{if(cond){pass++}else{fail++;lines.push('✗ '+msg)}};
   const section=name=>lines.push('— '+name);
   const tick=n=>{for(let i=0;i<n;i++){update(1/60);render()}};
@@ -59,6 +59,79 @@
     ok(!!pendingCombo&&pendingCombo===tc,'자동 스킬에서 뇌신 강림 발동 실패');
     tickCombo();ok(castLock>0,'뇌신 강림 시전 잠금 미적용');tick(300);
     S.auto=false;S.equip=SK.slice(0,8).map(s=>s.id);buildBar();
+  });
+
+  section('중력 구속 · 운석 낙하 · 천붕');
+  guard('중력 연계',()=>{
+    const gc=comboOf('gravity'),ga=skOf('gravity'),gb=skOf('meteor');
+    const reset=()=>{S=fresh();S.best=999;S.auto=false;S.sound=false;S.equip=['gravity','meteor'];ST=stats();CH=null;BI=null;BF=null;FX=[];P=[];T=[];B=[];PR=[];C=[];relicQ=[];stop=0;slowT=0;castLock=0;frenzyT=0;gauge=0;lastCast=null;pendingCombo=null;spawnT=100;miniQ=0;
+      m=makeMonster(1);m.state='fight';m.x=monX;m.hp=m.max=1e15;atkT=1e6;for(const s of SK)cds[s.id]=0;buildBar()};
+    const until=fn=>{for(let i=0;i<1500&&!fn();i++)tick(1)};
+    ok(ga.unlock===52&&gb.unlock===56,'중력/운석 해금 스테이지');ok(ga.cd===20&&gb.cd===26,'중력/운석 기본 쿨타임');
+    reset();cds.meteor=30;ok(cast(ga),'중력 구속 실전 시전');const well=gravityWell(),pos=gravityPoint(well);
+    ok(cds.meteor===PRIME_CD,'중력 구속 연계 준비 쿨타임');ok(activeLink()?.c===gc,'천붕 연계 창');
+    until(()=>well.t>=1.4);ok(m.sq>.2&&m.ly>0,'중력 구속의 찌그러짐/지면 침하');
+    until(()=>castLock<=0);ok(gravityWell()===well&&FX.includes(well),'시작 연출 종료 후 동일 구체 유지');ok(!well.collapse,'연계 대기 중 구체 붕괴 금지');
+    until(()=>gt-lastCast.t>=7.8);cds.meteor=0;gauge=0;const cd=cds.gravity;
+    ok(cast(gb),'8초 직전 수동 운석 연계');ok(pendingCombo===gc,'천붕 예약');ok(Math.abs(cds.gravity-cd*.5)<1e-9,'시작 스킬 쿨타임 절반 보상');ok(gauge===20*ST.gg,'각성 게이지 연계 보상');
+    until(()=>well.claimed);const flight=FX.find(o=>o.meteorFlight);ok(flight?.well===well,'운석이 시작 스킬의 동일 구체 인계');
+    ok(FX.filter(o=>o.gravityWell).length===1&&FX.filter(o=>o.meteorFlight).length===1,'구체/운석 중복 소환 금지');
+    ok(gravityPoint(well).x===pos.x&&gravityPoint(well).y===pos.y,'연계 인계 시 구체 좌표 연속성');
+    until(()=>flight.hit);ok(well.consumed&&stop>=.14,'충돌 시 구체 소모와 히트스톱');ok(S.combos===1,'천붕 발동 횟수');tick(200);ok(!gravityWell()&&castLock<=0,'천붕 종료 정리');
+    reset();cast(ga);const autoWell=gravityWell();cds.meteor=PRIME_CD;S.auto=true;until(()=>autoWell.claimed);S.auto=false;
+    ok(autoWell.claimed&&S.combos===1,'실제 잠금/쿨타임을 기다린 자동 천붕');ok(FX.find(o=>o.meteorFlight)?.well===autoWell,'자동 천붕의 구체 연속성');
+    reset();cast(ga);const expired=gravityWell();tick(550);ok(!FX.includes(expired),'8초 만료 시 구체 붕괴/제거');
+    cds.meteor=0;cast(gb);ok(!pendingCombo&&!FX.find(o=>o.meteorFlight)?.well,'시간 만료 후 운석 단독 발동');
+    reset();cast(ga);until(()=>castLock<=0);cast(skOf('dash'));tick(40);ok(!gravityWell(),'다른 스킬로 연계 중단 시 구체 정리');
+    reset();S.best=52;cast(ga);tick(160);ok(!gravityWell(),'운석 미해금 시 구체 붕괴');
+    reset();cast(ga,true);tick(160);ok(!gravityWell(),'중력 단독 시연 종료 후 구체 붕괴');
+    reset();CH={mods:[DMODS.find(x=>x.id==='chain')]};cast(ga);const longWell=gravityWell();until(()=>gt-lastCast.t>=15.7);
+    ok(gravityWell()===longWell&&activeLink()?.left>0,'일일 도전 16초 연계 창 동안 동일 구체 유지');cast(gb);until(()=>longWell.claimed);ok(longWell.claimed,'16초 직전 천붕 인계');
+    reset();cast(ga);const lost=gravityWell();m=null;lastCast=null;tick(180);ok(!FX.includes(lost),'대상 소멸/연계 초기화 시 안전 정리');
+    reset();cast(gb);m=null;tick(200);ok(FX.length===0&&castLock<=0,'운석 도중 몬스터 소멸 안전');
+    reset();cast(ga);FX=[];cds.meteor=0;castLock=0;cast(gb);ok(!pendingCombo,'FX 초기화 후 존재하지 않는 구체로 연계 금지');
+    // 실제 피해 경로에서 분기 A 및 시연 pm을 검증한다. 원래 함수를 반드시 복원한다.
+    const hit=skillHit,damage=deal;let hits=[],dealt=0;
+    try{
+      skillHit=function(mult,pm,x,y,o){hits.push({mult,pm,...o});return hit(mult,pm,x,y,o)};
+      deal=function(d,crit,src,x,y,o){if(src==='skill')dealt+=d;return damage(d,crit,src,x,y,o)};
+      for(const [s,total] of [[ga,9],[gb,13.5]])for(const b of [null,'a','b']){
+        reset();if(b)S.awk[s.id]=b;ST.cc=0;hits=[];dealt=0;cast(s,true);tick(200);
+        ok(Math.abs(hits.reduce((n,h)=>n+h.mult,0)-total)<1e-8&&hits.every(h=>h.pm===.1&&h.sid===s.id),s.id+(b||'')+': 피해 합계/시연 배율/id');
+        const expected=ST.atk*ST.sk*total*.1*(b==='a'?1.4:1);ok(dealt>=expected*.9&&dealt<=expected*1.1,s.id+(b||'')+': 실제 피해 및 A 분기');
+        ok(hits.at(-1)?.heavy&&hits.at(-1)?.name===s.name,s.id+(b||'')+': 마지막 강타 라벨');
+      }
+      for(const s of [ga,gb]){reset();S.awk[s.id]='b';cast(s);ok(Math.abs(cds[s.id]-s.cd*ST.cdm*.7)<1e-9,s.id+': B 분기 쿨타임')}
+      reset();hits=[];ok(previewCombo(gc),'천붕 전체 과정 시연');const demoWell=gravityWell();tick(300);
+      ok(demoWell.claimed&&demoWell.consumed,'천붕 시연도 시작 구체를 인계/소모');
+      ok(hits.every(h=>h.pm===.1)&&Math.abs(hits.reduce((n,h)=>n+h.mult,0)-38.5)<1e-8,'천붕 시연 9+13.5+16배, pm=0.1');
+      ok(hits.filter(h=>h.sid==='meteor').length===1&&hits.filter(h=>h.sid==='combo').length===1,'운석/연계 피해 중복 없음');
+      ok(hits.at(-1)?.name==='천붕'&&hits.at(-1)?.crack===2,'천붕 강타 이름/큰 균열');
+    }finally{skillHit=hit;deal=damage;reset()}
+    // 다른 스킬 쌍에도 데이터/훅만 붙여 동일한 인계 경로가 작동하는지 검증한다.
+    const other=comboOf('dash'),oa=skOf(other.a),ob=skOf(other.b),afn=oa.fn,bfn=ob.fn,cfn=other.fn;let transfer=null,standalone=0;
+    try{
+      other.keep={get:()=>FX.find(o=>o.testKept&&!o.collapse&&!o.consumed),ready:.1,release(o){o.collapse=true;o.dur=o.t+.05}};
+      oa.fn=pm=>addFX({testKept:1,dur:.2,up(dt,o){if(o.t<.1)castLock=Math.max(castLock,.05)}});
+      ob.fn=()=>standalone++;other.fn=(pm,o)=>{transfer={pm,o};o.consumed=true;o.dur=o.t+.1};
+      reset();cast(oa);const kept=other.keep.get();until(()=>castLock<=0);cast(ob);until(()=>!!transfer);
+      ok(transfer?.o===kept&&transfer?.pm===1,'다른 스킬 쌍 keep 훅의 동일 FX/실전 배율 인계');
+      ok(standalone===0&&S.combos===1,'keep 연계에서 마무리 스킬 중복 시전 방지');
+      reset();transfer=null;ok(previewCombo(other),'다른 스킬 쌍 keep 전체 시연');const demo=other.keep.get();until(()=>!!transfer);
+      ok(transfer?.o===demo&&transfer?.pm===.1,'keep 시연에서 시작 FX와 시연 배율 인계');
+      reset();cast(oa);FX=[];castLock=0;ok(!activeLink(),'keep FX 소멸 시 연계 안내 제거');cast(ob);
+      ok(!pendingCombo&&standalone===1,'keep FX 소멸 시 마무리 스킬 단독 발동');
+      reset();cast(oa);const interrupted=other.keep.get();lastCast=null;tick(20);
+      ok(interrupted.collapse&&!FX.includes(interrupted),'keep 연계 중단 시 release 훅 호출/정리');
+    }finally{oa.fn=afn;ob.fn=bfn;other.fn=cfn;delete other.keep;reset()}
+    // 3쌍 120초 자동 전투: 기존 기준 14/15보다 낮아지면 실패한다.
+    const originalCast=cast;let finish=0,linked=0;
+    try{S.equip=['spear','thunder','archers','wolf','gravity','meteor'];buildBar();S.auto=true;
+      cast=function(s,preview){const n=S.combos,result=originalCast(s,preview);if(result&&!preview&&COMBOS.some(c=>c.b===s.id)){finish++;if(pendingCombo||S.combos>n)linked++}return result};
+      const startTime=gt;for(let i=0;i<14400&&gt-startTime<120;i++)update(1/60);
+      ok(gt-startTime>=120,'자동 전투가 전투 시간 120초에 도달하지 못함');
+      ok(finish>=15&&linked/finish>=14/15,'3쌍 전투 시간 120초 자동 연계 비율: '+linked+'/'+finish);lines.push('자동 연계: '+linked+'/'+finish+' (전투 시간 120초)');
+    }finally{cast=originalCast;reset();S.equip=SK.slice(0,8).map(s=>s.id);buildBar()}
   });
 
   section('각성기');
@@ -126,9 +199,9 @@
   section('정리');
   guard('정리',()=>{tick(600);ok(FX.length===0,'연출이 끝나지 않고 남아 있음: '+FX.length+'개');ok(castLock<=0,'castLock이 풀리지 않음')});
 
-  const box=document.createElement('div');
+  const elapsedMs=performance.now()-startedAt,box=document.createElement('div');
   box.style.cssText='position:fixed;right:12px;top:12px;z-index:99;max-width:min(520px,92vw);max-height:80vh;overflow:auto;background:#0e0b1d;color:#f0ebff;border:2px solid '+(fail?'#ff4f5e':'#7cf29a')+';border-radius:12px;padding:14px;font:12px/1.6 "Noto Sans KR",sans-serif;white-space:pre-wrap';
-  box.textContent=(fail?'자가 점검 실패':'자가 점검 통과')+` · 통과 ${pass} · 실패 ${fail}\n`+lines.join('\n');
+  box.textContent=(fail?'자가 점검 실패':'자가 점검 통과')+` · 통과 ${pass} · 실패 ${fail} · ${(elapsedMs/1000).toFixed(1)}초\n`+lines.join('\n');
   document.body.appendChild(box);
-  window.__selftest={pass,fail,lines};console.log('[selftest]',pass,'pass',fail,'fail',lines.join('\n'));
+  window.__selftest={pass,fail,lines,elapsedMs};console.log('[selftest]',pass,'pass',fail,'fail',(elapsedMs/1000).toFixed(1)+'s',lines.join('\n'));
 })();

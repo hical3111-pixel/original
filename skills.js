@@ -663,21 +663,31 @@ const COMBOS=[
   {a:'archers',b:'wolf',name:'사냥의 밤',fn:comboHunt,col:'#7fd8ff',d:'달빛 아래 화살비가 적을 묶고, 그림자 늑대 셋이 번갈아 물어뜯는다.'},
   {a:'hands',b:'skulls',name:'망자의 연회',fn:comboFeast,col:'#c9a8ff',d:'거대한 그림자 손이 적을 움켜쥐고, 해골 망령 열 개가 차례로 파고든다.'},
   {a:'whip',b:'dslash',name:'업화 난무',fn:comboPyre,col:'#ffa05a',d:'불꽃 채찍이 사방으로 휘몰아친 뒤, 거대한 참격파 두 줄기가 X자로 교차한다.'},
-  {a:'spear',b:'thunder',name:'뇌신 강림',fn:comboThunderGod,col:'#ffe853',d:'박힌 뇌창이 피뢰침이 되어 연속 낙뢰를 부르고, 번개 폭풍으로 대폭발을 일으킨다.'}];
+  {a:'spear',b:'thunder',name:'뇌신 강림',fn:comboThunderGod,col:'#ffe853',d:'박힌 뇌창이 피뢰침이 되어 연속 낙뢰를 부르고, 번개 폭풍으로 대폭발을 일으킨다.'},
+  {a:'gravity',b:'meteor',name:'천붕',fn:comboSkyfall,col:'#ff9470',keep:{get:()=>gravityWell(),ready:1.8,release:releaseGravity},d:'중력 구속의 남은 구체가 운석을 휘어 끌어당긴다. 같은 구체와 충돌해 하얀 중심의 대폭발을 일으킨다.'}];
 const comboWin=()=>hasMod('chain')?16:8;
 let lastCast=null,pendingCombo=null;
 const skOf=id=>SK.find(s=>s.id===id);
 function comboReady(c){return unlocked(skOf(c.a))&&unlocked(skOf(c.b))}
 function activeLink(){
   if(!lastCast||pendingCombo||gt-lastCast.t>=comboWin())return null;
-  const c=COMBOS.find(c=>c.a===lastCast.id);if(!c||!comboReady(c))return null;
+  const c=COMBOS.find(c=>c.a===lastCast.id);if(!c||!comboReady(c)||(c.keep&&!c.keep.get()))return null;
   return{c,left:comboWin()-(gt-lastCast.t)};
 }
 function fireCombo(c,pm){
-  const a=skOf(c.a),b=skOf(c.b);
-  cutin(c.name,`${a.name} ＋ ${b.name}`,c.col,[a.c,b.c]);c.fn(pm);
+  const a=skOf(c.a),b=skOf(c.b),kept=c.keep&&c.keep.get();if(c.keep&&!kept)return false;
+  if(kept)kept.claimed=true;cutin(c.name,`${a.name} ＋ ${b.name}`,c.col,[a.c,b.c]);c.fn(pm,kept);return true;
 }
-function previewCombo(c){if(!fighting()||castLock>0)return false;fireCombo(c,.1);return true}
+function startKeptCombo(c,pm,demo=false){
+  const old=c.keep.get();if(old)c.keep.release(old);
+  const o=skOf(c.a).fn(pm),up=o.up;o.dur=Math.max(o.dur,comboWin()+c.keep.ready+1);
+  o.up=function(dt,o){if(up)up(dt,o);if(o.t<c.keep.ready||o.claimed||o.collapse)return;
+    if(demo){demo=false;fireCombo(c,pm)}
+    else{const live=pm===1&&lastCast&&lastCast.id===c.a&&gt-lastCast.t<comboWin()&&comboReady(c);
+      if(!live&&pendingCombo!==c)c.keep.release(o)}};
+  return o;
+}
+function previewCombo(c){if(!fighting()||castLock>0)return false;if(c.keep)startKeptCombo(c,.1,true);else fireCombo(c,.1);return true}
 
 /* ================= 유물 상자 ================= */
 let relicQ=[];
@@ -717,6 +727,8 @@ function relicFX(x,boss,min=0){
 
 /* ================= 스킬 목록 ================= */
 const IC={
+  gravity:'<svg viewBox="0 0 32 32"><circle cx="16" cy="12" r="8" fill="#050509" stroke="#c9c6df" stroke-width="2"/><ellipse cx="16" cy="12" rx="13" ry="4" fill="none" stroke="#fff"/><path d="M5 24l4-3 3 5-5 2zm17-3 5 2-2 6-5-3z" fill="#858593"/><path d="M16 21v8m-3-3 3 3 3-3" fill="none" stroke="#fff"/></svg>',
+  meteor:'<svg viewBox="0 0 32 32"><path d="M2 2l23 8 5 17-12 4L8 22z" fill="#b42e3b"/><path d="M6 5l20 12-2 10-10-5z" fill="#ff864e"/><path d="M10 9l12 10-4 4z" fill="#fff"/><path d="M19 17l8 3-1 8-9-2-3-5z" fill="#646471" stroke="#fff"/></svg>',
   whip:'<svg viewBox="0 0 32 32"><path d="M4 26c6-2 6-12 13-14s10 6 11-4" stroke="#ff8a2a" stroke-width="3" fill="none" stroke-linecap="round" stroke-dasharray="3 2"/><circle cx="28" cy="7" r="3" fill="#ffc04a"/></svg>',
   dslash:'<svg viewBox="0 0 32 32"><path d="M8 3c14 4 18 22 4 27 8-7 6-19-4-27z" fill="#ff5fb0"/><path d="M18 6c10 5 11 17 2 21 5-6 4-15-2-21z" fill="#ffd0e6"/></svg>',
   hands:'<svg viewBox="0 0 32 32"><path d="M10 31V16l-3-6 2-1 3 5V5h2v9-11h2v11-9h2v10l3-5 2 1-3 8v18z" fill="#07060e" stroke="#a58bff" stroke-width="1.2"/></svg>',
@@ -765,6 +777,8 @@ const SK=[
   {id:'upper',name:'진홍 승천격',unlock:40,cd:22,c:'#ff4f5e',fn:castUpper,d:'올려 베어 적을 띄우고, 공중에서 연타한 뒤 땅으로 내리꽂는다.'},
   {id:'spear',name:'뇌창 투척',unlock:44,cd:18,c:'#ffe853',fn:castSpear,d:'번개로 벼려낸 창을 던져 적에게 꽂고, 잔류 전격으로 연쇄 감전시킨다.'},
   {id:'thunder',name:'천뢰 낙하',unlock:48,cd:24,c:'#5ce1e6',fn:castThunder,d:'먹구름이 드리우고 하늘에서 거대한 낙뢰가 연달아 내리꽂힌다.'},
+  {id:'gravity',name:'중력 구속',unlock:52,cd:20,c:'#c9c6df',fn:castGravity,d:'검은 구체가 파편을 빨아들이고 적을 땅에 짓누른다. 연계 가능 중에는 구체가 남고, 연계가 끊기면 붕괴한다.'},
+  {id:'meteor',name:'운석 낙하',unlock:56,cd:26,c:'#ff9470',fn:castMeteor,d:'붉게 갈라진 하늘에서 불타는 운석이 대각선으로 낙하한다. 중력 구속 뒤에는 남은 구체로 휘어져 천붕을 일으킨다.'},
 ];
 SK.sort((a,b)=>a.unlock-b.unlock);
 const cds={};SK.forEach(s=>cds[s.id]=0);
@@ -777,7 +791,7 @@ const comboOf=id=>COMBOS.find(c=>c.a===id||c.b===id);
 function cast(s,preview){
   if(!canCast(s))return false;
   if(!preview){if(!unlocked(s)||cds[s.id]>0||sealed(s))return false;cds[s.id]=s.cd*ST.cdm*(BR[s.id]&&BR[s.id].gen&&br(s.id)==='b'?.7:1);
-    const cb=COMBOS.find(c=>lastCast&&c.a===lastCast.id&&c.b===s.id&&gt-lastCast.t<comboWin());
+    const cb=COMBOS.find(c=>lastCast&&c.a===lastCast.id&&c.b===s.id&&gt-lastCast.t<comboWin()&&(!c.keep||c.keep.get()));
     if(cb){pendingCombo=cb;sfx.link();
       cds[cb.a]*=.5;gauge=Math.min(100,gauge+20*ST.gg);
       T.push({x:heroX,y:groundY-140*U,vx:0,vy:-60*U,text:'연계!',crit:1,label:cb.name,lcol:'#fff',size:34,life:1.2,max:1.2,color:cb.col})}
@@ -785,7 +799,10 @@ function cast(s,preview){
     const nx=COMBOS.find(c=>c.a===s.id);
     if(nx&&comboReady(nx)){const b=skOf(nx.b);sfx.link();
       if(cds[b.id]>PRIME_CD){cds[b.id]=PRIME_CD;T.push({x:heroX,y:groundY-150*U,vx:0,vy:-50*U,text:'⛓ 연계 준비',crit:0,label:'',size:18,life:1,max:1,color:nx.col})}}}
-  s.fn(preview?.1:1);if(br(s.id))branchFX(s,preview?.1:1);if(!s.buff)castLock=Math.max(castLock,.1);return true;
+  const pm=preview?.1:1,c=comboOf(s.id);
+  if(!preview&&pendingCombo===c&&c.keep)castLock=Math.max(castLock,.1);
+  else if(c&&c.a===s.id&&c.keep)startKeptCombo(c,pm);else s.fn(pm);
+  if(br(s.id))branchFX(s,pm);if(!s.buff)castLock=Math.max(castLock,.1);return true;
 }
 function autoCast(){
   if(!fighting()||!S.auto)return;
@@ -805,7 +822,7 @@ function autoCast(){
     cast(s);return}
 }
 function tickCombo(){
-  if(pendingCombo&&castLock<=0&&fighting()){const cb=pendingCombo;pendingCombo=null;S.combos++;fireCombo(cb,1)}
+  if(pendingCombo&&castLock<=0&&fighting()){const cb=pendingCombo;pendingCombo=null;if(fireCombo(cb,1))S.combos++}
 }
 
 /* ================= 스킬 각성 분기 ================= */
@@ -1265,6 +1282,66 @@ function comboThunderGod(pm=1){
       ctx.fillStyle='rgba(92,225,230,'+(.4*f)+')';ctx.fillRect(c.x-110*U*f,0,220*U*f,groundY);ctx.restore()}}});
 }
 
+/* ================= 중력 · 운석 ================= */
+// 구체는 시작 스킬의 FX 자체다. 연계가 이 객체를 인계받으며 재소환하지 않는다.
+const gravityWell=()=>FX.find(o=>o.gravityWell&&!o.collapse&&!o.consumed);
+const gravityPoint=o=>({x:o.nx*W,y:groundY-o.alt*U});
+function drawGravity(o){
+  if(o.consumed)return;const c=gravityPoint(o),fade=o.collapse?clamp((o.dur-o.t)/.35,0,1):1,r=38*U*easeOut(Math.min(1,o.t/.35))*fade;if(r<=0)return;
+  ctx.save();ctx.translate(c.x,c.y);ctx.fillStyle='#06060b';ctx.beginPath();ctx.arc(0,0,r,0,7);ctx.fill();
+  ctx.strokeStyle='#868291';ctx.lineWidth=6*U;ctx.stroke();ctx.globalCompositeOperation='lighter';ctx.strokeStyle='#fff';ctx.lineWidth=2*U;ctx.stroke();
+  ctx.rotate(-.3+Math.sin(o.t*2)*.15);ctx.beginPath();ctx.ellipse(0,0,r*1.65,r*.32,0,0,7);ctx.stroke();ctx.globalCompositeOperation='source-over';
+  for(let i=0;i<14;i++){const k=(o.t*.65+i/14)%1,a=i*2.4+o.t*1.5,d=r+(1-k)*105*U,s=(3+i%4)*U*(1-k*.6);
+    ctx.save();ctx.translate(Math.cos(a)*d,Math.sin(a)*d*.6);ctx.rotate(a+o.t);ctx.fillStyle=i%2?'#93939f':'#555562';ctx.beginPath();ctx.moveTo(-s,-s);ctx.lineTo(s,-s*.6);ctx.lineTo(s*.6,s);ctx.lineTo(-s*.8,s*.4);ctx.fill();ctx.restore()}
+  ctx.restore();
+}
+function releaseGravity(o){const p=gravityPoint(o);o.collapse=true;o.dur=o.t+.35;sfx.whoosh();ink(p.x,p.y,10,'#08080d')}
+function castGravity(pm){
+  const c=m?mCenter(m):{x:monX,y:groundY-50*U},target=m,TR=tier();castLock=1.8;sfx.charge();
+  return addFX({gravityWell:1,nx:c.x/W,alt:(groundY-c.y)/U+85,dur:2.15,pm,up(dt,o){const t=o.t,p=gravityPoint(o);
+    if(t<1.8){castLock=Math.max(castLock,.05);dimT=Math.max(dimT,.45)}
+    for(const tm of [.55,.85])at(o,tm,()=>{sfx.rumble();skillHit(1+.15*TR,pm,p.x,groundY-35*U,{light:1,col:'#c9c6df',sid:'gravity'})});
+    at(o,1.2,()=>{sfx.bigboom();rubble(p.x,95*U,9);ink(p.x,groundY,14,'#09090e');
+      skillHit(7+.9*TR,pm,p.x,groundY-25*U,{heavy:1,name:'중력 구속',col:'#e4e1f2',fc:'210,205,230',crack:1,sid:'gravity'})});
+    if(t>=1.05&&t<1.7&&target===m&&fighting()){m.sq=.34;m.sqv=0;m.lyT=16*U;m.lyF=40}
+  },draw:drawGravity});
+}
+function drawMeteor(x,y,ang,t,sc=1){
+  ctx.save();ctx.translate(x,y);ctx.rotate(ang);ctx.scale(U*sc,U*sc);
+  for(const [col,len,w] of [['#390d1c',195,49],['#bd3544',155,38],['#ff8852',115,26],['#fff5d7',85,13]]){
+    ctx.fillStyle=col;ctx.beginPath();ctx.moveTo(24,0);ctx.lineTo(-38,-w);ctx.lineTo(-len,-w*.65);ctx.lineTo(-len*.72,0);ctx.lineTo(-len-25,w*.45);ctx.lineTo(-35,w);ctx.closePath();ctx.fill()}
+  ctx.rotate(t*2);ctx.fillStyle='#4f4f5b';ctx.strokeStyle='#b6b6c3';ctx.lineWidth=3;ctx.beginPath();
+  for(let i=0;i<7;i++){const a=i/7*Math.PI*2,r=i%2?27:34;if(i)ctx.lineTo(Math.cos(a)*r,Math.sin(a)*r);else ctx.moveTo(Math.cos(a)*r,Math.sin(a)*r)}ctx.closePath();ctx.fill();ctx.stroke();
+  ctx.globalCompositeOperation='lighter';ctx.strokeStyle='#fff';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(-20,-11);ctx.lineTo(3,2);ctx.lineTo(-6,20);ctx.stroke();ctx.restore();
+}
+function meteorFlight(pm,well=null){
+  const TR=tier(),c=m?mCenter(m):{x:monX,y:groundY-50*U},tx=well?gravityPoint(well).x:c.x,alt=well?well.alt:8,nx=tx/W;
+  const linked=!!well;castLock=2.5;sfx.rumble();sfx.charge();if(well){well.claimed=true;well.dur=well.t+2.6}
+  return addFX({meteorFlight:1,well,dur:2.5,up(dt,o){castLock=Math.max(castLock,.05);dimT=Math.max(dimT,.65);tintA=Math.max(tintA,.12);tintC='170,30,40';
+    at(o,.45,()=>sfx.whoosh());
+    at(o,1.35,()=>{const x=nx*W,y=groundY-alt*U;o.hit=true;if(well)well.consumed=true;
+      stop=Math.max(stop,linked?.2:.14);addTrauma(linked?1:.75);zoom+=(linked?.1:.06)*FXS;flash(linked?.85:.65,'255,225,210');sfx.bigboom();sfx.land();
+      ink(x,y,linked?38:22,'#07070d');smoke(x,y,18,'#09090d',1.3);rubble(x,(linked?180:130)*U,linked?16:11);
+      burst(x,y,['#fff','#ff9470','#9b9ba6','#4e4e5b'],linked?65:40,linked?1700:1250);
+      for(let i=0;i<24;i++)P.push({t:'shard',x,y,vx:rnd(-650,650)*U,vy:rnd(-700,100)*U,g:1450*U,drag:1,floor:1,size:rnd(5,14)*U,rot:rnd(0,6),vr:rnd(-12,12),life:1.1,max:1.1,color:i%2?'#9999a5':'#51515e'});
+      for(const [sy,col] of [[.25,'#ff9470'],[1,'#fff']])P.push({t:'ring',x,y:sy===1?y:groundY,r0:8*U,r1:(linked?320:240)*U,w:10*U,sy,life:.6,max:.6,color:col});
+      const mark=T.length;skillHit(13.5+1.9*TR,pm,x,y,{heavy:1,name:'운석 낙하',col:'#ffb395',fc:'255,200,175',crack:1,sid:'meteor'});
+      if(linked&&T.length>mark){T[mark].x=x-45*U;T[mark].y-=60*U;T[mark].size=26}
+      if(linked)skillHit(16,pm,x,y,{heavy:1,name:'천붕',col:'#fff',fc:'255,235,220',crack:2,sid:'combo'});
+    });
+  },draw(o){const t=o.t,x=nx*W,y=groundY-alt*U,sx=Math.max(80*U,x-360*U),sy=Math.max(105*U,H*.19);
+    if(t<1.35){ctx.save();ctx.globalAlpha=Math.min(1,t/.25);ctx.strokeStyle='#ad273e';ctx.lineWidth=15*U;ctx.beginPath();ctx.moveTo(sx-70*U,sy);ctx.lineTo(sx-20*U,sy+14*U);ctx.lineTo(sx+25*U,sy-5*U);ctx.lineTo(sx+90*U,sy+13*U);ctx.stroke();ctx.globalCompositeOperation='lighter';ctx.strokeStyle='#ff8c79';ctx.lineWidth=5*U;ctx.stroke();ctx.restore()}
+    if(t>=.45&&t<1.35){const k=clamp((t-.45)/.9,0,1),q=k*k,cy=linked?sy+35*U:lerp(sy,y,.5),cx=linked?x+100*U:lerp(sx,x,.5);
+      const px=(1-q)*(1-q)*sx+2*(1-q)*q*cx+q*q*x,py=(1-q)*(1-q)*sy+2*(1-q)*q*cy+q*q*y;
+      const a=Math.atan2((1-q)*(cy-sy)+q*(y-cy),(1-q)*(cx-sx)+q*(x-cx));drawMeteor(px,py,a,t,linked?1.2:1)}
+    if(t>=1.35&&t<2.1){const k=(t-1.35)/.75,r=(linked?190:130)*U*(.35+.65*easeOut(Math.min(1,k*3))),f=1-k;
+      ctx.save();ctx.globalAlpha=f;ctx.fillStyle='#09090f';ctx.beginPath();ctx.arc(x,y,r,0,7);ctx.fill();ctx.globalCompositeOperation='lighter';
+      for(const [col,sc] of [['#c33c50',.85],['#ff9668',.62],['#fff',.38]]){ctx.fillStyle=col;ctx.beginPath();ctx.arc(x,y,r*sc,0,7);ctx.fill()}ctx.restore()}
+  }});
+}
+function castMeteor(pm){meteorFlight(pm)}
+function comboSkyfall(pm=1,well){if(well)meteorFlight(pm,well)}
+
 /* ================= 각성기 ================= */
 let circleT=0;
 function awkCircle(pm=1){
@@ -1316,4 +1393,6 @@ Object.assign(BR,{
   upper:{a:['혈풍 승천','피해 +40%'],b:['연속 승천','재사용 대기 -30%'],gen:1},
   spear:{a:['번개 쐐기','피해 +40%'],b:['초전도','재사용 대기 -30%'],gen:1},
   thunder:{a:['뇌운 폭풍','피해 +40%'],b:['신속의 벼락','재사용 대기 -30%'],gen:1},
+  gravity:{a:['초고밀도','피해 +40%'],b:['중력 순환','재사용 대기 -30%'],gen:1},
+  meteor:{a:['멸성 충돌','피해 +40%'],b:['유성 궤도','재사용 대기 -30%'],gen:1},
 });
