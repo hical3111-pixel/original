@@ -357,6 +357,73 @@
     }finally{skillHit=hit;deal=damage;reset();m=null;buildBar()}
   });
 
+  section('계열 A · 데이터 · 편성 · 저장 변환');
+  guard('계열 A',()=>{
+    const reset=()=>{S=fresh();S.auto=false;S.sound=false;ST=stats();CH=null;BI=null;BF=null;CUT=null;BN=null;FX=[];P=[];T=[];B=[];PR=[];C=[];relicQ=[];shieldOn=null;stop=0;slowT=0;castLock=0;frenzyT=0;circleT=0;gauge=0;lastCast=null;pendingCombo=null;spawnT=100;miniQ=0;h.stun=0;atkT=1e6;
+      m=makeMonster(1);m.state='fight';m.x=monX;m.sh=0;m.hp=m.max=1e12;for(const s of SK)cds[s.id]=0};
+    const equal=(a,b)=>JSON.stringify(a)===JSON.stringify(b),derived=()=>S.loadout.flatMap(id=>{const c=COMBOS.find(c=>c.a===id);return[c.a,c.b]});
+    const mapping=[['crimson','진홍','#ff4f5e','inferno',['breath','demon']],['eclipse','월식','#9a7bff','dragon',['shadow','archers']],['verdant','녹광','#7dff5a',null,['orb','shield']],['abyss','심연','#b06bff','circle',['swords','gravity']],['storm','뇌전','#ffe853',null,['dash','spear']],['hellfire','업화','#ffa05a',null,['whip','hands']],['frost','빙정','#61dcf3','frostcrown',['frostcut','iceflower']]];
+    const ring=[['crimson','hellfire','홍련작'],['hellfire','eclipse','그림자 왈츠'],['eclipse','abyss','칠흑'],['abyss','frost','절대영도'],['frost','storm','초전도'],['storm','verdant','질풍신'],['verdant','crimson','역린혈공']];
+    try{
+      ok(SCHOOLS.length===7&&new Set(SCHOOLS.map(s=>s.id)).size===7,'서로 다른 계열 7개');
+      for(const [id,name,color,awk,pairs] of mapping){const s=SCHOOLS.find(s=>s.id===id),cs=COMBOS.filter(c=>c.school===id);
+        ok(s?.name===name&&s.c===color&&s.awk===awk,id+': 계열 이름/색/전용 각성기');
+        ok(cs.length===2&&pairs.every(a=>cs.some(c=>c.a===a))&&equal(s.pairs,cs.map(c=>c.a)),id+': 설계서 연계 2쌍');
+        ok(awk===null||AWK.some(a=>a.id===awk),id+': 전용 각성기 존재');
+      }
+      for(const c of COMBOS)ok(SCHOOLS.filter(s=>s.id===c.school&&s.pairs.includes(c.a)).length===1,c.name+': 정확히 한 계열 소속');
+      ok(!SCHOOLS.some(s=>s.awk==='thousand'),'천검멸은 기본 각성기로 유지');
+      ok(RESONANCES.length===7&&new Set(RESONANCES.map(r=>r.id)).size===7,'공명 7개/고유 id');
+      for(const [a,b,name] of ring)ok(RESONANCES.filter(r=>r.name===name&&r.a===a&&r.b===b).length===1,name+': 설계서 공명 연결');
+      for(const s of SCHOOLS){const ns=RESONANCES.filter(r=>r.a===s.id||r.b===s.id).map(r=>r.a===s.id?r.b:r.a);ok(ns.length===2&&new Set(ns).size===2&&!ns.includes(s.id),s.name+': 서로 다른 공명 이웃 2개')}
+      const reached=new Set([SCHOOLS[0].id]);for(let i=0;i<7;i++)for(const r of RESONANCES)if(reached.has(r.a)||reached.has(r.b)){reached.add(r.a);reached.add(r.b)}ok(reached.size===7,'공명 고리가 하나로 연결됨');
+      reset();const original={best:72,gold:321,lv:{atk:7},relics:{coin:2},awk:{frostcut:'a'},codex:{'0_0':3},equip:['meteor','gravity','sniper','neon','wolf','frostcut']},copy=JSON.stringify(original);load(original);
+      ok(equal(S.loadout,['gravity','shield','dash','archers']),'예전 장착 순서로 쌍 추정/중복 제거/앞 4쌍 유지');
+      ok(equal(S.equip,derived())&&S.equip.length===8,'변환 후 equip에 각 쌍 두 스킬 보존');
+      ok(S.gold===321&&S.lv.atk===7&&S.relics.coin===2&&S.awk.frostcut==='a'&&S.codex['0_0']===3,'기존 성장/유물/분기/도감 보존');ok(JSON.stringify(original)===copy,'저장 원본 객체를 변경하지 않음');
+      load({best:72,equip:['wolf','missing','wolf']});ok(S.loadout[0]==='archers'&&S.loadout.length===4&&new Set(S.loadout).size===4,'부분 장착은 짝 보완, 빈칸은 중복 없이 추천');
+      ok(equal(S.loadout,recommendLoadout(72,['archers'])),'추천으로 빈칸만 채우며 추정 쌍 고정');
+      load({best:1,equip:['dash']});ok(equal(S.loadout,['dash'])&&equal(S.equip,['dash','neon']),'초반은 해금된 쌍 후보만 채우고 잠긴 짝 유지');
+      load({best:72,equip:['invalid',null,7]});ok(equal(S.loadout,recommendLoadout(72)),'유효 장착이 없으면 추천 편성');
+      load({best:72});ok(equal(S.loadout,recommendLoadout(72)),'장착 필드 없는 예전 저장도 추천');
+      load({best:72,loadout:['iceflower','frostcut'],equip:['dash']});ok(equal(S.loadout,['iceflower','frostcut'])&&equal(S.equip,derived()),'새 저장은 loadout 우선, 의도적인 빈칸 유지');
+      const saved=JSON.parse(JSON.stringify(S));load(saved);ok(equal(S.loadout,saved.loadout)&&equal(S.equip,saved.equip),'새 저장 왕복 시 편성 순서 유지');
+      load({best:72,loadout:[],equip:['dash']});ok(S.loadout.length===0&&S.equip.length===0,'빈 편성을 추천으로 덮어쓰지 않음');
+      load({best:72,loadout:['dash','dash','bad',null,'swords','breath','shadow','gravity']});ok(equal(S.loadout,['dash','swords','breath','shadow']),'손상된 편성의 중복/잘못된 id/초과 칸 정리');
+      load({best:72,loadout:'broken',equip:['meteor']});ok(S.loadout[0]==='gravity'&&S.loadout.length===4,'배열 아닌 편성은 예전 장착에서 복원');
+      reset();ok(equal(S.loadout,['dash'])&&equal(S.equip,derived())&&!('mastery' in S),'새 게임 기본 쌍/파생 equip, 숙련 필드 미추가');
+      const both=['frostcut','iceflower','dash','spear'];let state=schoolState(both,72);
+      ok(equal(state.focus,['storm','frost'])&&equal(state.resonance,['frost_storm']),'빙정 2쌍+뇌전 2쌍: 집중 2/초전도');
+      state=schoolState(both,71);ok(equal(state.focus,['storm'])&&state.counts.frost===1,'짝 하나 미해금이면 빙정 집중 꺼짐');
+      state=schoolState(both,63);ok(state.counts.frost===0&&!state.resonance.includes('frost_storm'),'양쪽이 열린 쌍만 활성 집계');
+      state=schoolState(['breath','demon','whip','shadow'],72);ok(equal(state.focus,['crimson'])&&equal(state.resonance,['crimson_hellfire','hellfire_eclipse']),'진홍 집중+업화/월식 공명');
+      state=schoolState(['whip','shadow','swords','frostcut'],72);ok(state.focus.length===0&&state.resonance.length===3,'서로 다른 4계열 공명 사슬 3개');
+      state=schoolState(['frostcut','frostcut'],72);ok(state.counts.frost===1&&!state.focus.length,'같은 쌍 중복은 집중으로 세지 않음');
+      ok(schoolState([],72).resonance.length===0&&schoolState([],72).focus.length===0,'해제 후 집중/공명 모두 꺼짐');
+      reset();S.best=72;const st=stats(),cw=comboWin();setLoadout(both);schoolState();ok(equal(stats(),st)&&comboWin()===cw,'A단계는 스탯/연계 창에 효과 수치를 적용하지 않음');
+      // 독립 비트마스크 완전 탐색으로 추천의 전역 최댓값을 확인한다(그리기/전투 반복 없음).
+      for(const best of [0,1,3,8,11,17,21,30,36,40,48,56,60,64,68,72,999]){
+        const before=JSON.stringify(S),ids=recommendLoadout(best),eligible=COMBOS.filter(c=>[c.a,c.b].some(id=>skOf(id).unlock<=best)),n=Math.min(4,eligible.length);
+        ok(ids.length===n&&new Set(ids).size===n&&ids.every(id=>eligible.some(c=>c.a===id)),'STAGE '+best+': 추천은 해금 상황에 맞는 쌍만');
+        let maximum=-1;for(let mask=0;mask<(1<<eligible.length);mask++){let bits=mask,count=0;while(bits){bits&=bits-1;count++}if(count!==n)continue;
+          const cs={};for(let j=0;j<eligible.length;j++)if(mask&(1<<j)){const c=eligible[j];if(skOf(c.a).unlock<=best&&skOf(c.b).unlock<=best)cs[c.school]=(cs[c.school]||0)+1}
+          const score=Object.values(cs).filter(v=>v===2).length+ring.filter(([a,b])=>cs[a]>0&&cs[b]>0).length;maximum=Math.max(maximum,score)}
+        const actual=schoolState(ids,best);ok(actual.focus.length+actual.resonance.length===maximum,'STAGE '+best+': 집중+공명 총수 전역 최댓값');
+        ok(equal(ids,recommendLoadout(best))&&JSON.stringify(S)===before,'STAGE '+best+': 추천 결정성/상태 무변경');
+      }
+      reset();setLoadout([]);buildBar();buildBook();const row=id=>$('book').children[SK.findIndex(s=>s.id===id)];row('meteor').querySelector('.eq').click();
+      ok(equal(S.loadout,['gravity'])&&equal(S.equip,['gravity','meteor']),'잠긴 마무리 버튼도 연계 쌍 전체 편성');ok(!cast(skOf('meteor')),'편성해도 잠긴 스킬은 시전 불가');
+      row('gravity').querySelector('.eq').click();ok(S.loadout.length===0&&S.equip.length===0,'시작 스킬 버튼으로 쌍 전체 해제');
+      setLoadout(['iceflower','frostcut','dash','spear']);buildBar();ok(equal(barOrder().map(s=>s.id),derived()),'스킬 바가 편성 칸 순서/시작→마무리 순서 유지');
+      const full=JSON.stringify(S.loadout);ok(!toggleEquip('meteor')&&JSON.stringify(S.loadout)===full,'편성 4쌍 초과 금지');ok(!toggleEquip('invalid'),'없는 스킬 편성 거부');
+      S.best=72;$('recommendBtn').click();ok(equal(S.loadout,recommendLoadout())&&equal(S.equip,derived()),'추천 버튼으로 편성/equip 동시 반영');
+      ok($('slotTxt').textContent.includes('4/4쌍')&&$('skBar').querySelectorAll('.skill:not(.awk)').length===8,'편성 수/스킬 바 8칸 갱신');
+      reset();S.stage=S.best=2;S.kills=KPS-1;kill();ok(S.best===3&&equal(S.loadout,['dash','swords'])&&equal(S.equip,derived()),'진행 중 새 스킬 해금도 쌍 단위 자동 편성');
+      reset();S.stage=S.best=16;S.kills=KPS-1;kill();ok(S.best===17&&equal(S.loadout,['dash'])&&equal(S.equip,derived()),'편성한 잠긴 짝 해금 시 중복 칸 없음');
+      reset();setLoadout(['dash','breath','gravity','frostcut']);S.stage=S.best=2;S.kills=KPS-1;kill();ok(!S.loadout.includes('swords')&&equal(S.equip,derived()),'빈칸 없는 해금은 기존 편성 보존');
+    }finally{reset();m=null;buildBar();buildBook()}
+  });
+
   section('정리');
   guard('정리',()=>{tick(600);ok(FX.length===0,'연출이 끝나지 않고 남아 있음: '+FX.length+'개');ok(castLock<=0,'castLock이 풀리지 않음')});
 

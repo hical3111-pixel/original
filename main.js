@@ -722,7 +722,7 @@ for(const u of UP){
   rows[u.id]={lv:el.querySelector('.lv'),desc:el.querySelector('.up-desc'),btn:el.querySelector('.buy'),n:el.querySelector('.n'),c:el.querySelector('.c span')};
   rows[u.id].btn.addEventListener('click',()=>buy(u));
 }
-function barOrder(){const o=[];for(const c of COMBOS)for(const id of [c.a,c.b]){const s=skOf(id);if(equipped(s)&&!o.includes(s))o.push(s)}for(const s of SK)if(equipped(s)&&!o.includes(s))o.push(s);return o}
+function barOrder(){const o=[];for(const id of S.equip){const c=comboOf(id);if(c)for(const sid of [c.a,c.b]){const s=skOf(sid);if(equipped(s)&&!o.includes(s))o.push(s)}}return o}
 function buildBar(){
   const bar=$('skBar');bar.innerHTML='';
   let prev=null;for(const s of barOrder()){if(prev&&COMBOS.some(c=>c.a===prev.id&&c.b===s.id)){const l=document.createElement('span');l.className='lnk';l.textContent='⛓';l.style.color=comboOf(s.id).col;l.setAttribute('aria-hidden','true');bar.appendChild(l)}prev=s;const b=document.createElement('button');b.className='skill';b.style.setProperty('--c',s.c);
@@ -735,14 +735,15 @@ function buildBar(){
   a.addEventListener('click',()=>{ensureAudio();if(!castAwaken()){try{a.animate([{transform:'translateX(-3px)'},{transform:'translateX(3px)'},{transform:'none'}],{duration:150})}catch(e){}}});
   bar.appendChild(a);
 }
-function toggleEquip(id){const i=S.equip.indexOf(id);
-  if(i>=0)S.equip.splice(i,1);else{if(S.equip.length>=8){banner('슬롯이 가득 찼습니다','다른 스킬을 먼저 해제하세요','#9d95c4',1.4);return}S.equip.push(id)}
-  buildBar();buildBook();save()}
+function toggleEquip(id){const c=comboOf(id);if(!c)return false;const next=S.loadout.slice(),i=next.indexOf(c.a);
+  if(i>=0)next.splice(i,1);else{if(next.length>=4){banner('편성이 가득 찼습니다','다른 연계 쌍을 먼저 해제하세요','#9d95c4',1.4);return false}next.push(c.a)}
+  setLoadout(next);buildBar();buildBook();save();return true}
+$('recommendBtn').addEventListener('click',()=>{setLoadout(recommendLoadout());buildBar();buildBook();save()});
 function buildBook(){
   buildAwk();
-  const el=$('book'),TR=tier();el.innerHTML='';$('slotTxt').textContent=`장착 ${S.equip.length}/8 · 연출 ${'★'.repeat(TR)}${'☆'.repeat(3-TR)}`;
+  const el=$('book'),TR=tier();el.innerHTML='';$('slotTxt').textContent=`편성 ${S.loadout.length}/4쌍 · 연출 ${'★'.repeat(TR)}${'☆'.repeat(3-TR)}`;
   for(const s of SK){const r=document.createElement('div'),lk=!unlocked(s),eq=equipped(s);r.className='bk'+(lk?' locked':'');r.style.setProperty('--c',s.c);
-    r.innerHTML=`<i></i><div><b>${s.name}</b><small>${s.d}${comboTag(s)}</small>${awkHTML(s)}</div><div class="st">${lk?'STAGE '+s.unlock:''}<span class="btns">${lk?'':`<button type="button" class="eq${eq?' on':''}">${eq?'해제':'장착'}</button>`}<button type="button" class="pv">시연</button></span></div>`;
+    r.innerHTML=`<i></i><div><b>${s.name}</b><small>${s.d}${comboTag(s)}</small>${awkHTML(s)}</div><div class="st">${lk?'STAGE '+s.unlock:''}<span class="btns"><button type="button" class="eq${eq?' on':''}" aria-pressed="${eq}" aria-label="${comboOf(s.id).name} 쌍 ${eq?'해제':'편성'}">${eq?'쌍 해제':'쌍 편성'}</button><button type="button" class="pv">시연</button></span></div>`;
     r.querySelectorAll('[data-br]').forEach(x=>x.addEventListener('click',()=>{setBranch(s,x.dataset.br);buildBook()}));
     const ab=r.querySelector('.awkbuy');if(ab)ab.addEventListener('click',()=>{ensureAudio();if(buyAwk(s))buildBook()});
     const eb=r.querySelector('.eq');if(eb)eb.addEventListener('click',()=>toggleEquip(s.id));
@@ -752,7 +753,7 @@ function buildBook(){
   const cb=$('combos');cb.innerHTML='<div class="cbrule">⛓ <b>시작 스킬</b>을 쓰면 짝 스킬의 재사용 대기가 <b>'+PRIME_CD+'초 이하</b>로 줄어듭니다. '+comboWin()+'초 안에 짝 스킬을 쓰면 연계기가 발동하고, 시작 스킬 대기가 <b>절반</b>으로 줄며 각성 게이지가 20 찹니다. 자동 스킬은 짝 스킬을 아껴 두었다가 연계로 씁니다.</div>';
   for(const c of COMBOS){const a=skOf(c.a),b=skOf(c.b),ok=comboReady(c),both=equipped(a)&&equipped(b),d=document.createElement('div');
     d.className='cbc'+(ok?'':' locked');d.style.setProperty('--c',c.col);
-    const st=!ok?`STAGE ${Math.max(a.unlock,b.unlock)}에 해금`:both?'준비됨 · 자동 스킬이면 알아서 이어 씁니다':'두 스킬을 모두 장착해야 발동';
+    const st=!ok?`STAGE ${Math.max(a.unlock,b.unlock)}에 해금`:both?'준비됨 · 자동 스킬이면 알아서 이어 씁니다':'이 연계 쌍을 편성하면 발동';
     d.innerHTML=`<div class="cbf"><span class="ic" style="--c:${a.c}">${IC[a.id]}</span><em>＋</em><span class="ic" style="--c:${b.c}">${IC[b.id]}</span><em>=</em><b>${c.name}</b></div>`+
       `<p><span style="color:${a.c}">${a.name}</span>${eul(a.name)} 쓴 뒤 <b>${comboWin()}초 안에</b> <span style="color:${b.c}">${b.name}</span>${eul(b.name)} 쓰면 발동. ${c.d}</p>`+
       `<div class="cbs"><span class="${ok&&both?'ok':''}">${st}</span><button type="button">시연</button></div>`;
@@ -939,8 +940,7 @@ function frame(now){
 }
 function start(data){
   load(data&&data.S);
-  if(!Array.isArray(S.equip))S.equip=SK.filter(unlocked).slice(0,8).map(s=>s.id);
-  S.equip=S.equip.filter(id=>SK.some(s=>s.id===id));
+  syncEquip();
   ST=stats();dispGold=S.gold;zoneShown=zoneOf(S.stage);
   $('autoSk').checked=S.auto;soundUI();titleUI();
   resize();new ResizeObserver(resize).observe(stageEl);
