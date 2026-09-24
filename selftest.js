@@ -11,6 +11,7 @@
   const guard=(name,fn)=>{try{fn()}catch(e){fail++;lines.push('✗ '+name+' 예외: '+e.message+' @ '+String(e.stack||'').split('\n')[1])}};
 
   save=function(){};                                  // 점검 중에는 절대 저장하지 않는다
+  $('modal').hidden=true;pending=0;                   // 오프라인 보상 창은 점검과 무관하므로 닫는다
   S=fresh();S.best=999;S.gold=1e300;S.auto=false;S.sound=false;S.equip=SK.slice(0,8).map(s=>s.id);
   ST=stats();m=null;spawnT=0;FX=[];P=[];T=[];C=[];CH=null;BI=null;castLock=0;
   buildBar();buildBook();buildRelics();buildAch();chUI();
