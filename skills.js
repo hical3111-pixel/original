@@ -1422,9 +1422,10 @@ function iceDragonFX(pm,kept){
   return addFX({dur:1.8,kept,up(dt,o){castLock=Math.max(castLock,.05);const k=clamp((o.t-.25)/.85,0,1);o.x=lerp(heroX-35*U,endX,k*k);o.y=lerp(groundY-70*U,c.y,k);
     if(kept&&o.t<1.15)for(const p of kept.pieces){const q=icePoint(p);if(!p.used&&o.x>=q.x){p.used=true;iceBurst(q.x,q.y,7);sfx.glass()}}
     at(o,1.15,()=>{o.hit=true;if(kept)kept.consumed=true;iceBurst(c.x,c.y,kept?24:38);sfx.bigboom();stop=Math.max(stop,.14);zoom+=.045*FXS;
-      const mark=T.length;skillHit(14+1.9*TR,pm,c.x,c.y,{heavy:1,name:'백룡 돌진',col:ICE_COL[3],fc:'255,255,255',sid:'icedragon'});
-      if(kept&&T.length>mark){T[mark].x-=45*U;T[mark].y-=60*U;T[mark].size=26}
-      if(kept)skillHit(16,pm,c.x,c.y,{heavy:1,name:'빙룡쇄파',col:ICE_COL[4],fc:'255,255,255',crack:2,sid:'combo'})});
+      const cur=m?mCenter(m):c;
+      const mark=T.length;skillHit(14+1.9*TR,pm,cur.x,cur.y,{heavy:1,name:'백룡 돌진',col:ICE_COL[3],fc:'255,255,255',sid:'icedragon'});
+      if(kept&&T.length>mark){T[mark].x=cur.x-70*U;T[mark].y=cur.y-65*U;T[mark].vx=-35*U;T[mark].size=26}
+      if(kept)skillHit(16,pm,cur.x+30*U,cur.y,{heavy:1,name:'빙룡쇄파',col:ICE_COL[4],fc:'255,255,255',crack:2,sid:'combo'})});
   },draw(o){if(o.x===undefined)return;const f=o.t<.25?o.t/.25:o.t>1.15?clamp((1.6-o.t)/.45,0,1):1;drawIceDragon(o.x,o.y,o.t,f*(kept?1.2:1))}});
 }
 function castIcedragon(pm){return iceDragonFX(pm)}
@@ -1438,9 +1439,10 @@ function iceSpiralFX(pm,kept){
       if(k>=1&&!p.used){p.used=true;iceBurst(nx*W,groundY-alt*U,3)}}
     for(let i=0;i<3;i++)at(o,.55+i*.2,()=>skillHit(1.5+.2*TR,pm,nx*W,groundY-alt*U,{light:1,col:ICE_COL[3],sid:'frostspiral'}));
     at(o,1.3,()=>{o.hit=true;if(kept)kept.consumed=true;iceBurst(nx*W,groundY-alt*U,kept?22:38);sfx.glass();sfx.bigboom();stop=Math.max(stop,.15);zoom+=.045*FXS;
-      const mark=T.length;skillHit(10+1.3*TR,pm,nx*W,groundY-alt*U,{heavy:1,name:'동결 나선',col:ICE_COL[3],fc:'255,255,255',sid:'frostspiral'});
-      if(kept&&T.length>mark){T[mark].x-=45*U;T[mark].y-=60*U;T[mark].size=26}
-      if(kept)skillHit(16,pm,nx*W,groundY-alt*U,{heavy:1,name:'만화빙정',col:ICE_COL[4],fc:'255,255,255',crack:2,sid:'combo'})});
+      const x=nx*W,y=groundY-alt*U;
+      const mark=T.length;skillHit(10+1.3*TR,pm,x,y,{heavy:1,name:'동결 나선',col:ICE_COL[3],fc:'255,255,255',sid:'frostspiral'});
+      if(kept&&T.length>mark){T[mark].x=x-70*U;T[mark].y=y-65*U;T[mark].vx=-35*U;T[mark].size=26}
+      if(kept)skillHit(16,pm,x+30*U,y,{heavy:1,name:'만화빙정',col:ICE_COL[4],fc:'255,255,255',crack:2,sid:'combo'})});
   },draw(o){const k=clamp(o.t/1.2,0,1),f=o.t>1.3?clamp((1.9-o.t)/.6,0,1):1,x=lerp(heroX+40*U,nx*W,easeOut(k)),y=groundY-alt*U;
     if(o.t>.6)iceCrystal(nx*W,groundY-(kept?118:84)*U,kept?48:33,kept?118:84,0,clamp((o.t-.6)/.6,0,1)*f);
     ctx.save();for(let j=0;j<3;j++)for(const [col,w] of [[ICE_COL[0],10],[ICE_COL[3],6],[ICE_COL[4],2]]){ctx.globalCompositeOperation=col===ICE_COL[4]?'lighter':'source-over';ctx.strokeStyle=col;ctx.lineWidth=w*U*f;ctx.beginPath();ctx.ellipse(x,y+(j-1)*39*U,72*U*f,18*U*f,-.22,o.t*8+j*2,o.t*8+j*2+Math.PI*1.6);ctx.stroke()}ctx.restore()}});
@@ -1448,20 +1450,92 @@ function iceSpiralFX(pm,kept){
 function castFrostspiral(pm){return iceSpiralFX(pm)}
 function comboIceFlower(pm=1,kept){if(kept)return iceSpiralFX(pm,kept)}
 function awkFrostcrown(pm=1){
-  cutin('영원의 설관','각성 · 백룡이 휘감은 얼음 검',ICE_COL[3]);castLock=2.5;sfx.charge();
+  cutin('영원의 설관','각성 · 백룡이 휘감은 얼음 검',ICE_COL[3]);castLock=2.6;sfx.charge();
   const c=m?mCenter(m):{x:monX,y:groundY-50*U},TR=tier(),nx=c.x/W,alt=(groundY-c.y)/U;
-  return addFX({dur:2.5,frostcrown:1,up(dt,o){castLock=Math.max(castLock,.05);dimT=Math.max(dimT,.35);if(o.t<.6){h.ang=-1.7;h.t=9}
-    for(let i=0;i<6;i++)at(o,.65+i*.13,()=>{sfx.glass();skillHit(2+.25*TR,pm,nx*W,groundY-alt*U,{light:1,col:ICE_COL[3],sid:'frostcrown'})});
-    at(o,1.6,()=>{o.hit=true;iceBurst(nx*W,groundY,60);sfx.bigboom();stop=Math.max(stop,.22);zoom+=.1*FXS;
-      skillHit(36+4.5*TR,pm,nx*W,groundY-alt*U,{heavy:1,name:'영원의 설관',col:ICE_COL[4],fc:'255,255,255',crack:2,sid:'frostcrown'})});
-  },draw(o){const t=o.t,x=nx*W,y=groundY-alt*U,top=Math.max(70*U,y-185*U),f=t>1.6?clamp((2.4-t)/.8,0,1):1;
-    if(t<1.6){const k=clamp(t/.55,0,1),sx=lerp(heroX,x,easeOut(k)),sy=lerp(groundY-100*U,top,easeOut(k));
-      if(t>.45){ctx.save();for(let j=0;j<3;j++){ctx.strokeStyle=ICE_COL[j===1?3:1];ctx.lineWidth=(13-j*2)*U;ctx.beginPath();ctx.ellipse(x,top+35*U+j*30*U,95*U,22*U,-.15,t*5+j,t*5+j+5.3);ctx.stroke();ctx.globalCompositeOperation='lighter';ctx.strokeStyle=ICE_COL[4];ctx.lineWidth=3*U;ctx.stroke();ctx.globalCompositeOperation='source-over'}ctx.restore();
-        const q=clamp((t-1.15)/.45,0,1);drawIceDragon(x+90*U*(1-q),lerp(top+60*U,y,q*q),t,.55,q*Math.PI/2)}
-      iceCrystal(sx,sy,12,78,0,k);ctx.save();ctx.fillStyle=ICE_COL[3];ctx.fillRect(sx-30*U,sy+45*U,60*U,5*U);ctx.fillRect(sx-3*U,sy+50*U,6*U,25*U);ctx.restore();
-      for(let i=0;i<6;i++)iceCrystal(sx+(i-2.5)*23*U,sy-65*U-Math.sin(i/5*Math.PI)*20*U,8,19,(i-2.5)*.12,k)}
-    else{for(let i=0;i<9;i++){const a=-Math.PI*.75+i*Math.PI*1.5/8;iceCrystal(x+Math.sin(a)*72*U,groundY-38*U-Math.cos(a)*35*U,15,65,a,f)}
-      iceCrystal(x,groundY-125*U,45,125,0,f);ctx.save();ctx.globalCompositeOperation='lighter';ctx.fillStyle=ICE_COL[4];ctx.fillRect(x-7*U*f,top,14*U*f,groundY-top);ctx.restore()}}});
+  return addFX({dur:2.6,frostcrown:1,up(dt,o){
+    castLock=Math.max(castLock,.05);
+    dimT=Math.max(dimT,o.t<2.2?.68:.68*(1-(o.t-2.2)/.4));
+    tintA=Math.max(tintA,o.t<2.2?.15:.15*(1-(o.t-2.2)/.4));
+    tintC='36,91,188';
+    if(o.t<.6){h.ang=-1.7;h.t=9}
+    else if(o.t>=1.4&&o.t<1.75){h.ang=.85;h.t=9}
+    const x=nx*W,y=groundY-alt*U;
+    for(let i=0;i<6;i++)at(o,.65+i*.13,()=>{sfx.glass();skillHit(2+.25*TR,pm,x,y,{light:1,col:ICE_COL[3],sid:'frostcrown'})});
+    at(o,1.6,()=>{o.hit=true;iceBurst(x,groundY,48);
+      P.push({t:'ring',x,y:groundY,r0:12*U,r1:340*U,w:10*U,sy:.28,life:.55,max:.55,color:ICE_COL[3]});
+      P.push({t:'ring',x,y:groundY,r0:8*U,r1:220*U,w:6*U,sy:.28,life:.4,max:.4,color:ICE_COL[4]});
+      sfx.bigboom();sfx.glass();stop=Math.max(stop,.25);zoom+=.12*FXS;flash(.85,'255,255,255');
+      skillHit(36+4.5*TR,pm,x,y,{heavy:1,name:'영원의 설관',col:ICE_COL[4],fc:'255,255,255',crack:2,sid:'frostcrown'})});
+  },draw(o){
+    const t=o.t,x=nx*W,y=groundY-alt*U,top=Math.max(70*U,y-185*U);
+    if(t<1.6){
+      const k=clamp(t/.55,0,1),sx=lerp(heroX,x,easeOut(k)),
+            sy=t<.55?lerp(groundY-100*U,top,easeOut(k)):t<1.4?top+Math.sin(t*5)*5*U:lerp(top,groundY-60*U,((t-1.4)/.2)*((t-1.4)/.2));
+      iceCrystal(sx,sy,20,105,0,k);
+      ctx.save();ctx.fillStyle=ICE_COL[1];ctx.fillRect(sx-35*U*k,sy+48*U*k,70*U*k,6*U*k);
+      ctx.fillStyle=ICE_COL[3];ctx.fillRect(sx-30*U*k,sy+49*U*k,60*U*k,4*U*k);
+      ctx.fillStyle=ICE_COL[0];ctx.fillRect(sx-4*U*k,sy+54*U*k,8*U*k,24*U*k);
+      ctx.restore();
+      iceCrystal(sx,sy+82*U*k,10,10,0,k);
+      ctx.save();ctx.globalCompositeOperation='lighter';ctx.strokeStyle=ICE_COL[4];ctx.lineWidth=2.8*U*k;
+      ctx.beginPath();ctx.moveTo(sx,sy-88*U*k);ctx.lineTo(sx,sy+44*U*k);ctx.stroke();ctx.restore();
+      if(t>.35){
+        const hk=t<1.4?clamp((t-.35)/.45,0,1):clamp((1.6-t)/.2,0,1),rx=165*U*hk,ry=78*U*hk;
+        ctx.save();
+        for(let j=0;j<3;j++){
+          ctx.strokeStyle=ICE_COL[j===1?3:1];ctx.lineWidth=(11-j*3)*U;
+          ctx.beginPath();ctx.ellipse(sx,sy-20*U,rx,ry,0,0,Math.PI*2);ctx.stroke();
+        }
+        ctx.globalCompositeOperation='lighter';ctx.strokeStyle=ICE_COL[4];ctx.lineWidth=3*U;
+        ctx.beginPath();ctx.ellipse(sx,sy-20*U,rx,ry,0,0,Math.PI*2);ctx.stroke();ctx.restore();
+        for(let i=0;i<6;i++){
+          const a=i*Math.PI/3+t*.4,px=sx+Math.cos(a)*rx,py=sy-20*U+Math.sin(a)*ry;
+          iceCrystal(px,py,13,36,a+Math.PI/2,hk);
+        }
+      }
+      if(t>.4){
+        const tau=clamp((t-.4)/1.2,0,1);
+        const pt=u=>{
+          if(u<=.45){const u1=u/.45;return{x:lerp(heroX-50*U,x-110*U,easeOut(u1))+Math.sin(u1*Math.PI)*40*U,y:lerp(groundY-60*U,top-55*U,easeOut(u1))}}
+          if(u<=.85){const u2=(u-.45)/.4,th=-Math.PI*.8+u2*Math.PI*2.2;return{x:x+Math.cos(th)*lerp(175*U,105*U,u2),y:top-15*U+Math.sin(th)*lerp(85*U,50*U,u2)}}
+          const u3=(u-.85)/.15;return{x:lerp(x+30*U,x,u3),y:lerp(top+40*U,y,u3*u3)};
+        };
+        const uA=Math.max(0,Math.min(1,tau+.02)-.02),uB=Math.min(1,tau+.02);
+        const p0=pt(uA),p1=pt(uB),da=Math.atan2(p1.y-p0.y,p1.x-p0.x);
+        const dsc=clamp(tau/.18,0,1)*(tau>.85?lerp(1.35,.85,(tau-.85)/.15):1.35);
+        drawIceDragon(p0.x,p0.y,t,dsc,da);
+        ctx.save();
+        for(let j=0;j<2;j++){
+          ctx.strokeStyle=j?ICE_COL[4]:ICE_COL[3];ctx.lineWidth=(j?2.5:6)*U;
+          if(j)ctx.globalCompositeOperation='lighter';
+          ctx.beginPath();ctx.ellipse(p0.x,p0.y,42*U*dsc,17*U*dsc,da,0,Math.PI*2);ctx.stroke();
+        }
+        ctx.restore();
+      }
+    }else{
+      const f=clamp((2.55-t)/.85,0,1),erupt=clamp((t-1.6)/.16,0,1);
+      ctx.save();
+      for(const [w,h,col] of [[340*U,24*U,ICE_COL[0]],[270*U,17*U,ICE_COL[1]],[200*U,11*U,ICE_COL[3]],[130*U,6*U,ICE_COL[4]]]){
+        if(col===ICE_COL[4])ctx.globalCompositeOperation='lighter';
+        ctx.fillStyle=col;ctx.beginPath();ctx.ellipse(x,groundY,w*f,h*f*erupt,0,0,Math.PI*2);ctx.fill();
+      }
+      ctx.restore();
+      ctx.save();ctx.globalCompositeOperation='lighter';
+      ctx.fillStyle=ICE_COL[3];ctx.fillRect(x-20*U*f,0,40*U*f,groundY);
+      ctx.fillStyle=ICE_COL[4];ctx.fillRect(x-7*U*f,0,14*U*f,groundY);
+      ctx.restore();
+      const spires=[
+        [-155,-35,17,70,-.55],[-115,-55,21,95,-.42],[-78,-75,26,120,-.26],[-42,-95,32,145,-.12],[-16,-115,38,165,-.05],
+        [16,-115,38,165,.05],[42,-95,32,145,.12],[78,-75,26,120,.26],[115,-55,21,95,.42],[155,-35,17,70,.55]
+      ];
+      for(const [dx,dy,w,h,a] of spires)iceCrystal(x+dx*U*erupt,groundY+dy*U*erupt,w,h*erupt,a,f);
+      iceCrystal(x,groundY-120*U*erupt,48,120*erupt,0,f);
+      for(let i=0;i<8;i++){
+        const sa=i*Math.PI/4+(t-1.6)*.5,dist=(85+(t-1.6)*110)*U;
+        iceCrystal(x+Math.cos(sa)*dist,y-35*U+Math.sin(sa)*dist*.65,12,32,sa+Math.PI/2,f*(1-(t-1.6)/.95));
+      }
+    }
+  }});
 }
 
 /* ================= 각성기 ================= */

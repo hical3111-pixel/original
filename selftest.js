@@ -326,7 +326,10 @@
         ok(fin&&kept.pieces===pieces&&pieces.every((p,i)=>p===refs[i]),id+': 마무리에 원본 배열/객체 인계');
         ok(FX.filter(o=>o.iceKind===kind).length===1,id+': 유지 물체 중복 소환 금지');until(()=>pieces.some(p=>p.used));render();
         ok(pieces.some(p=>!p.used),id+': 한 번에 지우지 않고 순차 파괴/흡수');until(()=>kept.consumed);render();
-        ok(pieces.every(p=>p.used)&&fin.hit&&stop>=.14&&S.combos===1,id+': 모든 원본 소모/한 번 발동/히트스톱');step(150);
+        ok(pieces.every(p=>p.used)&&fin.hit&&stop>=.14&&S.combos===1,id+': 모든 원본 소모/한 번 발동/히트스톱');
+        const tCombo=T.at(-1),tFin=T.at(-2);
+        ok(tCombo&&tFin&&Math.abs(tCombo.x-tFin.x)>=50*U,id+': 마무리·연계 피해 숫자 분리 (거리 '+(tCombo&&tFin?Math.round(Math.abs(tCombo.x-tFin.x)/U):0)+'*U)');
+        step(150);
         ok(!c.keep.get()&&FX.length===0&&castLock<=0,id+': 연계 종료 정리');
         reset();cast(a);const auto=c.keep.get();S.auto=true;until(()=>auto.claimed);S.auto=false;ok(auto.claimed&&S.combos===1,id+': 자동 연계 인계');
         reset();cast(a);const expired=c.keep.get();step(560);ok(!FX.includes(expired),id+': 8초 만료 정리');
@@ -349,9 +352,13 @@
         ok(Math.abs(hits.reduce((n,h)=>n+h.mult,0)-(48+6*tr))<1e-8&&hits.every(h=>h.pm===1&&h.sid===a.id),'설관 TR '+tr+' 실전 피해');
         ok(hits.at(-1)?.heavy&&hits.at(-1)?.crack===2&&getFinisherInfo('skill',hits.at(-1)).kind==='각성기 결정타','설관 마지막 강타/각성 결정타');
       }
-      reset();hits=[];let emitted=0,colors=[];const push=P.push;
+      reset();hits=[];let emitted=0,colors=[],maxDim=0;const push=P.push;
       P.push=function(...args){emitted+=args.length;colors.push(...args.map(p=>p.color));return push.apply(this,args)};
-      previewAwk(a);step(300);ok(hits.every(h=>h.pm===.1)&&hits.length===7,'설관 시연 6연타+강타/pm');
+      previewAwk(a);const awkFX=FX.find(o=>o.frostcrown);
+      ok(awkFX&&awkFX.dur>=2.5,'설관 연출 객체 생성 확인');
+      for(let i=0;i<300;i++){update(1/60);maxDim=Math.max(maxDim,dimT)}
+      ok(maxDim>=.5,'설관 화면 어두움 dimT 0.5 이상: '+maxDim.toFixed(2));
+      ok(hits.every(h=>h.pm===.1)&&hits.length===7,'설관 시연 6연타+강타/pm');
       ok(emitted<=100&&colors.every(col=>ICE_COL.includes(col)),'설관 입자 100개 이하/5색: '+emitted);delete P.push;
       reset();a.fn(1);m=null;step(300);ok(FX.length===0&&castLock<=0,'설관 대상 소멸 안전');
     }finally{skillHit=hit;deal=damage;reset();m=null;buildBar()}
