@@ -61,6 +61,7 @@
     tick(260);ok(m.state==='fight','컷신 뒤 전투로 넘어가지 않음');
     m.hp=m.max*.49;tick(3);ok(m.state==='phase','체력 50% 아래에서 2페이즈 전환 없음');tick(200);ok(m.enraged&&m.state==='fight','2페이즈 변신 후 전투 복귀 실패');
     m.hp=m.max=1e15;const seen=new Set();for(let k=0;k<14;k++){m.atkT=0;tick(3);if(m.pat)seen.add(m.pat.ty);tick(150);if(!fighting())toFight()}
+    ok(seen.size>=3,'보스 패턴 다양성 부족: '+[...seen].join(','));
     bossFail();ok(S.farm,'보스 실패 후 반복 사냥으로 가지 않음');for(const s of SK)cds[s.id]=9;retryBoss();ok(SK.every(s=>cds[s.id]===0),'보스 재도전 시 쿨타임 초기화 안 됨');
     S.farm=false;S.stage=10;m=null;spawnT=0;stop=0;BI=null;BF=null;
     for(let k=0;k<120&&!(m&&BI);k++)tick(1);
