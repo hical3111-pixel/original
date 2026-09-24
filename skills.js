@@ -592,10 +592,75 @@ function comboCrimson(pm=1){
     for(const b of booms)b.t+=dt;
   },draw(){for(const b of booms)fleshBoom(b,b.sc)}});
 }
+function comboPrism(pm=1){
+  castLock=2.1;const c0=mCenter(m),R=m.rb*U,angs=[-.45,.45,-1.25,1.25];
+  addFX({dur:2.1,up(dt,o){const t=o.t,c=m?mCenter(m):c0;dimT=Math.max(dimT,.55);castLock=Math.max(castLock,.05);h.hide=t<1.5;
+    for(let i=0;i<4;i++)at(o,.15+i*.22,()=>{const E=ELEM[i],a=angs[i],L=R*4.2,dx=Math.cos(a)*L,dy=Math.sin(a)*L;
+      P.push({t:'streak',x:c.x-dx,y:c.y-dy,x2:c.x+dx,y2:c.y+dy,life:.35,max:.35,w:20*U,color:E.c[1]});
+      P.push({t:'streak',x:c.x-dx,y:c.y-dy,x2:c.x+dx,y2:c.y+dy,life:.2,max:.2,w:6*U,color:'#fff'});
+      for(let k=0;k<5;k++){const f=k/4-.5;P.push({t:'ghost',x:c.x+dx*f*2,y:c.y+dy*f*2+60*U,col:E.c[1],lean:a,ang:2.7,life:.3,max:.3})}
+      elemTrail(i,c.x+rnd(-R,R));burst(c.x,c.y,[E.c[1],E.c[2],'#fff'],16,1100);sfx.slash2();
+      skillHit(1.5,pm,c.x,c.y,{col:E.c[2],sid:'combo'})});
+    at(o,1.15,()=>{P.push({t:'star',x:c.x,y:c.y,size:220*U,life:.2,max:.2});
+      ELEM.forEach((E,i)=>P.push({t:'ring',x:c.x,y:c.y,r0:10*U,r1:(140+i*45)*U,w:8*U,life:.45+i*.05,max:.45+i*.05,color:E.c[1]}));
+      burst(c.x,c.y,ELEM.map(e=>e.c[1]).concat('#fff'),60,1700);sfx.bigboom();
+      skillHit(7,pm,c.x,c.y,{heavy:1,name:'프리즘 질주',col:'#ffffff',fc:'255,255,255',crack:2,sid:'combo'})});
+    if(t>1.5&&!o.rt){o.rt=1;P.push({t:'ring',x:heroX,y:groundY-50*U,r0:10*U,r1:90*U,w:5*U,life:.3,max:.3,color:'#fff'})}
+  },end(){h.hide=false}});
+}
+function comboBeastOrb(pm=1){
+  castLock=2.3;const c0=mCenter(m),R=m.rb*U,RB=95*U;
+  addFX({dur:2.3,up(dt,o){const t=o.t,c=m?mCenter(m):c0;dimT=Math.max(dimT,.55);castLock=Math.max(castLock,.05);
+    if(t<.35){o.x=heroX-60*U;o.y=groundY-90*U;o.r=RB*easeBack(t/.35)}
+    else if(t<.75){const k=easeIn((t-.35)/.4);o.x=lerp(heroX-60*U,c.x,k);o.y=lerp(groundY-90*U,c.y,k);o.r=RB;
+      P.push({t:'ring',x:o.x,y:o.y,r0:RB*.8,r1:RB*1.1,w:4*U,sx:.3,life:.3,max:.3,color:Math.random()<.5?'#7dff5a':'#ff3d8b'})}
+    else if(!o.hit){o.hit=1;o.bx=c.x;o.by=c.y;stop=Math.max(stop,.14);sfx.roar();sfx.bigboom();rubble(c.x,R*2.6,12);
+      burst(c.x,c.y,['#7dff5a','#ff3d8b','#ffe24a','#fff'],60,1700);smoke(c.x,c.y,14,'#1a0a12',1.4);
+      skillHit(8,pm,c.x,c.y,{heavy:1,name:'녹광 괴수탄',col:'#e8ff9a',fc:'220,255,180',crack:2,sid:'combo'})}
+  },draw(o){const t=o.t;
+    if(!o.hit){if(o.x===undefined)return;drawBeast(o.x,o.y,.8,t,1);
+      ctx.globalCompositeOperation='lighter';ctx.strokeStyle='#7dff5a';ctx.lineWidth=5*U;ctx.beginPath();ctx.arc(o.x,o.y,o.r,0,7);ctx.stroke();
+      ctx.globalAlpha=.18;ctx.fillStyle='#7dff5a';ctx.fill();ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over';return}
+    const k=easeOut(Math.min(1,(t-.75)/.45)),f=t>1.5?Math.max(0,1-(t-1.5)/.6):1,Rr=240*U*k;if(f<=0)return;
+    ctx.save();ctx.beginPath();ctx.rect(-100,-100,W+200,groundY+106*U);ctx.clip();ctx.globalCompositeOperation='lighter';ctx.globalAlpha=f;
+    for(const [s,col] of [[1,'rgba(125,255,90,.35)'],[.7,'rgba(255,61,139,.45)'],[.4,'rgba(255,226,74,.7)'],[.18,'rgba(255,255,255,.95)']]){ctx.fillStyle=col;ctx.beginPath();ctx.arc(o.bx,o.by,Rr*s,0,7);ctx.fill()}
+    ctx.strokeStyle='#7dff5a';ctx.lineWidth=10*U*f;ctx.beginPath();ctx.arc(o.bx,o.by,Rr,0,7);ctx.stroke();ctx.restore()}});
+}
+function comboFangs(pm=1){
+  castLock=2;const c0=mCenter(m),R=m.rb*U,n=7,top=[...Array(n)].map((_,i)=>({x:c0.x+(i/(n-1)-.5)*R*3.4,h:rnd(90,150)*U,w:rnd(22,34)*U}));
+  addFX({dur:2,up(dt,o){const t=o.t,c=m?mCenter(m):c0;dimT=Math.max(dimT,.55);castLock=Math.max(castLock,.05);
+    at(o,.15,()=>{for(let i=0;i<n;i++){const x=c0.x+(i/(n-1)-.5)*R*3.4;spike(x,rnd(24,36)*U,rnd(80,150)*U,(x-c0.x)/(R*1.7)*-.5,1,'#2a1450','#d9ccff',1.5)}sfx.chime();addTrauma(.3)});
+    at(o,.72,()=>{flash(.6,'215,200,255');stop=Math.max(stop,.12);sfx.glass();sfx.bigboom();
+      for(let i=0;i<40;i++)P.push({t:'shard',x:c.x+rnd(-R*1.6,R*1.6),y:c.y+rnd(-R,R),vx:rnd(-700,700)*U,vy:rnd(-800,200)*U,g:1600*U,drag:1,floor:1,size:rnd(4,12)*U,rot:rnd(0,6),vr:rnd(-15,15),life:rnd(.7,1.2),max:1.2,color:Math.random()<.5?'#b7a6ff':'#e8dcff'});
+      P.push({t:'ring',x:c.x,y:c.y,r0:10*U,r1:260*U,w:10*U,life:.45,max:.45,color:'#e8dcff'});
+      skillHit(8,pm,c.x,c.y,{heavy:1,name:'결정 용아',col:'#e8dcff',fc:'215,200,255',crack:2,sid:'combo'})});
+  },draw(o){const t=o.t;if(t<.2||t>1.6)return;const c=m?mCenter(m):c0,close=easeIn(clamp((t-.45)/.27,0,1)),f=t>1.2?Math.max(0,1-(t-1.2)/.4):1,
+      baseY=lerp(-40*U,c.y-R*.2,easeOut(clamp((t-.2)/.25,0,1)))+close*R*.9;
+    ctx.globalAlpha=f;for(const s of top){for(const [sc,col] of [[1,'#2a1450'],[.55,'#d9ccff']]){ctx.fillStyle=col;ctx.beginPath();ctx.moveTo(s.x-s.w*sc/2,baseY-s.h*.6);ctx.lineTo(s.x+s.w*sc/2,baseY-s.h*.6);ctx.lineTo(s.x,baseY+s.h*.4*sc);ctx.closePath();ctx.fill()}}
+    ctx.fillStyle='#2a1450';ctx.fillRect(c0.x-R*1.9,baseY-s0(top)*.6-12*U,R*3.8,14*U);ctx.globalAlpha=1}});
+  function s0(a){return Math.max(...a.map(x=>x.h))}
+}
+function comboHellfire(pm=1){
+  castLock=2.6;const c0=mCenter(m),R=m.rb*U,cols=['#5a0a2c','#ff3d8b','#ffb0d8','#fff4fa'],pl=[];
+  addFX({dur:2.7,up(dt,o){const t=o.t,c=m?mCenter(m):c0;dimT=Math.max(dimT,.6);tintA=Math.max(tintA,.1);tintC='255,60,150';castLock=Math.max(castLock,.05);
+    for(let i=0;i<6;i++)at(o,.1+i*.16,()=>{const x=lerp(heroX+90*U,c.x+R*1.4,i/5);pl.push({x,t0:t});sfx.boom();addTrauma(.25);
+      rubble(x,R*.9,3,1);if(Math.abs(x-c.x)<R*1.8)skillHit(1,pm,c.x,c.y,{light:1,col:'#ffc0dd',sid:'combo'})});
+    at(o,1.3,()=>{flash(.8,'255,120,200');stop=Math.max(stop,.14);sfx.roar();sfx.bigboom();burst(c.x,c.y,['#ff3d8b','#fff','#ffb0d8'],60,1800);
+      skillHit(9,pm,c.x,c.y,{heavy:1,name:'악귀 염마',col:'#ffc0dd',fc:'255,120,200',crack:2,sid:'combo'})});
+  },draw(o){const t=o.t;
+    for(const p of pl){const a=t-p.t0,g=easeOut(Math.min(1,a/.12)),f=a>1?Math.max(0,1-(a-1)/.4):1;if(f<=0)continue;const PH=groundY*.9*g,PW=70*U;
+      for(let i=0;i<4;i++){ctx.fillStyle=cols[i];ctx.globalAlpha=f;ctx.beginPath();
+        for(let j=0;j<4;j++)tongue(p.x+(j/3-.5)*PW*(1-i*.22)*.7,groundY+6*U,PW*(1-i*.22)/2,PH*(.7+.3*Math.sin(t*12+j+i+p.x))*(1-i*.1),t*9+j+i);ctx.fill()}}
+    ctx.globalAlpha=1}});
+}
 const COMBOS=[
   {a:'shadow',b:'eclipse',name:'월식 처형',fn:comboLunar,col:'#ff4a6a',d:'붉은 달이 떠오르고, 화면 전체를 가르는 거대한 참격이 떨어진다.'},
   {a:'swords',b:'portal',name:'차원 검우',fn:comboRain,col:'#c9a8ff',d:'하늘에 열린 차원문에서 보랏빛 검이 비처럼 쏟아진다.'},
-  {a:'breath',b:'cannon',name:'진홍 섬멸',fn:comboCrimson,col:'#ff6b7a',d:'기사 앞부터 적까지 붉은 폭발이 연쇄로 터져 나간다.'}];
+  {a:'breath',b:'cannon',name:'진홍 섬멸',fn:comboCrimson,col:'#ff6b7a',d:'기사 앞부터 적까지 붉은 폭발이 연쇄로 터져 나간다.'},
+  {a:'dash',b:'neon',name:'프리즘 질주',fn:comboPrism,col:'#9fe9ff',d:'네 원소가 X자로 적을 가로지르고 무지개빛 섬광으로 터진다.'},
+  {a:'orb',b:'beast',name:'녹광 괴수탄',fn:comboBeastOrb,col:'#7dff5a',d:'초록 구체에 갇힌 괴수가 포탄처럼 날아가 거대한 돔으로 터진다.'},
+  {a:'shield',b:'dragon',name:'결정 용아',fn:comboFangs,col:'#d9ccff',d:'땅과 하늘에서 결정 송곳니가 솟아 턱처럼 적을 물어 부순다.'},
+  {a:'demon',b:'inferno',name:'악귀 염마',fn:comboHellfire,col:'#ff5fa8',d:'분홍 지옥불 기둥이 기사 앞부터 적 너머까지 연달아 솟는다.'}];
 const comboWin=()=>hasMod('chain')?16:8;
 let lastCast=null,pendingCombo=null;
 const skOf=id=>SK.find(s=>s.id===id);
@@ -684,22 +749,38 @@ const cds={};SK.forEach(s=>cds[s.id]=0);
 const unlocked=s=>S.best>=s.unlock;
 const equipped=s=>S.equip.includes(s.id);
 function canCast(s){return fighting()&&(s.buff?frenzyT<=0:castLock<=0)}
+const PRIME_CD=3;            // 시작 스킬을 쓰면 짝 스킬 재사용 대기가 이 값 이하로 줄어든다
+const HOLD_FOR=6;            // 시작 스킬이 이 시간 안에 준비되면 자동 스킬은 마무리 스킬을 아껴 둔다
+const comboOf=id=>COMBOS.find(c=>c.a===id||c.b===id);
 function cast(s,preview){
   if(!canCast(s))return false;
   if(!preview){if(!unlocked(s)||cds[s.id]>0||sealed(s))return false;cds[s.id]=s.cd*ST.cdm;
     const cb=COMBOS.find(c=>lastCast&&c.a===lastCast.id&&c.b===s.id&&gt-lastCast.t<comboWin());
-    if(cb){pendingCombo=cb;sfx.link();T.push({x:heroX,y:groundY-140*U,vx:0,vy:-60*U,text:'연계!',crit:1,label:cb.name,lcol:'#fff',size:34,life:1.2,max:1.2,color:cb.col})}
+    if(cb){pendingCombo=cb;sfx.link();
+      cds[cb.a]*=.5;gauge=Math.min(100,gauge+20*ST.gg);
+      T.push({x:heroX,y:groundY-140*U,vx:0,vy:-60*U,text:'연계!',crit:1,label:cb.name,lcol:'#fff',size:34,life:1.2,max:1.2,color:cb.col})}
     lastCast={id:s.id,t:gt};
-    const nx=COMBOS.find(c=>c.a===s.id);if(nx&&comboReady(nx))sfx.link()}
+    const nx=COMBOS.find(c=>c.a===s.id);
+    if(nx&&comboReady(nx)){const b=skOf(nx.b);sfx.link();
+      if(cds[b.id]>PRIME_CD){cds[b.id]=PRIME_CD;T.push({x:heroX,y:groundY-150*U,vx:0,vy:-50*U,text:'⛓ 연계 준비',crit:0,label:'',size:18,life:1,max:1,color:nx.col})}}}
   s.fn(preview?.1:1);if(br(s.id))branchFX(s,preview?.1:1);if(!s.buff)castLock=Math.max(castLock,.1);return true;
 }
 function autoCast(){
   if(!fighting()||!S.auto)return;
   if(gauge>=100&&castLock<=0){castAwaken();return}
-  if(lastCast&&gt-lastCast.t<8&&castLock<=0&&!pendingCombo){const cb=COMBOS.find(c=>c.a===lastCast.id);
-    if(cb){const s=SK.find(x=>x.id===cb.b);if(equipped(s)&&unlocked(s)&&!sealed(s)&&cds[s.id]<=0){cast(s);return}}}
-  for(let i=SK.length-1;i>=0;i--){const s=SK[i];if(s.id==='shield')continue;
-    if(equipped(s)&&unlocked(s)&&!sealed(s)&&cds[s.id]<=0&&canCast(s)&&(s.buff||m.boss||m.hp>ST.atk*3)){cast(s);break}}
+  const has=s=>equipped(s)&&unlocked(s)&&!sealed(s),ok=s=>has(s)&&cds[s.id]<=0&&canCast(s),worth=s=>s.buff||m.boss||m.hp>ST.atk*3;
+  // 1) 열린 연계는 반드시 마무리한다. 짝 스킬이 곧 준비되면 다른 스킬을 쓰지 않고 기다린다.
+  const L=activeLink();
+  if(L&&!pendingCombo){const b=skOf(L.c.b);if(has(b)){if(ok(b)){cast(b);return}if(cds[b.id]<L.left)return}}
+  if(pendingCombo)return;
+  // 2) 두 스킬이 모두 장착돼 있으면 시작 스킬부터 쓴다 (강한 연계 우선)
+  for(let i=COMBOS.length-1;i>=0;i--){const c=COMBOS[i],a=skOf(c.a),b=skOf(c.b);
+    if(a.id==='shield'||!has(b))continue;if(ok(a)&&worth(a)){cast(a);return}}
+  // 3) 단독 사용. 시작 스킬이 곧 준비되는 마무리 스킬은 아껴 둔다.
+  for(let i=SK.length-1;i>=0;i--){const s=SK[i];if(s.id==='shield'||!ok(s)||!worth(s))continue;
+    const c=COMBOS.find(c=>c.b===s.id),st=c&&skOf(c.a);
+    if(st&&st.id!=='shield'&&has(st)&&cds[st.id]<HOLD_FOR)continue;
+    cast(s);return}
 }
 function tickCombo(){
   if(pendingCombo&&castLock<=0&&fighting()){const cb=pendingCombo;pendingCombo=null;S.combos++;fireCombo(cb,1)}

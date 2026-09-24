@@ -108,6 +108,9 @@ button:focus-visible,input:focus-visible+span{outline:2px solid var(--spirit);ou
 .btns button{border:1px solid var(--line);background:var(--bg);border-radius:7px;padding:3px 8px;font-size:11px;font-weight:700;color:var(--ink);cursor:pointer;white-space:nowrap}
 .btns button.eq.on{background:var(--c);color:#150d22;border-color:transparent}
 .combos{display:grid;gap:8px}
+.cbrule{font-size:12px;color:var(--mute);line-height:1.6;background:var(--bg);border-radius:10px;padding:10px 12px}
+.cbrule b{color:var(--gold)}
+.lnk{align-self:center;font-size:14px;margin:0 -6px;z-index:1;pointer-events:none;text-shadow:0 0 8px currentColor}
 .cbc{background:var(--panel2);border-radius:12px;padding:12px;display:grid;gap:8px;box-shadow:inset 3px 0 0 var(--c)}
 .cbc.locked{opacity:.6;box-shadow:inset 3px 0 0 #3a3360}
 .cbf{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
@@ -183,6 +186,7 @@ details.fold>*+*{margin-top:10px}
   #stageTxt{font-size:15px}
   .skills{gap:4px;left:8px;right:8px;bottom:8px}
   .skill{width:40px;height:40px;border-radius:10px}
+  .lnk{font-size:11px;margin:0 -3px}
   .skill svg{width:21px;height:21px;margin:0}
   .skill .k{display:none}
   .skill .cd{font-size:14px}
@@ -243,7 +247,7 @@ details.fold>*+*{margin-top:10px}
       <div class="list" id="book"></div>
     </details>
     <details class="fold" open>
-      <summary class="sec-h"><h2>연계기</h2><small>두 스킬을 8초 안에 이어 쓰면 발동</small></summary>
+      <summary class="sec-h"><h2>연계기</h2><small>모든 스킬이 짝을 이룹니다 · 7쌍</small></summary>
       <div class="combos" id="combos"></div>
     </details>
     <div class="soul daily" id="daily"></div>

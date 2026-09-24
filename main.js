@@ -630,9 +630,10 @@ for(const u of UP){
   rows[u.id]={lv:el.querySelector('.lv'),desc:el.querySelector('.up-desc'),btn:el.querySelector('.buy'),n:el.querySelector('.n'),c:el.querySelector('.c span')};
   rows[u.id].btn.addEventListener('click',()=>buy(u));
 }
+function barOrder(){const o=[];for(const c of COMBOS)for(const id of [c.a,c.b]){const s=skOf(id);if(equipped(s)&&!o.includes(s))o.push(s)}for(const s of SK)if(equipped(s)&&!o.includes(s))o.push(s);return o}
 function buildBar(){
   const bar=$('skBar');bar.innerHTML='';
-  for(const s of SK){if(!equipped(s))continue;const b=document.createElement('button');b.className='skill';b.style.setProperty('--c',s.c);
+  let prev=null;for(const s of barOrder()){if(prev&&COMBOS.some(c=>c.a===prev.id&&c.b===s.id)){const l=document.createElement('span');l.className='lnk';l.textContent='⛓';l.style.color=comboOf(s.id).col;l.setAttribute('aria-hidden','true');bar.appendChild(l)}prev=s;const b=document.createElement('button');b.className='skill';b.style.setProperty('--c',s.c);
     b.setAttribute('aria-label',s.name);b.innerHTML=IC[s.id]+`<span class="k">${s.name}</span><span class="cd"></span>`;
     b.addEventListener('click',()=>{ensureAudio();if(!cast(s)){try{b.animate([{transform:'translateX(-3px)'},{transform:'translateX(3px)'},{transform:'none'}],{duration:150})}catch(e){}}});
     bar.appendChild(b);s.el=b}
@@ -654,7 +655,7 @@ function buildBook(){
     const eb=r.querySelector('.eq');if(eb)eb.addEventListener('click',()=>toggleEquip(s.id));
     r.querySelector('.pv').addEventListener('click',()=>{ensureAudio();if(!cast(s,true))banner('지금은 시연할 수 없음','몬스터와 싸우는 중에 다시 눌러 주세요','#9d95c4',1.4)});
     el.appendChild(r)}
-  const cb=$('combos');cb.innerHTML='';
+  const cb=$('combos');cb.innerHTML='<div class="cbrule">⛓ <b>시작 스킬</b>을 쓰면 짝 스킬의 재사용 대기가 <b>'+PRIME_CD+'초 이하</b>로 줄어듭니다. '+comboWin()+'초 안에 짝 스킬을 쓰면 연계기가 발동하고, 시작 스킬 대기가 <b>절반</b>으로 줄며 각성 게이지가 20 찹니다. 자동 스킬은 짝 스킬을 아껴 두었다가 연계로 씁니다.</div>';
   for(const c of COMBOS){const a=skOf(c.a),b=skOf(c.b),ok=comboReady(c),both=equipped(a)&&equipped(b),d=document.createElement('div');
     d.className='cbc'+(ok?'':' locked');d.style.setProperty('--c',c.col);
     const st=!ok?`STAGE ${Math.max(a.unlock,b.unlock)}에 해금`:both?'준비됨 · 자동 스킬이면 알아서 이어 씁니다':'두 스킬을 모두 장착해야 발동';
