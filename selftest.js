@@ -199,6 +199,52 @@
     S.codex={};ST=stats();
   });
 
+  section('보스 그림자 추적탄');
+  guard('추적탄 독립 패링/피해/방패',()=>{
+    const reset=(stage=20,enraged=false)=>{S=fresh();S.best=999;S.stage=stage;S.auto=false;S.sound=false;ST=stats();CH=null;BI=null;BF=null;FX=[];P=[];T=[];C=[];B=[];PR=[];relicQ=[];shieldOn=null;stop=0;slowT=0;castLock=0;gauge=0;lastCast=null;pendingCombo=null;h.stun=0;h.dodgeT=-1;atkT=1e6;
+      m=makeMonster(stage);m.state='fight';m.yo=0;m.sh=0;m.hp=m.max=1e12;m.enraged=enraged;m.ph2=true;m.atkT=100;for(const s of SK)cds[s.id]=0};
+    const begin=()=>{const random=Math.random;try{Math.random=()=>.999;m.atkT=0;bossAI(1/60)}finally{Math.random=random}return m.pat};
+    const advance=(p,t)=>{for(let i=0;i<900&&m&&m.pat===p&&p.t<t;i++)tick(1)};
+    const tap=()=>{const lock=castLock,r=cv.getBoundingClientRect();castLock=Math.max(1,lock);cv.dispatchEvent(new PointerEvent('pointerdown',{clientX:r.left+heroX,clientY:r.top+groundY-60*U}));castLock=lock};
+    const parries=(p,mask)=>{for(let i=0;i<p.orbs.length;i++){const g=p.orbs[i];advance(p,g.imp-.15);
+      ok(bossParryTarget(p)===g&&g.imp-p.t>=0&&g.imp-p.t<=.5,`${i+1}번째 구체의 독립 경고 구간`);render();if(mask[i])tap();advance(p,g.imp+.01)}};
+    try{
+      reset(15);ok(begin().ty!=='orbs','20 스테이지 이전 추적탄 출현 금지');
+      reset();let p=begin();ok(p.ty==='orbs'&&p.orbs.length===3,'20 스테이지 보스 추적탄 3개 발생');
+      ok(p.orbs.every((g,i)=>Math.abs(g.imp-(1.2+i*.4))<1e-9),'추적탄 적중 간격 0.4초');
+      advance(p,.6);tap();ok(p.orbs.every(g=>!g.parry),'경고 전 탭은 패링 불가');advance(p,1.1);tap();tap();
+      ok(p.orbs[0].parry&&p.orbs.slice(1).every(g=>!g.parry),'연속 탭도 현재 구체 하나만 패링');advance(p,1.22);
+      ok(p.orbs[0].result==='parried'&&m.pat===p&&!m.stun,'첫 패링 후 나머지 구체/보스 패턴 유지');
+      reset();p=begin();p.evade=false;const hp=m.hp;parries(p,[true,true,true]);
+      ok(S.parries===3&&p.orbs.every(g=>g.result==='parried'),'실제 탭 이벤트로 3연속 독립 패링');
+      ok(p.returning&&CUT?.name==='완벽 반사!'&&!h.stun,'전부 패링 시 완벽 반사 연출/피해 없음');settle(200);
+      ok(Math.abs(hp-m.hp-ST.atk*12)<.001,'완벽 반사 피해 공격력 12배');ok(T.some(t=>t.label==='완벽 반사!'||t.label==='치명타')||m.stun>0,'완벽 반사 강타/보스 기절');
+      reset();p=begin();p.evade=false;parries(p,[false,true,false]);
+      ok(S.parries===1&&p.orbs.filter(g=>g.result==='hit').length===2&&!p.returning,'부분 패링 시 해당 구체만 차단');
+      ok(Math.abs(p.stunTotal-1.3*2/3)<1e-9,'1/3 패링 시 총 기절 피해 2/3');
+      reset();p=begin();p.evade=false;parries(p,[true,false,true]);ok(Math.abs(p.stunTotal-1.3/3)<1e-9,'2/3 패링 시 총 기절 피해 1/3');
+      reset(20,true);p=begin();ok(p.orbs.length===4,'2페이즈 추적탄 4개');
+      const t0=p.t;bossAI(.4);ok(Math.abs(p.t-t0-.4)<1e-9,'2페이즈에서도 구체 간격 가속 없음');p.evade=false;parries(p,[true,true,true,true]);
+      ok(S.parries===4&&p.returning,'2페이즈 4연속 패링 시 완벽 반사');
+      reset();p=begin();p.evade=false;advance(p,.8);cast(skOf('shield'));const shield=shieldOn;advance(p,1.24);
+      ok(p.orbs[0].result==='blocked'&&shield.blocked&&S.parries===0&&!h.stun,'결정 방패는 패링과 별개로 구체 차단');advance(p,1.5);
+      ok(shield.ph===1&&shieldOn===null,'막기 후 기존 방패 변환 동작 유지');advance(p,2.05);
+      ok(p.orbs.slice(1).every(g=>g.result==='hit')&&!p.returning,'소모된 방패는 뒤 구체까지 자동 차단하지 않음');settle(200);ok(shield.pl,'막기 후 기존 결정 파쇄검 발동');
+      reset();p=begin();p.t=p.imp+.01;tap();ok(!p.orbs[0].parry,'적중 시각 이후 탭은 소급 패링 불가');
+      for(const enrage of [false,true]){reset(20,enrage);p=begin();p.evade=false;advance(p,p.orbs.at(-1).imp+.01);
+        ok(Math.abs(p.stunTotal-1.3)<1e-9,'무조작 총 기절 상한 1.3초: '+(enrage?'4개':'3개'));
+        reset(20,enrage);p=begin();const random=Math.random;let rolls=0;
+        try{Math.random=()=>{rolls++;return .2};resolveBossOrb(p,p.orbs[0]);const firstRolls=rolls;
+          Math.random=()=>.9;for(const g of p.orbs.slice(1))resolveBossOrb(p,g);
+          ok(firstRolls>0&&p.evade&&p.orbs.every(g=>g.result==='dodged')&&!h.stun,'회피 결과는 묶음 전체에 유지: '+(enrage?'4개':'3개'));
+        }finally{Math.random=random}}
+      for(const evade of [true,false]){reset();CH={stage:20,mods:[DMODS.find(x=>x.id==='glass')],saved:{stage:20,kills:0,farm:false,farmKills:0}};p=begin();p.evade=evade;advance(p,p.orbs.at(-1).imp+.01);
+        ok(evade?!!CH&&p.orbs.every(g=>g.result==='dodged'):!CH&&m.state==='flee'&&p.orbs.filter(g=>g.res).length===1,'유리 대포에서도 묶음 단위 회피/피격 실패: '+evade)}
+      reset();const random=Math.random;try{Math.random=()=>.9;resolveHit({ty:'slam',parry:false});ok(h.stun===1.3,'기존 단타 패턴 기절 1.3초 유지')}finally{Math.random=random}
+      reset();p=begin();parries(p,[true,true,true]);m=null;spawnT=100;settle(200);ok(FX.length===0,'반사 중 보스 소멸 시 안전 정리');
+    }finally{reset(5);m=null;spawnT=100;buildBar()}
+  });
+
   section('정리');
   guard('정리',()=>{tick(600);ok(FX.length===0,'연출이 끝나지 않고 남아 있음: '+FX.length+'개');ok(castLock<=0,'castLock이 풀리지 않음')});
 
