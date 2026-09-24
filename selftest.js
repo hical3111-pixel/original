@@ -6,7 +6,10 @@
   const startedAt=performance.now(),lines=[];let pass=0,fail=0;
   const ok=(cond,msg)=>{if(cond){pass++}else{fail++;lines.push('✗ '+msg)}};
   const section=name=>lines.push('— '+name);
-  const tick=n=>{for(let i=0;i<n;i++){update(1/60);render()}};
+  // 속도를 위해 그리기는 4프레임마다(+마지막 프레임). 짧은 연출 구간(0.2초 이상)도 여러 번 그려진다.
+  let frameNo=0;const tick=n=>{for(let i=0;i<n;i++){update(1/60);if(++frameNo%4===0||n>1&&i===n-1)render()}};
+  // 연출이 모두 끝날 때까지만 진행한다(최대 n프레임). 끝까지 돌리므로 검사 범위는 같다.
+  const settle=n=>{for(let i=0;i<n;i++){update(1/60);if(++frameNo%4===0)render();if(i>=30&&FX.length===0&&castLock<=0&&!pendingCombo)break}render()};
   const toFight=()=>{for(let k=0;k<120&&(!fighting()||castLock>0);k++){if(BI)skipBossIntro();tick(10)}};
   const guard=(name,fn)=>{try{fn()}catch(e){fail++;lines.push('✗ '+name+' 예외: '+e.message+' @ '+String(e.stack||'').split('\n')[1])}};
 
@@ -40,12 +43,12 @@
   guard('스킬',()=>{
     for(const s of SK)for(const b of [null,'a','b']){if(b)S.awk[s.id]=b;else delete S.awk[s.id];
       toFight();if(!m){fail++;lines.push('✗ 몬스터가 나오지 않음');return}m.hp=m.max=1e15;castLock=0;frenzyT=0;
-      ok(cast(s,true),s.id+(b||'')+': 시연 실패');tick(s.buff?30:300)}
+      ok(cast(s,true),s.id+(b||'')+': 시연 실패');settle(s.buff?30:300)}
     S.awk={};
   });
 
   section('연계기');
-  guard('연계기',()=>{for(const c of COMBOS){toFight();m.hp=m.max=1e15;castLock=0;ok(previewCombo(c),c.name+': 시연 실패');tick(300)}
+  guard('연계기',()=>{for(const c of COMBOS){toFight();m.hp=m.max=1e15;castLock=0;ok(previewCombo(c),c.name+': 시연 실패');settle(300)}
     // 규칙: 시작 스킬을 쓰면 짝 스킬 쿨타임이 PRIME_CD 이하로 줄어든다
     const c=COMBOS.find(x=>x.a!=='shield'&&!skOf(x.a).buff),a=skOf(c.a),b=skOf(c.b);toFight();m.hp=m.max=1e15;castLock=0;
     for(const s of SK)cds[s.id]=0;cds[b.id]=30;lastCast=null;pendingCombo=null;cast(a);ok(cds[b.id]<=PRIME_CD,'연계 준비: 짝 쿨타임이 '+PRIME_CD+'초 이하로 줄지 않음');
@@ -135,7 +138,7 @@
   });
 
   section('각성기');
-  guard('각성기',()=>{for(const a of AWK){toFight();m.hp=m.max=1e15;castLock=0;ok(previewAwk(a),a.name+': 시연 실패');tick(360)}
+  guard('각성기',()=>{for(const a of AWK){toFight();m.hp=m.max=1e15;castLock=0;ok(previewAwk(a),a.name+': 시연 실패');settle(360)}
     S.awkSel=AWK[0].id;toFight();m.hp=m.max=1e15;castLock=0;gauge=100;ok(castAwaken(),'게이지 100에서 각성기 발동 실패');ok(gauge===0,'각성기 발동 후 게이지가 0이 아님');tick(360)});
 
   section('보스 · 2페이즈 · 패턴');
