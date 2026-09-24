@@ -184,7 +184,7 @@ function update(rdt){
   const dt=rdt*ts;gt+=dt;
   dimT=0;tintA=0;
 
-  for(const s of SK)cds[s.id]=Math.max(0,cds[s.id]-dt);
+  for(const s of SK)cds[s.id]=Math.max(0,cds[s.id]-dt*(circleT>0?2:1));if(circleT>0)circleT-=dt;
   castLock=Math.max(0,castLock-dt);
   if(frenzyT>0){frenzyT-=dt;
     if(Math.random()<dt*45)P.push({t:'flame',x:heroX+rnd(-24,24)*U,y:groundY-rnd(10,90)*U,vx:rnd(-20,20)*U,vy:-rnd(80,200)*U,drag:1,g:0,r:rnd(5,11)*U,cols:['#3a0620','#ff3d8b','#ffb0d8'],life:rnd(.3,.6),max:.6});}
@@ -239,7 +239,7 @@ function update(rdt){
     m.ly+=(m.lyT-m.ly)*Math.min(1,dt*(m.lyF||6));m.lyT=0;m.lyF=6;
     m.px+=(m.pxT-m.px)*Math.min(1,dt*m.pxF);m.pxT=0;m.pxF=6;
     m.sc+=(m.scT-m.sc)*Math.min(1,dt*6);m.scT=1;
-    m.flash=Math.max(0,m.flash-dt*9);m.hurt-=dt;
+    m.flash=Math.max(0,m.flash-dt*9);m.hurt-=dt;if(m.vuln>0)m.vuln-=dt;
     if(m.chipT>0)m.chipT-=dt;else m.chip+=(m.hp-m.chip)*Math.min(1,dt*7);
     if(m.state==='enter'){
       if(m.mini){const k=Math.min(1,m.t/.32);m.yo=lerp(-150*U,0,easeIn(k));if(k>=1){m.state='fight';m.sqv=7;P.push({t:'ring',x:m.x,y:groundY,r0:6*U,r1:60*U,w:4*U,sy:.25,life:.3,max:.3,color:'#fff'})}}
@@ -599,7 +599,7 @@ function render(){
   drawBG();
   if(dimCur>.01){ctx.fillStyle=`rgba(4,2,10,${dimCur})`;ctx.fillRect(-60,-60,W+120,H+120)}
   for(const o of FX)o.back&&o.back(o);
-  drawAllies();
+  drawCircleBuff();drawAllies();
   drawBossIntroWorld();
   if(m)drawMonster(m);
   drawBossRoar();
@@ -639,15 +639,16 @@ function buildBar(){
     bar.appendChild(b);s.el=b}
   for(const s of SK)if(!equipped(s))s.el=null;
   const a=document.createElement('button');a.className='skill awk';a.id='awk';a.setAttribute('aria-label','각성: 천검멸');
-  a.innerHTML='<svg viewBox="0 0 32 32"><path d="M16 2l2 11 11-2-9 6 6 10-10-7-10 7 6-10-9-6 11 2z" fill="#ff2a3a" stroke="#fff" stroke-width="1"/></svg><span class="k">천검멸</span><span class="cd"></span>';
+  const A=awkSel();a.setAttribute('aria-label','각성기: '+A.name);a.innerHTML=awkIcon(A)+'<span class="k">'+A.name+'</span><span class="cd"></span>';
   a.addEventListener('click',()=>{ensureAudio();if(!castAwaken()){try{a.animate([{transform:'translateX(-3px)'},{transform:'translateX(3px)'},{transform:'none'}],{duration:150})}catch(e){}}});
   bar.appendChild(a);
 }
 function toggleEquip(id){const i=S.equip.indexOf(id);
-  if(i>=0)S.equip.splice(i,1);else{if(S.equip.length>=7){banner('슬롯이 가득 찼습니다','다른 스킬을 먼저 해제하세요','#9d95c4',1.4);return}S.equip.push(id)}
+  if(i>=0)S.equip.splice(i,1);else{if(S.equip.length>=8){banner('슬롯이 가득 찼습니다','다른 스킬을 먼저 해제하세요','#9d95c4',1.4);return}S.equip.push(id)}
   buildBar();buildBook();save()}
 function buildBook(){
-  const el=$('book'),TR=tier();el.innerHTML='';$('slotTxt').textContent=`장착 ${S.equip.length}/7 · 연출 ${'★'.repeat(TR)}${'☆'.repeat(3-TR)}`;
+  buildAwk();
+  const el=$('book'),TR=tier();el.innerHTML='';$('slotTxt').textContent=`장착 ${S.equip.length}/8 · 연출 ${'★'.repeat(TR)}${'☆'.repeat(3-TR)}`;
   for(const s of SK){const r=document.createElement('div'),lk=!unlocked(s),eq=equipped(s);r.className='bk'+(lk?' locked':'');r.style.setProperty('--c',s.c);
     r.innerHTML=`<i></i><div><b>${s.name}</b><small>${s.d}${comboTag(s)}</small>${awkHTML(s)}</div><div class="st">${lk?'STAGE '+s.unlock:''}<span class="btns">${lk?'':`<button type="button" class="eq${eq?' on':''}">${eq?'해제':'장착'}</button>`}<button type="button" class="pv">시연</button></span></div>`;
     r.querySelectorAll('[data-br]').forEach(x=>x.addEventListener('click',()=>{setBranch(s,x.dataset.br);buildBook()}));
@@ -801,7 +802,7 @@ function frame(now){
 }
 function start(data){
   load(data&&data.S);
-  if(!Array.isArray(S.equip))S.equip=SK.filter(unlocked).slice(0,7).map(s=>s.id);
+  if(!Array.isArray(S.equip))S.equip=SK.filter(unlocked).slice(0,8).map(s=>s.id);
   S.equip=S.equip.filter(id=>SK.some(s=>s.id===id));
   ST=stats();dispGold=S.gold;zoneShown=zoneOf(S.stage);
   $('autoSk').checked=S.auto;soundUI();titleUI();
@@ -867,4 +868,14 @@ function chUI(){
     <p>시련의 군주(STAGE ${CH?CH.stage:chStage()} 보스, 체력 1.5배)를 <b>60초 안에</b> 쓰러뜨리면 골드와 <b>희귀 등급 이상 유물</b>을 받습니다. 실패해도 오늘 안에 다시 도전할 수 있어요.</p>
     <button type="button" id="chBtn" ${CH||done?'disabled':''}>${CH?'시련 진행 중…':done?'오늘의 시련 완료 ✓ · 내일 새 시련':'시련 시작'}</button>`;
   const b=$('chBtn');if(b&&!CH&&!done)b.addEventListener('click',()=>{ensureAudio();startChallenge()});
+}
+
+/* ================= awakening picker ================= */
+function buildAwk(){
+  const el=$('awks');if(!el)return;el.innerHTML='';const sel=awkSel();
+  for(const a of AWK){const lk=S.best<a.unlock,on=sel.id===a.id,r=document.createElement('div');r.className='bk'+(lk?' locked':'');r.style.setProperty('--c',a.c);
+    r.innerHTML=`<i></i><div><b>${a.name}</b><small>${a.d}</small></div><div class="st">${lk?'STAGE '+a.unlock:''}<span class="btns">${lk?'':`<button type="button" class="eq${on?' on':''}">${on?'선택됨':'선택'}</button>`}<button type="button" class="pv">시연</button></span></div>`;
+    const eb=r.querySelector('.eq');if(eb&&!on)eb.addEventListener('click',()=>{S.awkSel=a.id;sfx.link();buildBar();buildAwk();save()});
+    r.querySelector('.pv').addEventListener('click',()=>{ensureAudio();if(!previewAwk(a))banner('지금은 시연할 수 없음','몬스터와 싸우는 중에 다시 눌러 주세요','#9d95c4',1.4)});
+    el.appendChild(r)}
 }
