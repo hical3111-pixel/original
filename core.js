@@ -191,7 +191,7 @@ const sfx={
 /* ================= canvas & world vars ================= */
 const cv=$('cv'),ctx=cv.getContext('2d'),stageEl=$('stage');
 let W=800,H=450,DPR=1,U=1,groundY=340,heroX=200,monX=540,gx=40,gy=30,VIG=null,stars=[];
-let m=null,spawnT=.6,miniQ=0,miniX=0,P=[],T=[],C=[],B=[],PR=[],FX=[],CR=[],BN=null,CUT=null;
+let m=null,spawnT=.6,miniQ=0,miniX=0,P=[],T=[],C=[],B=[],PR=[],FX=[],CR=[],BN=null,CUT=null,BF=null;
 let trauma=0,zoom=1,flashA=0,flashC='255,255,255',stop=0,slowT=0,gt=0,bgX=0,invertT=0,desat=0;
 let dimT=0,dimCur=0,tintA=0,tintC='255,120,40',tintCur=0;
 let combo=0,comboT=0,comboPop=0,atkT=0,lastTap=0,bossT=30,castLock=0,gauge=0;
@@ -311,7 +311,41 @@ function deal(d,crit,src,x,y,o={}){
   else{stop=Math.max(stop,.028);addTrauma(.1)}
   gauge=Math.min(100,gauge+(src==='hero'||src==='tap'?.5:light?.12:src==='skill'?2:.3)*ST.gg);
   if(o.crack)addCrack(x,y,o.crack>1);
-  if(m.hp<=0)kill();
+  if(m.hp<=0)kill(m.boss?getFinisherInfo(src,o,crit):null);
+}
+function getFinisherInfo(src,o={},crit=false){
+  let name='',col=o.col||'',kind='결정타',sub='FINISHING BLOW';
+  if(o.sid==='awaken'||o.sid==='awk'||(typeof AWK!=='undefined'&&AWK.some(a=>a.id===o.sid))){
+    const a=(typeof AWK!=='undefined'&&AWK.find(x=>x.id===o.sid))||(typeof awkSel==='function'?awkSel():null);
+    name=o.name||(a?a.name:'각성 비기');col=col||(a?a.c:'#ff2a3a');kind='각성기 결정타';sub='AWAKENING FINISH';
+  }else if(o.sid==='combo'){
+    const c=(typeof COMBOS!=='undefined'&&o.name)?COMBOS.find(x=>x.name===o.name):null;
+    name=o.name||'연계 비기';col=col||(c?c.col:'#ff4f5e');kind='연계기 결정타';
+    const sa=c&&typeof SK!=='undefined'?SK.find(s=>s.id===c.a):null,sb=c&&typeof SK!=='undefined'?SK.find(s=>s.id===c.b):null;
+    sub=(sa&&sb)?`${sa.name} ＋ ${sb.name}`:'COMBO FINISH';
+  }else if(o.sid&&typeof SK!=='undefined'&&SK.some(s=>s.id===o.sid)){
+    const s=SK.find(x=>x.id===o.sid);name=o.name||s.name;col=col||s.c;kind='스킬 결정타';sub='SKILL FINISH';
+  }else if(src==='skill'){
+    name=o.name||'스킬 비기';col=col||'#8ff6ff';kind='스킬 결정타';sub='SKILL FINISH';
+  }else if(src==='tap'){
+    name=crit?'일섬 · 멸':'일섬';col=col||'#ff5fb0';kind=crit?'회심의 쾌검':'쾌검 결정타';sub=crit?'CRITICAL SLASH':'FATAL SLASH';
+  }else if(src==='hero'){
+    name=crit?'비검 회심타':'일반 공격';col=col||(crit?'#ffe066':'#ffffff');kind=crit?'회심의 일격':'기사의 일격';sub=crit?'CRITICAL STRIKE':'SWORD STRIKE';
+  }else if(src==='spirit'){
+    name='정령탄';col=col||'#8ff6ff';kind='정령의 일격';sub='SPIRIT FINISH';
+  }else if(src==='ally'){
+    name='동료 지원';col=col||'#c8ffb0';kind='동료의 일격';sub='ALLY FINISH';
+  }else if(src==='relic'){
+    name=col==='#ffe066'?'뇌전의 심판':'화염의 불씨';col=col||'#ffe066';kind='유물 발동';sub='RELIC FINISH';
+  }
+  if(!name)name='결정타';if(!col)col='#ff4f5e';
+  return {name,col,kind,sub};
+}
+function triggerBossFinisher(fin,o){
+  const c=mCenter(o);
+  BF={name:fin.name,col:fin.col,kind:fin.kind,sub:fin.sub,t:0,dur:1.6};
+  CUT=null;stop=Math.max(stop,.38);addTrauma(.75);zoom+=.12*FXS;flash(.85,'255,255,255');
+  sfx.slash2();sfx.cutin();slowT=1.35;ink(c.x,c.y,35,'#120008');addCrack(c.x,c.y,true);
 }
 function skillHit(mult,pm,x,y,o){
   const crit=Math.random()<ST.cc;
@@ -342,9 +376,10 @@ function killFx(o){
   if(b){T.push({x:c.x,y:c.y-r*1.2,vx:0,vy:-60*U,text:'격파!',crit:1,label:'',size:64,life:1.4,max:1.4,color:'#ff4f5e'});addCrack(c.x,c.y,true)}
   sfx.kill(b);
 }
-function kill(){
+function kill(fin){
   const o=m,b=o.boss;o.hp=0;
-  if(b){o.state='split';o.deadT=0;o.cutA=rnd(-.7,-.25);o.fx=0;stop=Math.max(stop,.32);addTrauma(.5);flash(.7);sfx.slash2();slowT=1.2;
+  if(b){o.state='split';o.deadT=0;o.cutA=rnd(-.7,-.25);o.fx=0;
+    triggerBossFinisher(fin||getFinisherInfo('hero'),o);
     S.bossKills++;if(o.lastSrc==='eclipse')S.eclBoss++;if(o.enraged)S.phase2++;}
   else{o.state='dead';o.deadT=0;stop=Math.max(stop,.1);addTrauma(.55);zoom+=.07*FXS;flash(.35);killFx(o)}
   if(o.split){miniQ=2;miniX=mCenter(o).x}

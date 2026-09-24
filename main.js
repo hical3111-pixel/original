@@ -173,6 +173,7 @@ function update(rdt){
   dispGold+=(S.gold-dispGold)*Math.min(1,rdt*9);if(Math.abs(S.gold-dispGold)<.5)dispGold=S.gold;
   if(BN){BN.t+=rdt;if(BN.t>BN.dur)BN=null}
   if(CUT){CUT.t+=rdt;if(CUT.t>CUT.dur)CUT=null}
+  if(BF){BF.t+=rdt;if(BF.t>BF.dur)BF=null}
   for(let i=CR.length-1;i>=0;i--){const c=CR[i];c.t+=rdt;
     if(c.t>c.dur*.5&&!c.sd){c.sd=1;for(let j=0;j<14;j++)c.sh.push({x:c.x+rnd(-90,90)*U,y:c.y+rnd(-90,90)*U,vx:rnd(-120,120)*U,vy:rnd(-160,0)*U,s:rnd(6,16)*U,r:rnd(0,6)})}
     for(const s of c.sh){s.vy+=1400*U*rdt;s.x+=s.vx*rdt;s.y+=s.vy*rdt;s.r+=rdt*6}
@@ -575,6 +576,42 @@ function drawCutin(){
     if(k>=1){ctx.fillStyle='#fff';star4(mx+ds,py,ds*2.2*(1+.2*Math.sin(t*30)),ds*.5,0);ctx.fill()}}
   ctx.restore();ctx.restore();
 }
+function drawBossFinisher(){
+  if(!BF)return;const t=BF.t,d=BF.dur;
+  const inK=easeOut(Math.min(1,t/.18)),outK=t>d-.25?easeIn((t-(d-.25))/.25):0,a=(1-outK)*inK;
+  if(a<=0)return;
+  const cy=H*.43,bh=clamp(H*.34,105,220),sk=Math.min(45,W*.06),slam=t<.18?1+.28*(1-t/.18):1;
+  ctx.save();
+  ctx.fillStyle=`rgba(0,0,0,${.58*a})`;ctx.fillRect(0,0,W,H);
+  ctx.save();ctx.beginPath();ctx.moveTo(-50,cy-bh/2+sk);ctx.lineTo(W+50,cy-bh/2-sk);ctx.lineTo(W+50,cy+bh/2-sk);ctx.lineTo(-50,cy+bh/2+sk);ctx.closePath();
+  ctx.fillStyle='#07040e';ctx.globalAlpha=a;ctx.fill();ctx.clip();
+  const g=ctx.createRadialGradient(W*.5,cy,10,W*.5,cy,W*.55);g.addColorStop(0,BF.col);g.addColorStop(.6,'rgba(10,4,20,.6)');g.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.globalAlpha=.45*a;ctx.fillStyle=g;ctx.fillRect(-50,cy-bh,W+100,bh*2);
+  ctx.globalAlpha=.5*a;ctx.strokeStyle='rgba(255,255,255,.35)';ctx.lineWidth=2;ctx.beginPath();
+  for(let i=0;i<24;i++){const ly=cy-bh/2+((i*31)%bh),lx=W-((t*3200+i*173)%(W+400));ctx.moveTo(lx,ly);ctx.lineTo(lx+140+(i%3)*70,ly)}ctx.stroke();
+  if(t<.32){const sk2=Math.min(1,t/.12),sw=Math.max(1,8*U*(1-t/.32));ctx.globalCompositeOperation='lighter';ctx.globalAlpha=1-t/.32;
+    ctx.fillStyle='#fff';ctx.fillRect(W*.5-W*.6*sk2,cy-sw/2,W*1.2*sk2,sw);ctx.fillStyle=BF.col;ctx.fillRect(W*.5-W*.65*sk2,cy-sw,W*1.3*sk2,sw*2);ctx.globalCompositeOperation='source-over'}
+  ctx.globalAlpha=.8*a;ctx.strokeStyle=BF.col;ctx.lineWidth=2.5*U;ctx.beginPath();
+  ctx.moveTo(-50,cy-bh/2+sk);ctx.lineTo(W+50,cy-bh/2-sk);ctx.moveTo(-50,cy+bh/2+sk);ctx.lineTo(W+50,cy-bh/2-sk);ctx.stroke();
+  ctx.strokeStyle='rgba(255,255,255,.7)';ctx.lineWidth=1*U;ctx.stroke();ctx.restore();
+  ctx.save();ctx.translate(W*.5,cy);ctx.scale(slam,slam);ctx.globalAlpha=a;
+  const chipFs=Math.max(10,Math.round(bh*.13));ctx.font=`700 ${chipFs}px "Noto Sans KR",sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';
+  const chipY=-bh*.26,chipTxt=`◆  ${BF.kind}  ◆`,chipW=ctx.measureText(chipTxt).width+24;
+  ctx.fillStyle='rgba(15,10,30,.85)';ctx.strokeStyle=BF.col;ctx.lineWidth=1.5;ctx.beginPath();
+  ctx.roundRect(-chipW/2,chipY-chipFs*.8,chipW,chipFs*1.6,chipFs*.8);ctx.fill();ctx.stroke();
+  ctx.fillStyle=BF.col;ctx.shadowColor=BF.col;ctx.shadowBlur=8;ctx.fillText(chipTxt,0,chipY);ctx.shadowBlur=0;
+  let fs=Math.round(clamp(bh*.38,28,54));const maxW=W*.82;
+  ctx.font=`${fs}px "Black Han Sans",sans-serif`;
+  while(ctx.measureText(BF.name).width>maxW&&fs>16){fs-=2;ctx.font=`${fs}px "Black Han Sans",sans-serif`}
+  const mainY=bh*.03;ctx.lineJoin='round';ctx.lineWidth=Math.max(6,Math.round(fs*.18));ctx.strokeStyle='#000';ctx.strokeText(BF.name,0,mainY);
+  ctx.fillStyle='#fff';ctx.shadowColor=BF.col;ctx.shadowBlur=20;ctx.fillText(BF.name,0,mainY);ctx.shadowBlur=0;
+  const nameHalfW=ctx.measureText(BF.name).width/2,starDist=Math.min(nameHalfW+18,W*.46);
+  ctx.fillStyle='#fff';const starS=Math.max(6,fs*.22)*(1+.15*Math.sin(t*24));
+  star4(-starDist,mainY,starS,starS*.35,0);ctx.fill();star4(starDist,mainY,starS,starS*.35,0);ctx.fill();
+  const subFs=Math.max(10,Math.round(fs*.28));ctx.font=`700 ${subFs}px "Noto Sans KR",sans-serif`;const subY=bh*.31;
+  ctx.lineWidth=3;ctx.strokeStyle='#000';ctx.strokeText(BF.sub,0,subY);ctx.fillStyle='rgba(240,235,255,.9)';ctx.fillText(BF.sub,0,subY);
+  ctx.restore();ctx.restore();
+}
 function drawCracks(){
   for(const c of CR){const t=c.t,al=t<c.dur*.6?1:Math.max(0,1-(t-c.dur*.6)/(c.dur*.4)),k=Math.min(1,t/.06);
     ctx.globalAlpha=al;ctx.lineJoin='round';
@@ -617,7 +654,7 @@ function render(){
   if(invertT>0&&!RM){ctx.globalCompositeOperation='difference';ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);ctx.globalCompositeOperation='source-over'}
   drawInk();drawCracks();
   drawBossIntro();drawPhasePlate();drawLinkHint();
-  drawCoins();drawCombo();drawBanner();drawCutin();
+  drawCoins();drawCombo();drawBanner();drawCutin();drawBossFinisher();
 }
 
 /* ================= UI ================= */
