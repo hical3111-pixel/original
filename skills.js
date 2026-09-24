@@ -653,20 +653,66 @@ function comboHellfire(pm=1){
     ctx.globalAlpha=1}});
 }
 const COMBOS=[
-  {a:'shadow',b:'eclipse',name:'월식 처형',fn:comboLunar,col:'#ff4a6a',d:'붉은 달이 떠오르고, 화면 전체를 가르는 거대한 참격이 떨어진다.'},
-  {a:'swords',b:'portal',name:'차원 검우',fn:comboRain,col:'#c9a8ff',d:'하늘에 열린 차원문에서 보랏빛 검이 비처럼 쏟아진다.'},
-  {a:'breath',b:'cannon',name:'진홍 섬멸',fn:comboCrimson,col:'#ff6b7a',d:'기사 앞부터 적까지 붉은 폭발이 연쇄로 터져 나간다.'},
-  {a:'dash',b:'neon',name:'프리즘 질주',fn:comboPrism,col:'#9fe9ff',d:'네 원소가 X자로 적을 가로지르고 무지개빛 섬광으로 터진다.'},
-  {a:'orb',b:'beast',name:'녹광 괴수탄',fn:comboBeastOrb,col:'#7dff5a',d:'초록 구체에 갇힌 괴수가 포탄처럼 날아가 거대한 돔으로 터진다.'},
-  {a:'shield',b:'sniper',name:'결정 굴절포',fn:comboRefract,col:'#b8ffb0',d:'녹광 저격이 결정 방패를 통과하며 일곱 갈래로 갈라져 적에게 모인다.'},
-  {a:'demon',b:'upper',name:'혈귀 염마',fn:comboHellfire,col:'#ff5fa8',d:'분홍 지옥불 기둥이 기사 앞부터 적 너머까지 연달아 솟는다.'},
-  {a:'archers',b:'wolf',name:'사냥의 밤',fn:comboHunt,col:'#7fd8ff',d:'달빛 아래 화살비가 적을 묶고, 그림자 늑대 셋이 번갈아 물어뜯는다.'},
-  {a:'hands',b:'skulls',name:'망자의 연회',fn:comboFeast,col:'#c9a8ff',d:'거대한 그림자 손이 적을 움켜쥐고, 해골 망령 열 개가 차례로 파고든다.'},
-  {a:'whip',b:'dslash',name:'업화 난무',fn:comboPyre,col:'#ffa05a',d:'불꽃 채찍이 사방으로 휘몰아친 뒤, 거대한 참격파 두 줄기가 X자로 교차한다.'},
-  {a:'spear',b:'thunder',name:'뇌신 강림',fn:comboThunderGod,col:'#ffe853',keep:{get:()=>thunderSpear(),ready:1.2,release:releaseSpear},d:'박힌 뇌창이 피뢰침이 되어 연속 낙뢰를 부르고, 번개 폭풍으로 대폭발을 일으킨다.'},
-  {a:'gravity',b:'meteor',name:'천붕',fn:comboSkyfall,col:'#ff9470',keep:{get:()=>gravityWell(),ready:1.8,release:releaseGravity},d:'중력 구속의 남은 구체가 운석을 휘어 끌어당긴다. 같은 구체와 충돌해 하얀 중심의 대폭발을 일으킨다.'},
-  {a:'frostcut',b:'icedragon',name:'빙룡쇄파',fn:comboIceDragon,col:'#61DCF3',keep:{get:()=>iceKeep('spikes'),ready:1.25,release:releaseIce},d:'서리 월참의 가시 3개가 남는다. 백룡이 같은 가시를 차례로 깨뜨려 빙룡쇄파를 일으킨다.'},
-  {a:'iceflower',b:'frostspiral',name:'만화빙정',fn:comboIceFlower,col:'#61DCF3',keep:{get:()=>iceKeep('petals'),ready:1.35,release:releaseIce},d:'빙화 장벽의 꽃잎 6개가 남는다. 동결 나선이 같은 꽃잎을 흡수해 거대한 빙정으로 폭발한다.'}];
+  {school:'eclipse',a:'shadow',b:'eclipse',name:'월식 처형',fn:comboLunar,col:'#ff4a6a',d:'붉은 달이 떠오르고, 화면 전체를 가르는 거대한 참격이 떨어진다.'},
+  {school:'abyss',a:'swords',b:'portal',name:'차원 검우',fn:comboRain,col:'#c9a8ff',d:'하늘에 열린 차원문에서 보랏빛 검이 비처럼 쏟아진다.'},
+  {school:'crimson',a:'breath',b:'cannon',name:'진홍 섬멸',fn:comboCrimson,col:'#ff6b7a',d:'기사 앞부터 적까지 붉은 폭발이 연쇄로 터져 나간다.'},
+  {school:'storm',a:'dash',b:'neon',name:'프리즘 질주',fn:comboPrism,col:'#9fe9ff',d:'네 원소가 X자로 적을 가로지르고 무지개빛 섬광으로 터진다.'},
+  {school:'verdant',a:'orb',b:'beast',name:'녹광 괴수탄',fn:comboBeastOrb,col:'#7dff5a',d:'초록 구체에 갇힌 괴수가 포탄처럼 날아가 거대한 돔으로 터진다.'},
+  {school:'verdant',a:'shield',b:'sniper',name:'결정 굴절포',fn:comboRefract,col:'#b8ffb0',d:'녹광 저격이 결정 방패를 통과하며 일곱 갈래로 갈라져 적에게 모인다.'},
+  {school:'crimson',a:'demon',b:'upper',name:'혈귀 염마',fn:comboHellfire,col:'#ff5fa8',d:'분홍 지옥불 기둥이 기사 앞부터 적 너머까지 연달아 솟는다.'},
+  {school:'eclipse',a:'archers',b:'wolf',name:'사냥의 밤',fn:comboHunt,col:'#7fd8ff',d:'달빛 아래 화살비가 적을 묶고, 그림자 늑대 셋이 번갈아 물어뜯는다.'},
+  {school:'hellfire',a:'hands',b:'skulls',name:'망자의 연회',fn:comboFeast,col:'#c9a8ff',d:'거대한 그림자 손이 적을 움켜쥐고, 해골 망령 열 개가 차례로 파고든다.'},
+  {school:'hellfire',a:'whip',b:'dslash',name:'업화 난무',fn:comboPyre,col:'#ffa05a',d:'불꽃 채찍이 사방으로 휘몰아친 뒤, 거대한 참격파 두 줄기가 X자로 교차한다.'},
+  {school:'storm',a:'spear',b:'thunder',name:'뇌신 강림',fn:comboThunderGod,col:'#ffe853',keep:{get:()=>thunderSpear(),ready:1.2,release:releaseSpear},d:'박힌 뇌창이 피뢰침이 되어 연속 낙뢰를 부르고, 번개 폭풍으로 대폭발을 일으킨다.'},
+  {school:'abyss',a:'gravity',b:'meteor',name:'천붕',fn:comboSkyfall,col:'#ff9470',keep:{get:()=>gravityWell(),ready:1.8,release:releaseGravity},d:'중력 구속의 남은 구체가 운석을 휘어 끌어당긴다. 같은 구체와 충돌해 하얀 중심의 대폭발을 일으킨다.'},
+  {school:'frost',a:'frostcut',b:'icedragon',name:'빙룡쇄파',fn:comboIceDragon,col:'#61DCF3',keep:{get:()=>iceKeep('spikes'),ready:1.25,release:releaseIce},d:'서리 월참의 가시 3개가 남는다. 백룡이 같은 가시를 차례로 깨뜨려 빙룡쇄파를 일으킨다.'},
+  {school:'frost',a:'iceflower',b:'frostspiral',name:'만화빙정',fn:comboIceFlower,col:'#61DCF3',keep:{get:()=>iceKeep('petals'),ready:1.35,release:releaseIce},d:'빙화 장벽의 꽃잎 6개가 남는다. 동결 나선이 같은 꽃잎을 흡수해 거대한 빙정으로 폭발한다.'}];
+/* ================= 계열 · 편성 (A단계: 활성 상태만 계산) ================= */
+const SCHOOLS=[
+  {id:'crimson',name:'진홍',c:'#ff4f5e',awk:'inferno'},
+  {id:'eclipse',name:'월식',c:'#9a7bff',awk:'dragon'},
+  {id:'verdant',name:'녹광',c:'#7dff5a',awk:null},
+  {id:'abyss',name:'심연',c:'#b06bff',awk:'circle'},
+  {id:'storm',name:'뇌전',c:'#ffe853',awk:null},
+  {id:'hellfire',name:'업화',c:'#ffa05a',awk:null},
+  {id:'frost',name:'빙정',c:'#61dcf3',awk:'frostcrown'},
+].map(s=>({...s,pairs:COMBOS.filter(c=>c.school===s.id).map(c=>c.a)}));
+const RESONANCES=[
+  {id:'crimson_hellfire',a:'crimson',b:'hellfire',name:'홍련작'},
+  {id:'hellfire_eclipse',a:'hellfire',b:'eclipse',name:'그림자 왈츠'},
+  {id:'eclipse_abyss',a:'eclipse',b:'abyss',name:'칠흑'},
+  {id:'abyss_frost',a:'abyss',b:'frost',name:'절대영도'},
+  {id:'frost_storm',a:'frost',b:'storm',name:'초전도'},
+  {id:'storm_verdant',a:'storm',b:'verdant',name:'질풍신'},
+  {id:'verdant_crimson',a:'verdant',b:'crimson',name:'역린혈공'},
+];
+// 저장에는 안정적인 시작 스킬 id를 최대 4개 보관한다. 빈 편성도 그대로 유지한다.
+function cleanLoadout(ids){return [...new Set((Array.isArray(ids)?ids:[]).filter(id=>COMBOS.some(c=>c.a===id)))].slice(0,4)}
+function schoolState(loadout=S.loadout,best=S.best){
+  const counts=Object.fromEntries(SCHOOLS.map(s=>[s.id,0]));
+  for(const id of cleanLoadout(loadout)){const c=COMBOS.find(c=>c.a===id);if([c.a,c.b].every(id=>skOf(id).unlock<=best))counts[c.school]++}
+  return{counts,focus:SCHOOLS.filter(s=>counts[s.id]===2).map(s=>s.id),resonance:RESONANCES.filter(r=>counts[r.a]>0&&counts[r.b]>0).map(r=>r.id)};
+}
+function recommendLoadout(best=S.best,keep=[]){
+  const fixed=cleanLoadout(keep),pool=COMBOS.filter(c=>!fixed.includes(c.a)&&[c.a,c.b].some(id=>skOf(id).unlock<=best)),n=Math.min(4-fixed.length,pool.length);
+  let result=fixed,bestScore=[-1,-1,-1];
+  const visit=(i,picked)=>{if(picked.length===n){const ids=fixed.concat(picked),st=schoolState(ids,best),skills=ids.map(id=>COMBOS.find(c=>c.a===id)).flatMap(c=>[c.a,c.b]);
+      const score=[st.focus.length+st.resonance.length,Object.values(st.counts).reduce((n,v)=>n+v,0),skills.filter(id=>skOf(id).unlock<=best).length];
+      // 동률이면 완전히 열린 쌍, 열린 스킬 수, 마지막으로 COMBOS의 고정 순서로 결정한다.
+      const diff=score.findIndex((v,j)=>v!==bestScore[j]);if(diff>=0&&score[diff]>bestScore[diff]){bestScore=score;result=ids}return}
+    for(let j=i;j<=pool.length-(n-picked.length);j++)visit(j+1,picked.concat(pool[j].a))};
+  visit(0,[]);return result;
+}
+function syncEquip(){S.loadout=cleanLoadout(S.loadout);S.equip=S.loadout.flatMap(id=>{const c=COMBOS.find(c=>c.a===id);return[c.a,c.b]})}
+function restoreLoadout(raw){
+  if(Array.isArray(raw?.loadout))S.loadout=cleanLoadout(raw.loadout);
+  else{const equip=Array.isArray(raw?.equip)?raw.equip:[],inferred=equip.map(id=>comboOf(id)?.a);
+    S.loadout=recommendLoadout(S.best,cleanLoadout(inferred))}
+  syncEquip();
+}
+function setLoadout(ids){S.loadout=cleanLoadout(ids);syncEquip()}
+function autoEquipPair(id){const c=comboOf(id);if(c&&S.loadout.length<4&&!S.loadout.includes(c.a))setLoadout(S.loadout.concat(c.a))}
+
 const comboWin=()=>hasMod('chain')?16:8;
 let lastCast=null,pendingCombo=null;
 const skOf=id=>SK.find(s=>s.id===id);

@@ -23,10 +23,10 @@ function fmt(n){
 const KEY='blade-road-v1';
 const freshLv=()=>({atk:0,spd:0,crit:0,critd:0,skill:0,spirit:0,archer:0,mage:0,greed:0});
 const fresh=()=>({gold:0,stage:1,kills:0,maxStage:1,best:1,farm:false,farmKills:0,lv:freshLv(),souls:0,auto:true,sound:true,t:Date.now(),totalKills:0,
-  relics:{},ach:{},title:'',equip:null,maxCombo:0,bossKills:0,parries:0,legends:0,rebirths:0,combos:0,awakes:0,eclBoss:0,pulls:0,
+  relics:{},ach:{},title:'',loadout:['dash'],equip:['dash','neon'],maxCombo:0,bossKills:0,parries:0,legends:0,rebirths:0,combos:0,awakes:0,eclBoss:0,pulls:0,
   awk:{},daily:{key:'',done:false},dailyWins:0,phase2:0,awkSel:'thousand',codex:{}});
 let S=fresh();
-function load(d){try{const raw=d||JSON.parse(localStorage.getItem(KEY)||'null');if(raw){S=Object.assign(fresh(),raw);S.lv=Object.assign(freshLv(),raw.lv||{});S.relics=Object.assign({},raw.relics||{});S.ach=Object.assign({},raw.ach||{});S.awk=Object.assign({},raw.awk||{});S.daily=Object.assign({key:'',done:false},raw.daily||{});S.codex=Object.assign({},raw.codex||{});}}catch(e){}}
+function load(d){try{const raw=d||JSON.parse(localStorage.getItem(KEY)||'null');if(raw){S=Object.assign(fresh(),raw);S.lv=Object.assign(freshLv(),raw.lv||{});S.relics=Object.assign({},raw.relics||{});S.ach=Object.assign({},raw.ach||{});S.awk=Object.assign({},raw.awk||{});S.daily=Object.assign({key:'',done:false},raw.daily||{});S.codex=Object.assign({},raw.codex||{});restoreLoadout(raw)}}catch(e){}}
 function save(){S.t=Date.now();const out=CH?Object.assign({},S,CH.saved):S;try{localStorage.setItem(KEY,JSON.stringify(out))}catch(e){}}
 
 /* ================= daily challenge ================= */
@@ -410,7 +410,7 @@ function kill(fin){
     else{S.kills++;if(S.kills>=KPS){S.stage++;S.kills=0;stageBanner()}}
   }
   S.maxStage=Math.max(S.maxStage,S.stage);S.best=Math.max(S.best,S.stage);
-  for(const s of SK)if(s.unlock>prevBest&&s.unlock<=S.best){banner('새 스킬 해금',s.name,s.c,2.2);sfx.chime();if(S.equip.length<8&&!S.equip.includes(s.id))S.equip.push(s.id);buildBar();buildBook()}
+  for(const s of SK)if(s.unlock>prevBest&&s.unlock<=S.best){banner('새 스킬 해금',s.name,s.c,2.2);sfx.chime();autoEquipPair(s.id);buildBar();buildBook()}
   for(const a of AWK)if(a.unlock>prevBest&&a.unlock<=S.best){banner('새 각성기 해금',a.name+' · 패널에서 선택하세요',a.c,2.4);sfx.chime();buildBook()}
   stageUI();
 }
