@@ -369,7 +369,7 @@
     const reset=()=>{S=fresh();S.auto=false;S.sound=false;ST=stats();CH=null;BI=null;BF=null;CUT=null;BN=null;FX=[];P=[];T=[];B=[];PR=[];C=[];relicQ=[];shieldOn=null;stop=0;slowT=0;castLock=0;frenzyT=0;circleT=0;gauge=0;lastCast=null;pendingCombo=null;spawnT=100;miniQ=0;h.stun=0;atkT=1e6;
       m=makeMonster(1);m.state='fight';m.x=monX;m.sh=0;m.hp=m.max=1e12;for(const s of SK)cds[s.id]=0};
     const equal=(a,b)=>JSON.stringify(a)===JSON.stringify(b),derived=()=>S.loadout.flatMap(id=>{const c=COMBOS.find(c=>c.a===id);return[c.a,c.b]});
-    const mapping=[['crimson','진홍','#ff4f5e','inferno',['breath','demon']],['eclipse','월식','#9a7bff','dragon',['shadow','archers']],['verdant','녹광','#7dff5a',null,['orb','shield']],['abyss','심연','#b06bff','circle',['swords','gravity']],['storm','뇌전','#ffe853',null,['dash','spear']],['hellfire','업화','#ffa05a',null,['whip','hands']],['frost','빙정','#61dcf3','frostcrown',['frostcut','iceflower']]];
+    const mapping=[['crimson','진홍','#ff4f5e','inferno',['breath','demon']],['eclipse','월식','#9a7bff','dragon',['shadow','archers']],['verdant','녹광','#7dff5a','celestial',['orb','shield']],['abyss','심연','#b06bff','circle',['swords','gravity']],['storm','뇌전','#ffe853','judgment',['dash','spear']],['hellfire','업화','#ffa05a','hellking',['whip','hands']],['frost','빙정','#61dcf3','frostcrown',['frostcut','iceflower']]];
     const ring=[['crimson','hellfire','홍련작'],['hellfire','eclipse','그림자 왈츠'],['eclipse','abyss','칠흑'],['abyss','frost','절대영도'],['frost','storm','초전도'],['storm','verdant','질풍신'],['verdant','crimson','역린혈공']];
     try{
       ok(SCHOOLS.length===7&&new Set(SCHOOLS.map(s=>s.id)).size===7,'서로 다른 계열 7개');
@@ -572,6 +572,54 @@
       startPat();
       ok(!m.pat&&m.freezeCancel,'빙정 집중 3단계: 빙결 중 적 패턴 1회 취소');
     }finally{reset();m=null;buildBar();buildBook()}
+  });
+
+  section('계열 전용 각성기 · 천체 창례 · 천벌 병기 · 업화 명왕');
+  guard('계열 전용 각성기',()=>{
+    const data=[['celestial','verdant',50,44,5,5],['judgment','storm',60,46,5.5,4],['hellking','hellfire',70,48,6,4]],hit=skillHit,damage=deal,random=Math.random;
+    let hits=[],dealt=0;
+    const reset=()=>{S=fresh();S.best=999;S.auto=false;S.sound=false;setLoadout([]);ST=stats();ST.atk=100;ST.sk=1;ST.cc=0;CH=null;BI=null;BF=null;CUT=null;BN=null;FX=[];P=[];T=[];B=[];PR=[];C=[];relicQ=[];shieldOn=null;stop=slowT=castLock=frenzyT=circleT=desat=0;gauge=0;lastCast=pendingCombo=null;spawnT=100;miniQ=0;h.stun=0;atkT=1e6;verdantCD=0;
+      m=makeMonster(1);m.state='fight';m.x=monX;m.sh=0;m.hp=m.max=1e12;hits=[];dealt=0;for(const s of SK)cds[s.id]=0};
+    try{
+      Math.random=()=>.5;
+      skillHit=function(mult,pm,x,y,o){hits.push({mult,pm,...o});return hit(mult,pm,x,y,o)};
+      deal=function(d,crit,src,x,y,o){if(src==='skill')dealt+=d;return damage(d,crit,src,x,y,o)};
+      ok(new Set(AWK.map(a=>a.id)).size===AWK.length,'각성기 id 중복 없음');
+      ok(SCHOOLS.every(s=>AWK.some(a=>a.id===s.awk)),'7계열 모두 유효한 전용 각성기');
+      for(const [id,school,unlock,base,slope,count] of data){const a=AWK.find(a=>a.id===id),s=SCHOOLS.find(s=>s.id===school),p=SCHOOL_AWK_COL[id];
+        ok(a.unlock===unlock&&s.awk===id,id+': 해금/계열 배정');ok((awkIcon(a).match(/#[0-9a-f]{6}/gi)||[]).every(c=>p.includes(c)),id+': 아이콘 전용 5색');
+        reset();S.best=unlock-1;S.awkSel=id;buildBook();ok(awkSel().id==='thousand',id+': 해금 전 실전 선택 차단');
+        ok($('schoolCards').querySelector('[data-school="'+school+'"] .school-awakening').textContent.includes(a.name)&&!$('schoolCards').querySelector('[data-school="'+school+'"] .school-awakening').textContent.includes('미정'),id+': 계열 카드 자동 이름 표시');
+        S.best=unlock;ok(awkSel()===a,id+': 지정 스테이지 해금');S.awkSel='thousand';buildBook();$('awks').children[AWK.indexOf(a)].querySelector('.eq').click();ok(S.awkSel===id&&$('awk').getAttribute('aria-label')==='각성기: '+a.name,id+': 패널 선택과 전투 버튼 연결');
+        for(const [tr,lv] of [[0,0],[1,5],[2,10],[3,20]]){reset();S.lv.skill=lv;S.awkSel=id;gauge=100;const total=base+slope*tr;
+          ok(castAwaken()&&gauge===0&&S.awakes===1&&CUT.name===a.name,id+': TR '+tr+' 실전 게이지/컷인');settle(360);
+          ok(hits.length===count&&Math.abs(hits.reduce((n,h)=>n+h.mult,0)-total)<1e-8&&hits.every(h=>h.pm===1&&h.sid===id),id+': TR '+tr+' 타수/배율/pm/sid');
+          ok(Math.abs(dealt-100*total)<1e-6,id+': TR '+tr+' 실제 피해 합계');
+          ok(total<=48+6*tr,id+': TR '+tr+' 영원의 설관 이하');
+          ok(hits.at(-1)?.heavy&&hits.at(-1)?.crack===2&&hits.at(-1)?.name===a.name&&getFinisherInfo('skill',hits.at(-1)).kind==='각성기 결정타',id+': TR '+tr+' 마지막 강타/균열/이름');
+          ok(FX.length===0&&castLock<=0&&desat===0,id+': TR '+tr+' 연출 종료/잠금/흑백 복귀');
+          reset();S.lv.skill=lv;S.awkSel=id;setLoadout(s.pairs);ST.atk=100;ST.sk=1;ST.cc=0;gauge=100;castAwaken();settle(360);
+          ok(isFocusAwk()&&Math.abs(dealt-100*total*1.5)<1e-6,id+': TR '+tr+' 집중 전용 각성기 실제 피해 +50%');
+        }
+        reset();S.awkSel=id;setLoadout([s.pairs[0]]);ST.atk=100;ST.sk=1;ST.cc=0;gauge=100;castAwaken();settle(360);
+        ok(!isFocusAwk()&&Math.abs(dealt-100*base)<1e-6,id+': 한 쌍만 편성하면 집중 보너스 없음');
+        reset();S.best=1;gauge=43;const mastery=JSON.stringify(S.mastery);ok(previewAwk(a),id+': 잠긴 각성기 시연');settle(360);
+        ok(hits.every(h=>h.pm===.1)&&Math.abs(dealt-10*base)<1e-6&&Math.abs(gauge-(43+(count-1)*.12+2))<1e-6&&S.awakes===0&&JSON.stringify(S.mastery)===mastery,id+': 시연 0.1배/게이지 소비 없음/기존 적중 충전/숙련 보존');
+        reset();a.fn(.1);m=null;settle(360);ok(FX.length===0&&castLock<=0,id+': 발동 직후 대상 소멸 안전');
+        reset();m=null;a.fn(.1);settle(360);ok(FX.length===0&&castLock<=0,id+': 대상 없는 직접 시연도 안전');
+        // 전용 FX만 분리해 팔레트·입자 예산·예약 이벤트·지속 흑백을 검증한다.
+        reset();skillHit=(mult,pm,x,y,o)=>hits.push({mult,pm,...o});let emitted=0,colors=[];const push=P.push;
+        P.push=function(...args){emitted+=args.length;colors.push(...args.map(p=>p.color));return push.apply(this,args)};
+        const fx=a.fn(.1),linear=ctx.createLinearGradient,radial=ctx.createRadialGradient;let locked=true,gray=true;
+        try{ctx.createLinearGradient=ctx.createRadialGradient=()=>{throw Error('각성기 그라데이션 금지')};
+          for(let i=0;i<168;i++){fx.t=(i+1)/60;castLock=0;desat=0;fx.up(1/60,fx);locked=locked&&castLock>0;if(fx.t<1.5&&id!=='hellking')gray=gray&&desat>=.8;ctx.save();fx.post(fx);ctx.restore()}
+        }finally{ctx.createLinearGradient=linear;ctx.createRadialGradient=radial;delete P.push}
+        ok(emitted===74&&emitted<=100&&colors.every(c=>p.includes(c)),id+': 단색 입자 74개, 예산 100개 이하');
+        ok(locked&&gray,id+': 매 프레임 시전 잠금/필요 구간 흑백 유지');ok(hits.length===count,id+': 이벤트 중복 적중 없음');
+        skillHit=function(mult,pm,x,y,o){hits.push({mult,pm,...o});return hit(mult,pm,x,y,o)};
+      }
+      reset();S.best=59;S.stage=59;S.kills=KPS-1;schoolSeenState=null;uiTick();kill();uiTick();ok(BN?.text==='새 계열: 빙정','STAGE 60 동시 해금: 계열 안내 우선');BN=null;uiTick();ok(BN?.text==='새 각성기 해금'&&BN.sub.includes('천벌 병기'),'동시 해금: 각성기 안내도 잃지 않고 다음 배너로 표시');
+    }finally{skillHit=hit;deal=damage;Math.random=random;reset();m=null;buildBar();buildBook()}
   });
 
   section('정리');
