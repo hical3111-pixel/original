@@ -1,6 +1,6 @@
 'use strict';
 /* 실제 ?lab 문서에서 부팅 이후에도 저장/전투 진행이 없는지 확인한다. */
-(()=>{
+(async()=>{
   const startedAt=performance.now(),lines=[];let pass=0,fail=0,frames=0;
   const ok=(v,n)=>{if(v)pass++;else{fail++;lines.push('✗ '+n)}},guard=(n,fn)=>{try{fn()}catch(e){fail++;lines.push('✗ '+n+': '+e.message)}};
   S.sound=false;lab.repeat=false;
@@ -60,6 +60,7 @@
       ok(window.__labAudit.save===0&&window.__labAudit.writes===0,'수련장 음량/소리만도 저장 0회');
     }finally{silenceAudio();AC=saved.AC;master=saved.master;noiseBuf=saved.noiseBuf;audioBed=saved.audioBed;audioLead=saved.audioLead;schoolCue=saved.cue;S.sound=saved.sound;S.volume=saved.volume}
   });
+  try{await runLabFileSelftest(ok)}catch(e){ok(false,'소리 고르기 검사: '+e.message)}
   labClear();window.__selftest={pass,fail,lines,elapsedMs:performance.now()-startedAt,audit:window.__labAudit};
   if(window===window.parent){const box=document.createElement('pre');box.textContent=`수련장 점검 · 통과 ${pass} · 실패 ${fail} · ${(window.__selftest.elapsedMs/1000).toFixed(2)}초\n`+lines.join('\n');box.style.cssText='position:fixed;top:0;right:0;z-index:99;background:#17132b;max-height:80vh;overflow:auto';document.body.appendChild(box)}
 })();

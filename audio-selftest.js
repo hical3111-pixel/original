@@ -3,8 +3,8 @@
 function fakeAudio(){
   const a={currentTime:10,state:'running',destination:{},events:[],sources:[],sampleRate:8000};
   const param=()=>({value:1,setValueAtTime(v,t){this.value=v;a.events.push(['set',v,t])},exponentialRampToValueAtTime(v,t){a.events.push(['exp',v,t])},linearRampToValueAtTime(v,t){a.events.push(['ramp',v,t])},setTargetAtTime(v,t,k){this.value=v;a.events.push(['target',v,t,k])},cancelScheduledValues(t){a.events.push(['cancel',t])}});
-  const node=kind=>({kind,connect(){},disconnect(){},gain:param(),frequency:param(),Q:param(),start(t){a.events.push(['start',kind,t]);this.started=t},stop(t){a.events.push(['stop',kind,t]);this.stopped=t}});
-  a.createGain=()=>node('gain');a.createBiquadFilter=()=>node('filter');a.createOscillator=()=>{const n=node('tone');a.sources.push(n);return n};a.createBufferSource=()=>{const n=node('noise');a.sources.push(n);return n};a.createBuffer=(n,len)=>({getChannelData:()=>new Float32Array(len)});a.resume=()=>{a.state='running';return Promise.resolve()};return a;
+  const node=kind=>({kind,connect(){},disconnect(){},gain:param(),frequency:param(),Q:param(),playbackRate:param(),start(t){a.events.push(['start',kind,t]);this.started=t},stop(t){a.events.push(['stop',kind,t]);this.stopped=t}});
+  a.createGain=()=>node('gain');a.createDynamicsCompressor=()=>Object.assign(node('compressor'),{threshold:param(),knee:param(),ratio:param(),attack:param(),release:param()});a.createBiquadFilter=()=>node('filter');a.createOscillator=()=>{const n=node('tone');a.sources.push(n);return n};a.createBufferSource=()=>{const n=node('noise');a.sources.push(n);return n};a.createBuffer=(n,len)=>({getChannelData:()=>new Float32Array(len)});a.resume=()=>{a.state='running';return Promise.resolve()};return a;
 }
 function runAudioSelftest(ok,reset,persist){
   const saved={AC,master,noiseBuf,audioBed,audioLead,audioVoices,schoolAudioJobs,schoolSoundContext,hit:skillHit,cue:schoolCue,random:Math.random},calls=[];

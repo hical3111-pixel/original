@@ -66,6 +66,7 @@ function labStart(){
   $('labVolume').oninput=e=>{S.volume=soundVolume(Number(e.target.value));audioVolume();$('labVolumeValue').textContent=S.volume+'%'};$('labSoundOnly').onclick=labListen;
   $('labStop').onclick=()=>{lab.repeat=false;$('labRepeat').checked=false;labClear();$('labStatus').textContent='정지 · 연출을 정리했습니다'};
   $('labReturn').onclick=()=>{window.close();if(!window.closed){$('labStatus').textContent='직접 연 탭은 브라우저의 탭 닫기로 돌아가세요'}};
+  buildLabSounds();
   resize();new ResizeObserver(resize).observe(stageEl);labClear();
   const q=new URLSearchParams(location.search);for(const kind of ['skill','combo','awk'])if(q.has(kind)&&labPlay(kind,q.get(kind))){const b=panel.querySelector(`[data-kind="${kind}"][data-id="${q.get(kind)}"]`);if(b){b.closest('details').open=true;b.scrollIntoView({block:'nearest'})}break}
   last=performance.now();requestAnimationFrame(frame);

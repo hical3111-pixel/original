@@ -1,5 +1,5 @@
 'use strict';
-/* 모든 층은 WebAudio 합성. 이 표에 계열만 추가하면 SCHOOLS 소속 함수에 자동 연결한다. */
+/* 합성 팔레트는 파일 로딩 실패 시 대체음. 파일 후보/선택은 sfx-files.js에서 확장한다. */
 const SFX_SCHOOL={
   crimson:{
     cast:[{wave:'sine',f:65,to:135,d:.48,v:.32},{wave:'sawtooth',f:82,to:122,d:.5,v:.08},{noise:'lowpass',f:700,to:1600,d:.55,v:.13}],
@@ -17,13 +17,16 @@ const SFX_SCHOOL={
 const AUDIO_LIMIT=24;
 let audioBed=null,audioLead=null,audioVoices=[],schoolSoundContext=null,schoolAudioJobs=[];
 const soundVolume=v=>Number.isFinite(v)?clamp(v,0,100):100;
-function audioGraph(){master=AC.createGain();master.gain.value=.32*soundVolume(S.volume)/100*(S.sound?1:0);master.connect(AC.destination);audioBed=AC.createGain();audioLead=AC.createGain();audioBed.connect(master);audioLead.connect(master)}
+function audioGraph(){master=AC.createGain();master.gain.value=.32*soundVolume(S.volume)/100*(S.sound?1:0);
+  const soft=AC.createBiquadFilter(),limit=AC.createDynamicsCompressor();soft.type='highshelf';soft.frequency.value=2800;soft.gain.value=-5;
+  limit.threshold.value=-10;limit.knee.value=3;limit.ratio.value=20;limit.attack.value=.003;limit.release.value=.18;master.connect(soft);soft.connect(limit);limit.connect(AC.destination);
+  audioBed=AC.createGain();audioLead=AC.createGain();audioBed.connect(master);audioLead.connect(master)}
 function audioVolume(){if(master&&AC){master.gain.cancelScheduledValues(AC.currentTime);master.gain.setTargetAtTime(S.sound?.32*soundVolume(S.volume)/100:0,AC.currentTime,.015)}}
 function audioPrune(){audioVoices=audioVoices.filter(v=>{if(v.end>AC.currentTime)return true;try{v.source.disconnect()}catch(e){}return false})}
 function audioRoom(priority=0){if(!AC||!S.sound||S.volume===0)return false;audioPrune();if(audioVoices.length<AUDIO_LIMIT)return true;
   const i=audioVoices.findIndex(v=>v.priority<priority);if(i<0)return false;const [v]=audioVoices.splice(i,1);try{v.source.stop();v.source.disconnect()}catch(e){}return true}
 function audioTrack(source,end,priority=0){const voice={source,end,priority};audioVoices.push(voice);source.onended=()=>{const i=audioVoices.indexOf(voice);if(i>=0)audioVoices.splice(i,1);source.disconnect()}}
-function silenceAudio(){for(const v of audioVoices){try{v.source.stop();v.source.disconnect()}catch(e){}}audioVoices=[];schoolAudioJobs=[];for(const k in thr)delete thr[k];if(AC&&audioBed){audioBed.gain.cancelScheduledValues(AC.currentTime);audioBed.gain.setValueAtTime(1,AC.currentTime)}audioVolume()}
+function silenceAudio(){sfxPlaybackEpoch++;for(const v of audioVoices){try{v.source.stop();v.source.disconnect()}catch(e){}}audioVoices=[];schoolAudioJobs=[];for(const k in thr)delete thr[k];if(AC&&audioBed){audioBed.gain.cancelScheduledValues(AC.currentTime);audioBed.gain.setValueAtTime(1,AC.currentTime)}audioVolume()}
 function audioDuck(){if(!audioBed)return;const t=AC.currentTime;audioBed.gain.cancelScheduledValues(t);audioBed.gain.setValueAtTime(.38,t);audioBed.gain.linearRampToValueAtTime(1,t+.36)}
 function soundOwner(kind,id){const school=kind==='combo'?COMBOS.find(c=>c.a===id)?.school:kind==='awk'?SCHOOLS.find(s=>s.awk===id)?.id:comboOf(id)?.school;
   return SFX_SCHOOL[school]?{school,kind,id,key:kind==='combo'?'combo:'+id:id}:null}
@@ -40,10 +43,16 @@ function schoolCue(owner,phase){
   const palette=SFX_SCHOOL[owner.school],layers=palette?.[phase];if(!layers)return false;
   const now=AC.currentTime,key='school:'+owner.school+':'+owner.key+':'+phase,gap=phase==='hit'?.095:phase==='finish'?.18:.15;
   if(now-(thr[key]??-Infinity)<gap)return false;thr[key]=now;
+  const file=schoolFileCue(owner,phase);if(file!==null)return file;
+  return synthSchoolCue(owner,phase);
+}
+function synthSchoolCue(owner,phase){
+  if(!owner||!AC||!S.sound||S.volume===0)return false;
+  const palette=SFX_SCHOOL[owner.school],layers=palette[phase];
   const voice=palette.voices?.[owner.key]||{},large=owner.kind!=='skill',tail=(voice.tail||1)*(large?1.35:1),gain=large?1.12:1,pitch=voice.pitch||1,priority=phase==='finish'?2:1;
   if(phase==='finish')audioDuck();let count=0;
   for(const layer of layers)if(schoolLayer(layer,pitch,tail,gain,priority))count++;
-  // 연계/각성은 뒤에 낮고 약한 잔향 층을 더한다. 새 녹음 파일은 사용하지 않는다.
+  // 대체음도 연계/각성에는 낮고 약한 잔향 층을 더한다.
   if(large&&phase==='finish')for(const layer of layers.slice(0,2))if(schoolLayer(layer,pitch*.75,tail*1.15,gain*.35,priority,.12))count++;
   return count>0;
 }
