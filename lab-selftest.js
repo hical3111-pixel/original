@@ -47,6 +47,19 @@
     ok(JSON.stringify(S)===snap,'실제 frame/탭 전환/닫기 상태 불변');
     ok(window.__labAudit?.save===0,'부팅부터 save 호출 0회');ok(window.__labAudit?.writes===0,'부팅부터 localStorage 쓰기/삭제 0회');
   });
+  guard('수련장 소리만 듣기',()=>{
+    const saved={AC,master,noiseBuf,audioBed,audioLead,cue:schoolCue,sound:S.sound,volume:S.volume},events=[];
+    try{AC=fakeAudio();noiseBuf=AC.createBuffer(1,9600,8000);audioGraph();S.sound=true;S.volume=100;schoolCue=(o,p)=>{events.push([o.school,o.kind,o.id,p]);return saved.cue(o,p)};
+      labPlay('skill','cannon');events.length=0;const state=JSON.stringify(S);ok(labListen(),'소리만 듣기 시작');
+      for(let i=0;i<360;i++){AC.currentTime+=1/60;step(1)}
+      ok(events.map(e=>e[3]).join()==='cast,hit,finish','소리만: 시작 → 적중 → 마무리 순서');
+      ok(!FX.length&&!P.length&&!T.length&&!castLock&&JSON.stringify(S)===state,'소리만: 연출/피해/상태 변화 없음');
+      $('labVolume').value=23;$('labVolume').dispatchEvent(new Event('input'));ok(S.volume===23&&Math.abs(master.gain.value-.32*.23)<1e-9,'수련장 독립 음량 슬라이더');
+      labListen();step(1);labClear();ok(!lab.audioOnly&&audioVoices.length===0&&lab.soundQueue.length===0,'소리만 중단: 음원과 남은 순서 취소');
+      labPlay('skill','dash');ok($('labSoundOnly').disabled&&!labListen(),'미구현 계열 소리만 듣기 비활성');
+      ok(window.__labAudit.save===0&&window.__labAudit.writes===0,'수련장 음량/소리만도 저장 0회');
+    }finally{silenceAudio();AC=saved.AC;master=saved.master;noiseBuf=saved.noiseBuf;audioBed=saved.audioBed;audioLead=saved.audioLead;schoolCue=saved.cue;S.sound=saved.sound;S.volume=saved.volume}
+  });
   labClear();window.__selftest={pass,fail,lines,elapsedMs:performance.now()-startedAt,audit:window.__labAudit};
   if(window===window.parent){const box=document.createElement('pre');box.textContent=`수련장 점검 · 통과 ${pass} · 실패 ${fail} · ${(window.__selftest.elapsedMs/1000).toFixed(2)}초\n`+lines.join('\n');box.style.cssText='position:fixed;top:0;right:0;z-index:99;background:#17132b;max-height:80vh;overflow:auto';document.body.appendChild(box)}
 })();

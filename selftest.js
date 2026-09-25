@@ -69,6 +69,7 @@ function referenceLoadout(best=ub(),keep=[]){
     }finally{cast=originalCast;reset()}
   };
 
+  const persistForAudio=save;
   save=function(){};                                  // 점검 중에는 절대 저장하지 않는다
   $('modal').hidden=true;pending=0;                   // 오프라인 보상 창은 점검과 무관하므로 닫는다
   S=fresh();S.best=999;S.gold=1e300;S.auto=false;S.sound=false;S.equip=SK.slice(0,8).map(s=>s.id);
@@ -1266,6 +1267,9 @@ function referenceLoadout(best=ub(),keep=[]){
 
   section('정리');
   guard('정리',()=>{tick(600);ok(FX.length===0,'연출이 끝나지 않고 남아 있음: '+FX.length+'개');ok(castLock<=0,'castLock이 풀리지 않음');ok(desat===0,'흑백(desat)이 풀리지 않고 남아 있음: '+desat)});
+
+  section('진홍·빙정 효과음 · 저장 · 재생 제한');
+  guard('효과음',()=>runAudioSelftest(ok,testReset,persistForAudio));
 
   section('수련장 별도 문서');
   const labFrame=document.createElement('iframe');labFrame.style.cssText='position:fixed;left:-2000px;width:390px;height:844px';labFrame.src='?lab&selftest';document.body.appendChild(labFrame);

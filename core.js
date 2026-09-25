@@ -29,12 +29,12 @@ const BAL={hpG:1.3,goldG:1.19,comboGauge:8,skillGauge:.8,speed:2,blessSpeed:3,bl
   spirit:{koi:[9,1.2,28],crane:[13.5,1.8,34],turtle:[9.5,1.2,30],tiger:[14,1.8,36],ascension:[48,6],combo:16,focusHit:4,stunFactor:.5,gauge:10,frozenHit:4,critHit:2,critCD:3}};
 const freshBlessing=()=>({charges:BAL.blessCharges,chargeAt:Date.now(),until:{power:0,gold:0,haste:0},pending:null});
 const freshLv=()=>({atk:0,spd:0,crit:0,critd:0,skill:0,spirit:0,archer:0,mage:0,greed:0});
-const fresh=()=>({gold:0,stage:1,kills:0,maxStage:1,best:1,farm:false,farmKills:0,lv:freshLv(),souls:0,auto:true,sound:true,speed:1,hasteSpeed:3,blessing:freshBlessing(),t:Date.now(),totalKills:0,
+const fresh=()=>({gold:0,stage:1,kills:0,maxStage:1,best:1,farm:false,farmKills:0,lv:freshLv(),souls:0,auto:true,sound:true,volume:100,speed:1,hasteSpeed:3,blessing:freshBlessing(),t:Date.now(),totalKills:0,
   relics:{},ach:{},title:'',loadout:['dash'],equip:['dash','neon'],maxCombo:0,bossKills:0,parries:0,legends:0,rebirths:0,combos:0,awakes:0,eclBoss:0,pulls:0,
   awk:{},daily:{key:'',done:false},dailyWins:0,phase2:0,awkSel:'thousand',codex:{},unlockFloor:0,unlockV:2,
   mastery:{crimson:0,eclipse:0,verdant:0,abyss:0,storm:0,hellfire:0,frost:0,ink:0,wuji:0,spirit:0}});
 let S=fresh();
-function load(d){try{const raw=d||JSON.parse(localStorage.getItem(KEY)||'null');if(raw){S=Object.assign(fresh(),raw);if(!raw.unlockV){S.unlockFloor=unlockFloorOf(raw.best||1);S.unlockV=2}S.unlockFloor=Math.min(S.unlockFloor||0,NEW_UNLOCK[NEW_UNLOCK.length-1]);S.lv=Object.assign(freshLv(),raw.lv||{});S.relics=Object.assign({},raw.relics||{});S.ach=Object.assign({},raw.ach||{});S.awk=Object.assign({},raw.awk||{});S.daily=Object.assign({key:'',done:false},raw.daily||{});S.codex=Object.assign({},raw.codex||{});S.mastery=Object.assign({crimson:0,eclipse:0,verdant:0,abyss:0,storm:0,hellfire:0,frost:0,ink:0,wuji:0,spirit:0},raw.mastery||{});S.speed=raw.speed===BAL.speed?BAL.speed:1;S.hasteSpeed=[1,2,3].includes(raw.hasteSpeed)?raw.hasteSpeed:BAL.blessSpeed;restoreBlessing(raw.blessing);restoreLoadout(raw)}}catch(e){}}
+function load(d){try{const raw=d||JSON.parse(localStorage.getItem(KEY)||'null');if(raw){S=Object.assign(fresh(),raw);if(!raw.unlockV){S.unlockFloor=unlockFloorOf(raw.best||1);S.unlockV=2}S.unlockFloor=Math.min(S.unlockFloor||0,NEW_UNLOCK[NEW_UNLOCK.length-1]);S.lv=Object.assign(freshLv(),raw.lv||{});S.relics=Object.assign({},raw.relics||{});S.ach=Object.assign({},raw.ach||{});S.awk=Object.assign({},raw.awk||{});S.daily=Object.assign({key:'',done:false},raw.daily||{});S.codex=Object.assign({},raw.codex||{});S.mastery=Object.assign({crimson:0,eclipse:0,verdant:0,abyss:0,storm:0,hellfire:0,frost:0,ink:0,wuji:0,spirit:0},raw.mastery||{});S.volume=soundVolume(raw.volume);S.speed=raw.speed===BAL.speed?BAL.speed:1;S.hasteSpeed=[1,2,3].includes(raw.hasteSpeed)?raw.hasteSpeed:BAL.blessSpeed;restoreBlessing(raw.blessing);restoreLoadout(raw)}}catch(e){}}
 function save(){if(LAB_MODE)return;S.t=Date.now();const out=CH?Object.assign({},S,CH.saved):S;try{localStorage.setItem(KEY,JSON.stringify(out))}catch(e){}}
 
 /* 실제 시각 기준 축복: 충전 잔여분은 보존하고, 가득 찬 동안은 다음 충전을 쌓지 않는다. */
@@ -193,20 +193,20 @@ let AC=null,master=null,noiseBuf=null;const thr={};
 function ensureAudio(){
   if(!S.sound)return;
   if(AC){if(AC.state==='suspended')AC.resume();return}
-  try{AC=new(window.AudioContext||window.webkitAudioContext)();master=AC.createGain();master.gain.value=.32;master.connect(AC.destination);
+  try{AC=new(window.AudioContext||window.webkitAudioContext)();audioGraph();
     const len=AC.sampleRate*1.2;noiseBuf=AC.createBuffer(1,len,AC.sampleRate);const d=noiseBuf.getChannelData(0);for(let i=0;i<len;i++)d[i]=Math.random()*2-1;}catch(e){AC=null}
 }
 function tone(type,f0,f1,dur,vol,delay=0){
-  if(!AC||!S.sound)return;const t=AC.currentTime+delay;const o=AC.createOscillator(),g=AC.createGain();
+  if(schoolSoundContext||!audioRoom())return;const t=AC.currentTime+delay;const o=AC.createOscillator(),g=AC.createGain();
   o.type=type;o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(Math.max(1,f1),t+dur);
-  g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.001,t+dur);o.connect(g);g.connect(master);o.start(t);o.stop(t+dur+.02);
+  g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.001,t+dur);o.connect(g);g.connect(audioBed);audioTrack(o,t+dur+.02);o.start(t);o.stop(t+dur+.02);
 }
 function noise(dur,vol,freq,q=1,type='bandpass',delay=0){
-  if(!AC||!S.sound)return;const t=AC.currentTime+delay;const s=AC.createBufferSource();s.buffer=noiseBuf;
+  if(schoolSoundContext||!audioRoom())return;const t=AC.currentTime+delay;const s=AC.createBufferSource();s.buffer=noiseBuf;
   const f=AC.createBiquadFilter();f.type=type;f.frequency.value=freq;f.Q.value=q;const g=AC.createGain();
-  g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.001,t+dur);s.connect(f);f.connect(g);g.connect(master);s.start(t,Math.random()*.1,dur+.05);
+  g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.001,t+dur);s.connect(f);f.connect(g);g.connect(audioBed);audioTrack(s,t+dur+.05);s.start(t,Math.random()*.1,dur+.05);
 }
-const gate=(k,gap)=>{if(!AC)return false;const n=AC.currentTime;if(n-(thr[k]||0)<gap)return false;thr[k]=n;return true};
+const gate=(k,gap)=>{if(!AC||schoolSoundContext)return false;const n=AC.currentTime;if(n-(thr[k]||0)<gap)return false;thr[k]=n;return true};
 let coinI=0;
 const sfx={
   hit(c){if(!gate('hit',.03))return;noise(.07,c?.6:.4,c?2800:1500,.9);tone('sine',c?260:170,45,.12,c?.75:.5);
@@ -294,7 +294,7 @@ function spike(x,w,hh,lean,n,c1,c2,life){P.push({t:'spike',x,y:groundY,w,h:hh,le
 function rubble(cx,R,n,life=1.4){for(let i=0;i<n;i++){const x=cx+rnd(-1,1)*R;spike(x,rnd(20,45)*U,rnd(40,110)*U,(x-cx)/R*.8,1+(i%2),'#62626e','#a4a4b2',rnd(life*.7,life))}}
 function genBolt(x1,y1,x2,y2){const p=[x1,y1],n=9;for(let i=1;i<n;i++){const k=i/n;p.push(lerp(x1,x2,k)+rnd(-30,30)*U,lerp(y1,y2,k)+rnd(-10,10)*U)}p.push(x2,y2);return p}
 function at(o,t,fn){o.f=o.f||{};if(o.t>=t&&!o.f[t]){o.f[t]=1;fn()}}
-function addFX(o){o.t=0;FX.push(o);return o}
+function addFX(o){bindSchoolFX(o);o.t=0;FX.push(o);return o}
 function star4(x,y,L,w,rot){ctx.save();ctx.translate(x,y);ctx.rotate(rot);ctx.beginPath();const c=w*.14;
   ctx.moveTo(0,-L);ctx.quadraticCurveTo(c,-c,w,0);ctx.quadraticCurveTo(c,c,0,L);ctx.quadraticCurveTo(-c,c,-w,0);ctx.quadraticCurveTo(-c,-c,0,-L);ctx.closePath();ctx.restore()}
 function tongue(x,y,w,hh,ph){const s=Math.sin(ph);
@@ -432,6 +432,7 @@ function triggerBossFinisher(fin,o){
 }
 function combatCritChance(){return Math.min(1,ST.cc+(FX.some(o=>o.inkSchool&&!o.collapse&&o.t<o.dur)&&focusTier('ink')>=3?BAL.ink.crit:0))}
 function skillHit(mult,pm,x,y,o){
+  schoolImpact(o);
   const crit=Math.random()<combatCritChance();
   if(o&&o.sid&&BR[o.sid]&&BR[o.sid].gen&&br(o.sid)==='a')mult*=1.4;
   if(o&&o.sid==='combo'){
