@@ -326,19 +326,169 @@ const SFX_FILES={
     ],
     "bytes": 36405,
     "asset": "https://cdn.freesound.org/previews/609/609588_1038806-hq.mp3"
+  },
+  "itch_fire1": {
+    "path": "sfx/itch_fire1.mp3",
+    "label": "불 마법 1 · 강타",
+    "pack": "Basic Spell Impacts",
+    "original": "Fire Spell Impacts/Fire Spell Impact 1.wav",
+    "author": "lentikula",
+    "source": "https://lentikula.itch.io/freecc0-basic-spell-impacts-sfx",
+    "license": "CC0 1.0",
+    "preview": false,
+    "trim": [
+      0.5,
+      2.4
+    ],
+    "bytes": 39331
+  },
+  "itch_fire3": {
+    "path": "sfx/itch_fire3.mp3",
+    "label": "불 마법 3 · 짧은 적중",
+    "pack": "Basic Spell Impacts",
+    "original": "Fire Spell Impacts/Fire Spell Impact 3.wav",
+    "author": "lentikula",
+    "source": "https://lentikula.itch.io/freecc0-basic-spell-impacts-sfx",
+    "license": "CC0 1.0",
+    "preview": false,
+    "trim": [
+      0.45,
+      0.65
+    ],
+    "bytes": 11327
+  },
+  "itch_fire5": {
+    "path": "sfx/itch_fire5.mp3",
+    "label": "불 마법 5 · 강타",
+    "pack": "Basic Spell Impacts",
+    "original": "Fire Spell Impacts/Fire Spell Impact 5.wav",
+    "author": "lentikula",
+    "source": "https://lentikula.itch.io/freecc0-basic-spell-impacts-sfx",
+    "license": "CC0 1.0",
+    "preview": false,
+    "trim": [
+      0.055,
+      1.8
+    ],
+    "bytes": 29718
+  },
+  "itch_ice1": {
+    "path": "sfx/itch_ice1.mp3",
+    "label": "얼음 마법 1 · 강타",
+    "pack": "Basic Spell Impacts",
+    "original": "Ice Spell Impacts/Ice Spell Impact 1.wav",
+    "author": "lentikula",
+    "source": "https://lentikula.itch.io/freecc0-basic-spell-impacts-sfx",
+    "license": "CC0 1.0",
+    "preview": false,
+    "trim": [
+      0.6,
+      1.8
+    ],
+    "bytes": 29718
+  },
+  "itch_ice3": {
+    "path": "sfx/itch_ice3.mp3",
+    "label": "얼음 마법 3 · 짧은 적중",
+    "pack": "Basic Spell Impacts",
+    "original": "Ice Spell Impacts/Ice Spell Impact 3.wav",
+    "author": "lentikula",
+    "source": "https://lentikula.itch.io/freecc0-basic-spell-impacts-sfx",
+    "license": "CC0 1.0",
+    "preview": false,
+    "trim": [
+      0.61,
+      0.65
+    ],
+    "bytes": 11327
+  },
+  "itch_ice4": {
+    "path": "sfx/itch_ice4.mp3",
+    "label": "얼음 마법 4 · 강타",
+    "pack": "Basic Spell Impacts",
+    "original": "Ice Spell Impacts/Ice Spell Impact 4.wav",
+    "author": "lentikula",
+    "source": "https://lentikula.itch.io/freecc0-basic-spell-impacts-sfx",
+    "license": "CC0 1.0",
+    "preview": false,
+    "trim": [
+      0.45,
+      1.4
+    ],
+    "bytes": 23448
+  },
+  "itch_wind2": {
+    "path": "sfx/itch_wind2.mp3",
+    "label": "바람 마법 2 · 기 모으기",
+    "pack": "Druid Spell Impacts",
+    "original": "Wind Spell Impacts/Wind Spell Impact 2.wav",
+    "author": "lentikula",
+    "source": "https://lentikula.itch.io/druid-spell-impacts",
+    "license": "CC0 1.0",
+    "preview": false,
+    "trim": [
+      0.175,
+      1.5
+    ],
+    "bytes": 24284
+  },
+  "itch_wind5": {
+    "path": "sfx/itch_wind5.mp3",
+    "label": "바람 마법 5 · 기 모으기",
+    "pack": "Druid Spell Impacts",
+    "original": "Wind Spell Impacts/Wind Spell Impact 5.wav",
+    "author": "lentikula",
+    "source": "https://lentikula.itch.io/druid-spell-impacts",
+    "license": "CC0 1.0",
+    "preview": false,
+    "trim": [
+      0.05,
+      0.8
+    ],
+    "bytes": 12999
+  },
+  "itch_heal10": {
+    "path": "sfx/itch_heal10.mp3",
+    "label": "회복 마법 10 · 결정 준비",
+    "pack": "Healing Spell Impacts",
+    "original": "Impacts/Healing Spell Impact 10.wav",
+    "author": "lentikula",
+    "source": "https://lentikula.itch.io/healing-spell-impacts",
+    "license": "CC0 1.0",
+    "preview": false,
+    "trim": [
+      0.13,
+      0.8
+    ],
+    "bytes": 13835
+  },
+  "itch_heal11": {
+    "path": "sfx/itch_heal11.mp3",
+    "label": "회복 마법 11 · 결정 준비",
+    "pack": "Healing Spell Impacts",
+    "original": "Impacts/Healing Spell Impact 11.wav",
+    "author": "lentikula",
+    "source": "https://lentikula.itch.io/healing-spell-impacts",
+    "license": "CC0 1.0",
+    "preview": false,
+    "trim": [
+      0,
+      1.5
+    ],
+    "bytes": 24284
   }
 };
 // kind 별 시작/적중/마무리. selected는 임시 기본값이며 후보 목록 안에 있어야 한다.
 const sfxSlot=(selected,...candidates)=>({selected,candidates:[selected,...candidates]});
 SFX_SCHOOL.crimson.files={
-  skill:{cast:sfxSlot('field_fire','field_growl','spell_fire','fire','fire2','slice','rumble2'),hit:sfxSlot('body_hit','body_hit_heavy','spell_fire','punch','punch2','chop','crunch'),finish:sfxSlot('field_blast','spell_fire','spell_fire_heavy','crunch','rumble','crunch2','metal')},
-  combo:{cast:sfxSlot('field_growl','field_fire','spell_fire','fire2','fire','rumble2'),hit:sfxSlot('spell_fire','body_hit_heavy','field_blast','crunch2','punch2','metal'),finish:sfxSlot('spell_fire_heavy','field_blast','rumble','crunch','crunch2','rumble2')},
-  awk:{cast:sfxSlot('field_growl','field_fire','rumble2','fire2','fire'),hit:sfxSlot('body_hit_heavy','spell_fire_heavy','metal','crunch2','punch'),finish:sfxSlot('field_blast','spell_fire_heavy','crunch2','rumble','crunch')}
+  skill:{cast:sfxSlot('itch_wind5','itch_fire5','field_fire','field_growl','spell_fire','fire','fire2','slice','rumble2'),hit:sfxSlot('itch_fire3','spell_fire','body_hit','body_hit_heavy','punch','punch2','chop','crunch'),finish:sfxSlot('itch_fire1','spell_fire_heavy','field_blast','spell_fire','crunch','rumble','crunch2','metal')},
+  combo:{cast:sfxSlot('itch_fire5','itch_wind2','field_growl','field_fire','spell_fire','fire2','fire','rumble2'),hit:sfxSlot('spell_fire','itch_fire3','body_hit_heavy','field_blast','crunch2','punch2','metal'),finish:sfxSlot('spell_fire_heavy','itch_fire1','field_blast','rumble','crunch','crunch2','rumble2')},
+  awk:{cast:sfxSlot('itch_wind2','itch_fire5','field_growl','field_fire','rumble2','fire2','fire'),hit:sfxSlot('itch_fire3','spell_fire','body_hit_heavy','spell_fire_heavy','metal','crunch2','punch'),finish:sfxSlot('itch_fire1','spell_fire_heavy','field_blast','crunch2','rumble','crunch')}
 };
 SFX_SCHOOL.frost.files={
-  skill:{cast:sfxSlot('field_ice','spell_ice','slice','slice2','bell','glasslight'),hit:sfxSlot('shatter','field_ice_heavy','body_hit','glasslight','glassmid','punch','chop'),finish:sfxSlot('shatter_heavy','spell_ice','field_ice_heavy','glass','glass2','bell','metal')},
-  combo:{cast:sfxSlot('spell_ice','field_ice','bell','bell2','slice2'),hit:sfxSlot('field_ice_heavy','shatter','body_hit_heavy','glassmid','glasslight','metal'),finish:sfxSlot('spell_ice_heavy','shatter_heavy','glass2','glass','bell2')},
-  awk:{cast:sfxSlot('spell_ice_heavy','field_ice','bell2','bell','slice'),hit:sfxSlot('shatter_heavy','field_ice_heavy','glass','glassmid','punch2'),finish:sfxSlot('spell_ice_heavy','shatter_heavy','glass2','bell2','glass','metal')}
+  skill:{cast:sfxSlot('itch_heal10','itch_wind5','field_ice','spell_ice','slice','slice2','bell','glasslight'),hit:sfxSlot('itch_ice3','spell_ice','shatter','field_ice_heavy','body_hit','glasslight','glassmid','punch','chop'),finish:sfxSlot('itch_ice1','itch_ice4','shatter_heavy','spell_ice','field_ice_heavy','glass','glass2','bell','metal')},
+  combo:{cast:sfxSlot('itch_wind2','itch_heal10','spell_ice','field_ice','bell','bell2','slice2'),hit:sfxSlot('spell_ice','itch_ice3','field_ice_heavy','shatter','body_hit_heavy','glassmid','glasslight','metal'),finish:sfxSlot('spell_ice_heavy','itch_ice1','shatter_heavy','glass2','glass','bell2')},
+  awk:{cast:sfxSlot('itch_heal11','itch_heal10','spell_ice_heavy','field_ice','bell2','bell','slice'),hit:sfxSlot('itch_ice4','itch_ice3','shatter_heavy','field_ice_heavy','glass','glassmid','punch2'),finish:sfxSlot('itch_ice1','spell_ice_heavy','shatter_heavy','glass2','bell2','glass','metal')}
 };
 const SFX_CACHE=new WeakMap(),labSoundChoices=Object.create(null);
 let sfxPlaybackEpoch=0,sfxRandomSeed=0x62a914b3;

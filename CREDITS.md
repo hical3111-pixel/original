@@ -68,3 +68,28 @@ mono MP3 / 44.1 kHz / 128 kbps. 먼저 mono로 합친 뒤 35 Hz~6.5 kHz 필터, 
 | `sfx/field_blast.mp3` | Firecracker Explosion | `609588__unfa__firecracker-explosion.flac` | 0 / 2.2 | CC0 1.0 | 36405 |
 
 추가 **344,536 bytes / 13개**, 전체 **704,329 bytes / 31개** (5 MB 이하). Sonniss 음원은 포함하지 않았습니다.
+
+## 3차 기본값 — itch.io 마법 팩
+
+진홍·빙정의 일반기/연계기/각성기 시작·적중·강타 기본값을 아래 itch.io 팩으로 통일했습니다. 기존 후보 31개는 비교용으로 유지하며, 그중 Basic Spell Impacts의 기존 4개도 계속 사용합니다. 추가 팩은 2026-09-26 공식 페이지에서 CC0를 확인하고 무료 다운로드로 받았습니다. 팩에 별도 라이선스 파일은 없으므로 [공식 페이지의 선언 기록](sfx/licenses/itch-packs.txt)을 보관합니다.
+
+- [Basic Spell Impacts](https://lentikula.itch.io/freecc0-basic-spell-impacts-sfx) — lentikula, CC0 1.0. 불·얼음 각 5종에서 선택.
+- [Druid Spell Impacts](https://lentikula.itch.io/druid-spell-impacts) — lentikula, CC0 1.0. 바람 2종을 준비음에 사용.
+- [Healing Spell Impacts](https://lentikula.itch.io/healing-spell-impacts) — lentikula, CC0 1.0. 회복 마법 2종을 빙정 준비음에 사용(게임의 회복 효과 추가 아님).
+
+형식·필터·정규화·페이드는 2차와 같습니다. 적중용은 강한 파형 직전부터 짧게, 준비·강타용은 더 길게 잘랐습니다. 모든 변경은 효과음에만 적용됩니다.
+
+| 저장 파일 | 팩 | 원본 파일 | 구간 시작 / 길이(초) | 라이선스 | 크기 (bytes) |
+|---|---|---|---|---|---:|
+| `sfx/itch_fire1.mp3` | Basic Spell Impacts | `Fire Spell Impacts/Fire Spell Impact 1.wav` | 0.5 / 2.4 | CC0 1.0 | 39331 |
+| `sfx/itch_fire3.mp3` | Basic Spell Impacts | `Fire Spell Impacts/Fire Spell Impact 3.wav` | 0.45 / 0.65 | CC0 1.0 | 11327 |
+| `sfx/itch_fire5.mp3` | Basic Spell Impacts | `Fire Spell Impacts/Fire Spell Impact 5.wav` | 0.055 / 1.8 | CC0 1.0 | 29718 |
+| `sfx/itch_ice1.mp3` | Basic Spell Impacts | `Ice Spell Impacts/Ice Spell Impact 1.wav` | 0.6 / 1.8 | CC0 1.0 | 29718 |
+| `sfx/itch_ice3.mp3` | Basic Spell Impacts | `Ice Spell Impacts/Ice Spell Impact 3.wav` | 0.61 / 0.65 | CC0 1.0 | 11327 |
+| `sfx/itch_ice4.mp3` | Basic Spell Impacts | `Ice Spell Impacts/Ice Spell Impact 4.wav` | 0.45 / 1.4 | CC0 1.0 | 23448 |
+| `sfx/itch_wind2.mp3` | Druid Spell Impacts | `Wind Spell Impacts/Wind Spell Impact 2.wav` | 0.175 / 1.5 | CC0 1.0 | 24284 |
+| `sfx/itch_wind5.mp3` | Druid Spell Impacts | `Wind Spell Impacts/Wind Spell Impact 5.wav` | 0.05 / 0.8 | CC0 1.0 | 12999 |
+| `sfx/itch_heal10.mp3` | Healing Spell Impacts | `Impacts/Healing Spell Impact 10.wav` | 0.13 / 0.8 | CC0 1.0 | 13835 |
+| `sfx/itch_heal11.mp3` | Healing Spell Impacts | `Impacts/Healing Spell Impact 11.wav` | 0 / 1.5 | CC0 1.0 | 24284 |
+
+이번 추가 **220,271 bytes / 10개**, 현재 전체 **924,600 bytes / 41개** (5 MB 이하). 기본값은 itch.io 팩만 사용하며 다른 계열의 소리는 변경하지 않았습니다.

@@ -1,0 +1,21 @@
+CC0 1.0 source record — checked 2026-09-26
+Author: lentikula
+License: https://creativecommons.org/publicdomain/zero/1.0/
+The original packs contain no separate license file; this records the explicit CC0 declaration on each official project page.
+Downloaded through the normal free itch.io download flow.
+
+Pack: Basic Spell Impacts
+Archive: Basic Spell Impacts.zip
+Page: https://lentikula.itch.io/freecc0-basic-spell-impacts-sfx
+Published license: CC0 (Creative Commons Zero 1.0)
+
+Pack: Druid Spell Impacts
+Archive: Druid Spell Impacts Pack.7z
+Page: https://lentikula.itch.io/druid-spell-impacts
+Published license: CC0 (Creative Commons Zero 1.0)
+
+Pack: Healing Spell Impacts
+Archive: Healing Spell Impacts Pack by Lentikula.7z
+Page: https://lentikula.itch.io/healing-spell-impacts
+Published license: CC0 (Creative Commons Zero 1.0)
+
