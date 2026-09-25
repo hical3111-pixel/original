@@ -131,6 +131,10 @@ addFX({dur:1.5, up(dt,o){...}, back(o){...}, draw(o){...}, post(o){...}, end(o){
 - 시작 연출을 인계하려면 `keep:{get,ready,release}`를 추가한다: 시작 함수는 FX를 반환하고, `get()`은 살아 있는 FX, `ready`는 시작 연출 종료 시각(초), `release(fx)`는 `collapse` 표시와 종료 처리이며, 공통 경로가 유지·전체 시연·중복 마무리 방지·`fn(pm,fx)` 인계(`claimed`)를 담당한다. 연계 함수는 FX를 소모(`consumed`)하고 종료 시간을 정한다.
 - 연계의 `school`과 `SCHOOLS`를 맞춘다. 모든 연계는 한 계열에만 속하고, 계열마다 정확히 2쌍이다.
 
+### 새 계열의 selftest
+- **공통 검사는 복사하지 말고 데이터만 추가한다.** 독립 기대값인 `schoolFixture`·`resonanceFixture`에 계열/연결을, 스킬 수치 표에 해금·쿨타임·피해 기대값을 추가하고 `checkSchoolSkills`를 호출한다. `SCHOOLS` 순회가 공명 이웃·카드·해금 배너·1/2배속 120초 자동 연계(각 14/15 이상)를 검사하며, 고유 연출·효과 조건만 별도 검사한다. 기존 기대값·시나리오는 유지한다.
+- 추천은 계열별 0/1/2쌍 분배를 탐색하고, 완성 쌍·열린 스킬·`COMBOS` 순서와 `keep` 순서를 보존한다. `referenceLoadout`은 변경 전 전수 탐색 기준 답안이므로 최적화 구현으로 교체하지 않는다. 구간별 시간은 `window.__selftest.timings`, 추천 측정은 `window.__recommendBenchmarks`에 남는다. 모든 기준 답안 비교는 항상 실행하며, 옛 함수의 반복 속도 측정만 `?selftest&referencebench`로 추가한다.
+
 ### 새 각성기
 `awkXxx(pm=1)` 작성(첫 줄에 `cutin(...)`, `castLock` 설정) → `AWK`에 `{id,name,unlock,c,fn,d}` → 아이콘은 `AWK_IC[id]` 또는 `IC[id]`. 각성기 id는 일반 스킬 id와 겹치면 안 된다.
 
