@@ -2,7 +2,7 @@
 /* 구조 자가 점검 — 주소 뒤에 ?selftest 를 붙이면 index.html이 이 파일을 불러온다.
    저장을 끄고 새 상태에서 모든 스킬·연계기·각성기·보스·도전을 실제로 돌려 본 뒤 결과를 화면에 띄운다.
    결과는 window.__selftest 에도 남는다: {pass, fail, lines, elapsedMs, timings, autoResults}. 규칙은 AGENTS.md 참고. */
-(()=>{
+(async()=>{
   const startedAt=performance.now(),lines=[];let pass=0,fail=0;
   const ok=(cond,msg)=>{if(cond){pass++}else{fail++;lines.push('✗ '+msg)}};
   const timings=[];let timedSection=null;
@@ -1266,6 +1266,13 @@ function referenceLoadout(best=ub(),keep=[]){
 
   section('정리');
   guard('정리',()=>{tick(600);ok(FX.length===0,'연출이 끝나지 않고 남아 있음: '+FX.length+'개');ok(castLock<=0,'castLock이 풀리지 않음');ok(desat===0,'흑백(desat)이 풀리지 않고 남아 있음: '+desat)});
+
+  section('수련장 별도 문서');
+  const labFrame=document.createElement('iframe');labFrame.style.cssText='position:fixed;left:-2000px;width:390px;height:844px';labFrame.src='?lab&selftest';document.body.appendChild(labFrame);
+  try{const deadline=performance.now()+25000;while(!labFrame.contentWindow?.__selftest&&performance.now()<deadline)await new Promise(r=>setTimeout(r,25));
+    const result=labFrame.contentWindow?.__selftest;ok(!!result,'수련장 별도 문서 점검 완료');if(result){pass+=result.pass;fail+=result.fail;lines.push(...result.lines);window.__labSelftest=result}
+  }catch(e){ok(false,'수련장 문서 예외: '+e.message)}finally{labFrame.remove()}
+  ok(!LAB_MODE,'기존 전투 점검은 일반 모드에서 실행');ok(document.querySelectorAll('.lab-link').length===SK.length+COMBOS.length+AWK.length,'기존 시연 옆 수련장 링크 전체');
 
   closeSection();const elapsedMs=performance.now()-startedAt,box=document.createElement('div');
   box.style.cssText='position:fixed;right:12px;top:12px;z-index:99;max-width:min(520px,92vw);max-height:80vh;overflow:auto;background:#0e0b1d;color:#f0ebff;border:2px solid '+(fail?'#ff4f5e':'#7cf29a')+';border-radius:12px;padding:14px;font:12px/1.6 "Noto Sans KR",sans-serif;white-space:pre-wrap';

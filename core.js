@@ -20,6 +20,7 @@ function fmt(n){
 }
 
 /* ================= state ================= */
+const LAB_MODE=new URLSearchParams(location.search).has('lab');
 const KEY='blade-road-v1';
 // 밸런스 수치는 여기 한곳에 둔다. 축복 시간은 Date.now와 같은 밀리초 단위다.
 const BAL={hpG:1.3,goldG:1.19,comboGauge:8,skillGauge:.8,speed:2,blessSpeed:3,blessPower:2,blessGold:2,blessDuration:30*60*1000,blessCap:2*60*60*1000,blessRecharge:2*60*60*1000,blessCharges:3,blessRitual:3000,taichi:[48,6],
@@ -34,7 +35,7 @@ const fresh=()=>({gold:0,stage:1,kills:0,maxStage:1,best:1,farm:false,farmKills:
   mastery:{crimson:0,eclipse:0,verdant:0,abyss:0,storm:0,hellfire:0,frost:0,ink:0,wuji:0,spirit:0}});
 let S=fresh();
 function load(d){try{const raw=d||JSON.parse(localStorage.getItem(KEY)||'null');if(raw){S=Object.assign(fresh(),raw);if(!raw.unlockV){S.unlockFloor=unlockFloorOf(raw.best||1);S.unlockV=2}S.unlockFloor=Math.min(S.unlockFloor||0,NEW_UNLOCK[NEW_UNLOCK.length-1]);S.lv=Object.assign(freshLv(),raw.lv||{});S.relics=Object.assign({},raw.relics||{});S.ach=Object.assign({},raw.ach||{});S.awk=Object.assign({},raw.awk||{});S.daily=Object.assign({key:'',done:false},raw.daily||{});S.codex=Object.assign({},raw.codex||{});S.mastery=Object.assign({crimson:0,eclipse:0,verdant:0,abyss:0,storm:0,hellfire:0,frost:0,ink:0,wuji:0,spirit:0},raw.mastery||{});S.speed=raw.speed===BAL.speed?BAL.speed:1;S.hasteSpeed=[1,2,3].includes(raw.hasteSpeed)?raw.hasteSpeed:BAL.blessSpeed;restoreBlessing(raw.blessing);restoreLoadout(raw)}}catch(e){}}
-function save(){S.t=Date.now();const out=CH?Object.assign({},S,CH.saved):S;try{localStorage.setItem(KEY,JSON.stringify(out))}catch(e){}}
+function save(){if(LAB_MODE)return;S.t=Date.now();const out=CH?Object.assign({},S,CH.saved):S;try{localStorage.setItem(KEY,JSON.stringify(out))}catch(e){}}
 
 /* 실제 시각 기준 축복: 충전 잔여분은 보존하고, 가득 찬 동안은 다음 충전을 쌓지 않는다. */
 const BLESSINGS=[{id:'power',name:'힘',icon:'⚔',d:'공격력 ×2'},{id:'gold',name:'풍요',icon:'◆',d:'골드 ×2'},{id:'haste',name:'신속',icon:'»',d:'전투 ×3'}];
@@ -163,7 +164,7 @@ function stats(lv=S.lv,blessed=true){
     cdm:Math.max(.4,(1-.05*rv('frost'))*(typeof focusTier==='function'&&focusTier('abyss')>=1?.85:1)*(typeof hasRes==='function'&&hasRes('eclipse_abyss')?.92:1)),gg:1+.25*rv('shard'),cdx};
 }
 let ST=stats();
-const tier=()=>S.lv.skill>=20?3:S.lv.skill>=10?2:S.lv.skill>=5?1:0;
+const tier=()=>LAB_MODE?lab.tier:S.lv.skill>=20?3:S.lv.skill>=10?2:S.lv.skill>=5?1:0;
 function dps(st=ST){const cf=1+st.cc*(st.cm-1),f=frenzyT>0?2.8:1;return st.atk*st.aps*f*cf+st.sn*.8*st.sd*cf+st.ar*1.4*cf+st.mg/2.6*cf}
 
 const UP=[
@@ -357,7 +358,7 @@ function deal(d,crit,src,x,y,o={}){
   else m.hp-=d;
   m.flash=1;m.hurt=.22;m.chipT=.35;if(o.sid)m.lastSrc=o.sid;
   m.sqv-=heavy?11:crit?9:light?2:5;m.kv+=(heavy?700:crit?520:light?80:260)*U;
-  if(src!=='spirit'&&src!=='ally'){combo++;comboT=1.6;comboPop=1;if(combo>S.maxCombo)S.maxCombo=combo}
+  if(src!=='spirit'&&src!=='ally'){combo++;comboT=1.6;comboPop=1;if(!LAB_MODE&&combo>S.maxCombo)S.maxCombo=combo}
   const size=src==='spirit'||src==='ally'?17:light?22:heavy?54:crit?44:src==='tap'?32:src==='skill'?34:28;
   T.push({x:x+rnd(-26,26)*U,y:y-m.rb*U*.5,vx:rnd(-50,50)*U,vy:-rnd(150,210)*U,text:fmt(d),crit:crit||heavy,
     label:crit?'치명타':heavy&&o.name?o.name:'',lcol:crit?'#ff4fa3':col,size,life:heavy?1.1:.9,max:heavy?1.1:.9,color:col});
