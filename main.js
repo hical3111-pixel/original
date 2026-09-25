@@ -235,6 +235,8 @@ function updAllies(dt,fg){
 /* ================= update ================= */
 let hintY=0,dispGold=0,uiAcc=0,saveAcc=0,achAcc=0,lastBump=0;
 function update(rdt){
+  const pendingBless=S.blessing.pending,granted=syncBlessings();if(ST.blessingMask!==blessingMask())ST=stats();
+  if(granted){if($('blessPicker').open)$('blessPicker').close();const a=BLESSINGS.find(a=>a.id===pendingBless.id);banner('축복 발동 · '+a.name,a.d+' · 30분 연장','#FFD45B',2.2);sfx.chime()}
   trauma=Math.max(0,trauma-rdt*1.7);
   zoom+=(1-zoom)*Math.min(1,rdt*7);zoom=Math.min(zoom,1.25);
   flashA=Math.max(0,flashA-rdt*3.5);invertT=Math.max(0,invertT-rdt);
@@ -253,7 +255,11 @@ function update(rdt){
   dimCur+=(dimT-dimCur)*Math.min(1,rdt*6);tintCur+=(tintA-tintCur)*Math.min(1,rdt*6);
   if(stop>0){stop-=rdt;if(m)m.flash=Math.max(m.flash,.6);return}
   let ts=1;if(slowT>0){slowT-=rdt;ts=lerp(1,.25,Math.min(1,slowT))}
-  const dt=rdt*ts;gt+=dt;
+  const speed=gameSpeed(),steps=Math.max(1,Math.ceil(rdt*speed/(1/60)));
+  for(let i=0;i<steps;i++){updateWorld(rdt*ts*speed/steps,rdt/steps);if(stop>0)break}
+}
+function updateWorld(dt,realDt){
+  gt+=dt;
   dimT=0;tintA=0;
 
   for(const s of SK)cds[s.id]=Math.max(0,cds[s.id]-dt*(circleT>0?2:1));if(circleT>0)circleT-=dt;
@@ -300,7 +306,7 @@ function update(rdt){
   updAllies(dt,fg);
 
   for(let i=FX.length-1;i>=0;i--){const o=FX[i];if(!o)continue;o.t+=dt;o.up&&o.up(dt,o);if(o.t>=o.dur){o.end&&o.end(o);FX.splice(i,1)}}
-  updBossIntro(dt);
+  updBossIntro(realDt);
   bossAI(dt);
 
   // monster
@@ -942,6 +948,7 @@ document.querySelectorAll('.seg button').forEach(b=>b.addEventListener('click',(
   mode=b.dataset.m==='max'?'max':+b.dataset.m;document.querySelectorAll('.seg button').forEach(x=>x.setAttribute('aria-pressed',x===b));uiTick(true)}));
 let lastDesc='';
 function uiTick(force){
+  blessingUI();
   watchSchoolUnlocks();{const st=schoolState();if(schoolUIKey!==JSON.stringify([S.best,S.loadout,st,st.focus.map(focusTier)]))buildBook()};
   $('goldTxt').textContent=fmt(dispGold);
   $('dpsTxt').textContent=fmt(dps());
@@ -996,6 +1003,21 @@ $('retry').addEventListener('click',()=>{ensureAudio();retryBoss()});
 $('autoSk').addEventListener('change',e=>{S.auto=e.target.checked;save()});
 $('soundBtn').addEventListener('click',()=>{S.sound=!S.sound;if(S.sound)ensureAudio();soundUI();save()});
 function soundUI(){const b=$('soundBtn');b.textContent=S.sound?'소리 켬':'소리 끔';b.setAttribute('aria-pressed',S.sound)}
+const blessingTime=ms=>{const sec=Math.max(0,Math.ceil(ms/1000));return Math.floor(sec/60)+':'+String(sec%60).padStart(2,'0')};
+function blessingUI(){
+  const now=Date.now(),b=S.blessing,speed=gameSpeed(now),fast=blessingActive('haste',now),btn=$('speedBtn');btn.textContent='×'+speed;btn.disabled=fast;btn.setAttribute('aria-pressed',S.speed===BAL.speed);btn.setAttribute('aria-label',fast?'신속 축복 · 3배속 · 종료 후 '+S.speed+'배속':'전투 '+S.speed+'배속 · 누르면 '+(S.speed===1?BAL.speed:1)+'배속');btn.title=fast?'신속 종료 후 ×'+S.speed:'전투 배속 전환';
+  $('blessBtn').textContent=(b.pending?'축복 받는 중':'축복 받기')+' · '+b.charges+'/'+BAL.blessCharges;$('blessBtn').disabled=b.charges<=0&&!b.pending;
+  $('blessNext').textContent=b.charges===BAL.blessCharges?'충전 가득 참':'다음 충전 '+blessingTime(b.chargeAt+BAL.blessRecharge-now);
+  $('blessBuffs').innerHTML=BLESSINGS.filter(a=>blessingActive(a.id,now)).map(a=>`<span class="bless-buff" data-blessing="${a.id}" title="${a.d}">${a.icon} ${a.name} <time>${blessingTime(b.until[a.id]-now)}</time></span>`).join('');
+  $('blessTitle').textContent=b.pending?'축복을 받는 중':'축복을 선택하세요';$('blessSelection').hidden=!!b.pending;$('blessRitual').hidden=!b.pending;$('closeBlessPicker').disabled=!!b.pending;
+  if(b.pending){const a=BLESSINGS.find(a=>a.id===b.pending.id);$('blessRitualName').textContent=a.name+' · '+a.d;$('blessSymbol').textContent=a.icon;$('blessRitual').style.setProperty('--ritual',RM?0:clamp(1-(b.pending.readyAt-now)/BAL.blessRitual,0,1));if(!$('blessPicker').open)$('blessPicker').showModal()}
+  for(const btn of $('blessChoices').children)btn.disabled=b.charges<=0||!!b.pending||b.until[btn.dataset.blessing]>=now+BAL.blessCap-BAL.blessRitual;
+}
+$('speedBtn').addEventListener('click',()=>{if(blessingActive('haste'))return;S.speed=S.speed===BAL.speed?1:BAL.speed;blessingUI();save()});
+for(const a of BLESSINGS){const btn=document.createElement('button');btn.className='bless-choice';btn.dataset.blessing=a.id;btn.innerHTML=`<b>${a.icon} ${a.name}</b><small>${a.d} · 30분</small>`;btn.addEventListener('click',()=>{ensureAudio();if(beginBlessing(a.id)){sfx.charge();blessingUI()}});$('blessChoices').appendChild(btn)}
+$('blessBtn').addEventListener('click',()=>{syncBlessings();blessingUI();if(!$('blessPicker').open)$('blessPicker').showModal()});
+$('closeBlessPicker').addEventListener('click',()=>$('blessPicker').close());
+$('blessPicker').addEventListener('cancel',e=>{if(S.blessing.pending)e.preventDefault()});
 cv.addEventListener('pointerdown',e=>{
   ensureAudio();const r=cv.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;
   P.push({t:'ring',x,y,r0:4*U,r1:40*U,w:4*U,life:.25,max:.25,color:'#ffffff'});
@@ -1008,8 +1030,8 @@ cv.addEventListener('pointerdown',e=>{
 let pending=0;
 function showOffline(sec){
   sec=Math.min(sec,8*3600);if(S.totalKills<1)return;
-  const kps=Math.min(dps()/monHp(S.stage),1.5)*.6;
-  const amt=sec*kps*goldDrop(S.stage)*ST.gm*.5;if(amt<1)return;
+  const offlineST=stats(S.lv,false),kps=Math.min(dps(offlineST)/monHp(S.stage),1.5)*.6;
+  const amt=sec*kps*goldDrop(S.stage)*offlineST.gm*.5;if(amt<1)return;
   pending+=amt;const hh=Math.floor(sec/3600),mm=Math.floor(sec%3600/60);
   $('awayTxt').textContent=`자리를 비운 ${hh?hh+'시간 ':''}${mm}분 동안 기사와 동료들이 대신 싸웠습니다.`;
   $('awayGold').textContent=fmt(pending);$('modal').hidden=false;
