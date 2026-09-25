@@ -393,10 +393,10 @@
     const reset=()=>{S=fresh();S.auto=false;S.sound=false;ST=stats();CH=null;BI=null;BF=null;CUT=null;BN=null;FX=[];P=[];T=[];B=[];PR=[];C=[];relicQ=[];shieldOn=null;stop=0;slowT=0;castLock=0;frenzyT=0;circleT=0;gauge=0;lastCast=null;pendingCombo=null;spawnT=100;miniQ=0;h.stun=0;atkT=1e6;
       m=makeMonster(1);m.state='fight';m.x=monX;m.sh=0;m.hp=m.max=1e12;for(const s of SK)cds[s.id]=0};
     const equal=(a,b)=>JSON.stringify(a)===JSON.stringify(b),derived=()=>S.loadout.flatMap(id=>{const c=COMBOS.find(c=>c.a===id);return[c.a,c.b]});
-    const mapping=[['crimson','진홍','#ff4f5e','inferno',['breath','demon']],['eclipse','월식','#9a7bff','dragon',['shadow','archers']],['verdant','녹광','#7dff5a','celestial',['orb','shield']],['abyss','심연','#b06bff','circle',['swords','gravity']],['storm','뇌전','#ffe853','judgment',['dash','spear']],['hellfire','업화','#ffa05a','hellking',['whip','hands']],['frost','빙정','#61dcf3','frostcrown',['frostcut','iceflower']],['ink','음양검결','#D9DFE5','yinyangsky',['twinstroke','inkrain']]];
-    const ring=[['crimson','hellfire','홍련작'],['hellfire','eclipse','그림자 왈츠'],['eclipse','abyss','칠흑'],['abyss','frost','절대영도'],['frost','storm','초전도'],['storm','verdant','질풍신'],['verdant','crimson','역린혈공'],['eclipse','ink','묵월'],['abyss','ink','현묵']];
+    const mapping=[['crimson','진홍','#ff4f5e','inferno',['breath','demon']],['eclipse','월식','#9a7bff','dragon',['shadow','archers']],['verdant','녹광','#7dff5a','celestial',['orb','shield']],['abyss','심연','#b06bff','circle',['swords','gravity']],['storm','뇌전','#ffe853','judgment',['dash','spear']],['hellfire','업화','#ffa05a','hellking',['whip','hands']],['frost','빙정','#61dcf3','frostcrown',['frostcut','iceflower']],['ink','음양검결','#D9DFE5','yinyangsky',['twinstroke','inkrain']],['wuji','무극도법','#D9DFE5','wuji_return',['ink_gate','talisman']]];
+    const ring=[['crimson','hellfire','홍련작'],['hellfire','eclipse','그림자 왈츠'],['eclipse','abyss','칠흑'],['abyss','frost','절대영도'],['frost','storm','초전도'],['storm','verdant','질풍신'],['verdant','crimson','역린혈공'],['eclipse','ink','묵월'],['abyss','ink','현묵'],['ink','wuji','태허도검'],['verdant','wuji','생무극']];
     try{
-      ok(SCHOOLS.length===8&&new Set(SCHOOLS.map(s=>s.id)).size===8,'서로 다른 계열 8개');
+      ok(SCHOOLS.length===9&&new Set(SCHOOLS.map(s=>s.id)).size===9,'서로 다른 계열 9개');
       for(const [id,name,color,awk,pairs] of mapping){const s=SCHOOLS.find(s=>s.id===id),cs=COMBOS.filter(c=>c.school===id);
         ok(s?.name===name&&s.c===color&&s.awk===awk,id+': 계열 이름/색/전용 각성기');
         ok(cs.length===2&&pairs.every(a=>cs.some(c=>c.a===a))&&equal(s.pairs,cs.map(c=>c.a)),id+': 설계서 연계 2쌍');
@@ -404,10 +404,10 @@
       }
       for(const c of COMBOS)ok(SCHOOLS.filter(s=>s.id===c.school&&s.pairs.includes(c.a)).length===1,c.name+': 정확히 한 계열 소속');
       ok(!SCHOOLS.some(s=>s.awk==='thousand'),'천검멸은 기본 각성기로 유지');
-      ok(RESONANCES.length===9&&new Set(RESONANCES.map(r=>r.id)).size===9,'공명 9개/고유 id');
+      ok(RESONANCES.length===11&&new Set(RESONANCES.map(r=>r.id)).size===11,'공명 11개/고유 id');
       for(const [a,b,name] of ring)ok(RESONANCES.filter(r=>r.name===name&&r.a===a&&r.b===b).length===1,name+': 설계서 공명 연결');
       for(const s of SCHOOLS){const ns=RESONANCES.filter(r=>r.a===s.id||r.b===s.id).map(r=>r.a===s.id?r.b:r.a);const expected=ring.filter(([a,b])=>a===s.id||b===s.id).map(([a,b])=>a===s.id?b:a);ok(ns.length===expected.length&&new Set(ns).size===expected.length&&!ns.includes(s.id)&&expected.every(id=>ns.includes(id)),s.name+': 설계서의 정확한 공명 이웃 '+expected.length+'개')}
-      const reached=new Set([SCHOOLS[0].id]);for(let i=0;i<8;i++)for(const r of RESONANCES)if(reached.has(r.a)||reached.has(r.b)){reached.add(r.a);reached.add(r.b)}ok(reached.size===8,'기존 고리와 음양검결이 하나로 연결됨');
+      const reached=new Set([SCHOOLS[0].id]);for(let i=0;i<9;i++)for(const r of RESONANCES)if(reached.has(r.a)||reached.has(r.b)){reached.add(r.a);reached.add(r.b)}ok(reached.size===9,'기존 연결과 무극도법이 하나로 연결됨');
       reset();const original={best:72,gold:321,lv:{atk:7},relics:{coin:2},awk:{frostcut:'a'},codex:{'0_0':3},equip:['meteor','gravity','sniper','neon','wolf','frostcut']},copy=JSON.stringify(original);load(original);
       ok(equal(S.loadout,['gravity','shield','dash','archers']),'예전 장착 순서로 쌍 추정/중복 제거/앞 4쌍 유지');
       ok(equal(S.equip,derived())&&S.equip.length===8,'변환 후 equip에 각 쌍 두 스킬 보존');
@@ -433,7 +433,7 @@
       ok(schoolState([],OB(72)).resonance.length===0&&schoolState([],OB(72)).focus.length===0,'해제 후 집중/공명 모두 꺼짐');
       reset();S.best=OB(72);const st=stats(),cw=comboWin();setLoadout(both);schoolState();ok(equal(stats(),st)&&comboWin()===cw,'A단계는 스탯/연계 창에 효과 수치를 적용하지 않음');
       // 독립 비트마스크 완전 탐색으로 추천의 전역 최댓값을 확인한다(그리기/전투 반복 없음).
-      for(const best of [...[0,1,3,8,11,17,21,30,36,40,48,56,60,64,68,72,999].map(OB),199,200,205,209,210,219,220,229,230]){
+      for(const best of [...[0,1,3,8,11,17,21,30,36,40,48,56,60,64,68,72,999].map(OB),199,200,205,209,210,219,220,229,230,239,240,249,250,255,259,260,269,270]){
         const before=JSON.stringify(S),ids=recommendLoadout(best),eligible=COMBOS.filter(c=>[c.a,c.b].some(id=>skOf(id).unlock<=best)),n=Math.min(4,eligible.length);
         ok(ids.length===n&&new Set(ids).size===n&&ids.every(id=>eligible.some(c=>c.a===id)),'STAGE '+best+': 추천은 해금 상황에 맞는 쌍만');
         let maximum=-1;for(let mask=0;mask<(1<<eligible.length);mask++){let bits=mask,count=0;while(bits){bits&=bits-1;count++}if(count!==n)continue;
@@ -462,7 +462,7 @@
     const equal=(a,b)=>JSON.stringify(a)===JSON.stringify(b),row=id=>$('book').querySelector('[data-skill="'+id+'"]'),slot=i=>$('loadoutGrid').children[i];
     const shown=root=>[...root.querySelectorAll('[data-effect]')].map(e=>e.dataset.kind+':'+e.dataset.effect);
     try{
-      reset(1);ok($('schoolCards').children.length===8,'계열 카드 8장');ok($('loadoutGrid').children.length===4,'항상 편성 4칸 표시');
+      reset(1);ok($('schoolCards').children.length===9,'계열 카드 9장');ok($('loadoutGrid').children.length===4,'항상 편성 4칸 표시');
       for(const s of SCHOOLS){const card=$('schoolCards').querySelector('[data-school="'+s.id+'"]'),skills=schoolSkills(s),icons=[...card.querySelectorAll('.school-skill')];
         ok(card.style.getPropertyValue('--c')===s.c&&card.querySelector('.school-heading b').textContent===s.name,s.name+': 카드 이름/색');
         ok(icons.length===4&&equal(icons.map(e=>e.dataset.skill),skills.map(sk=>sk.id)),s.name+': 스킬 아이콘 4개');
@@ -507,7 +507,7 @@
       m=makeMonster(1);m.state='fight';m.x=monX;m.sh=0;m.hp=m.max=1e12;for(const s of SK)cds[s.id]=0};
     const equal=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
     try{
-      ok(Object.keys(FOCUS_FX).length===8&&SCHOOLS.every(s=>Array.isArray(FOCUS_FX[s.id])&&FOCUS_FX[s.id].length===3),'8계열 3단계 효과 설명 데이터 구비');
+      ok(Object.keys(FOCUS_FX).length===9&&SCHOOLS.every(s=>Array.isArray(FOCUS_FX[s.id])&&FOCUS_FX[s.id].length===3),'9계열 3단계 효과 설명 데이터 구비');
       reset();load({best:72,equip:['dash']});
       ok(S.mastery&&typeof S.mastery==='object'&&SCHOOLS.every(s=>S.mastery[s.id]===0),'숙련 필드 없는 옛 저장에 기본값(0) 병합');
       load({best:72,mastery:{crimson:12,frost:28}});
@@ -609,7 +609,7 @@
       skillHit=function(mult,pm,x,y,o){hits.push({mult,pm,...o});return hit(mult,pm,x,y,o)};
       deal=function(d,crit,src,x,y,o){if(src==='skill')dealt+=d;return damage(d,crit,src,x,y,o)};
       ok(new Set(AWK.map(a=>a.id)).size===AWK.length,'각성기 id 중복 없음');
-      ok(SCHOOLS.every(s=>AWK.some(a=>a.id===s.awk)),'8계열 모두 유효한 전용 각성기');
+      ok(SCHOOLS.every(s=>AWK.some(a=>a.id===s.awk)),'9계열 모두 유효한 전용 각성기');
       for(const [id,school,unlock,base,slope,count] of data){const a=AWK.find(a=>a.id===id),s=SCHOOLS.find(s=>s.id===school),p=SCHOOL_AWK_COL[id];
         ok(a.unlock===unlock&&s.awk===id,id+': 해금/계열 배정');ok((awkIcon(a).match(/#[0-9a-f]{6}/gi)||[]).every(c=>p.includes(c)),id+': 아이콘 전용 5색');
         reset();S.best=unlock-1;S.awkSel=id;buildBook();ok(awkSel().id==='thousand',id+': 해금 전 실전 선택 차단');
@@ -651,7 +651,7 @@
     const reset=()=>{S=fresh();S.best=999;S.stage=72;S.auto=false;S.sound=false;ST=stats();CH=null;BI=null;BF=null;CUT=null;BN=null;FX=[];P=[];T=[];B=[];PR=[];C=[];relicQ=[];shieldOn=null;stop=0;slowT=0;castLock=0;frenzyT=0;circleT=0;gauge=0;lastCast=null;pendingCombo=null;spawnT=100;miniQ=0;h.stun=0;atkT=1e6;verdantCD=0;bloodBuffT=0;
       m=makeMonster(1);m.state='fight';m.x=monX;m.sh=0;m.hp=m.max=1e12;for(const s of SK)cds[s.id]=0};
     try{
-      ok(Object.keys(RES_FX).length===9&&RESONANCES.every(r=>typeof RES_FX[r.id]==='string'&&RES_FX[r.id].length>0),'9공명 효과 설명 데이터 구비');
+      ok(Object.keys(RES_FX).length===11&&RESONANCES.every(r=>typeof RES_FX[r.id]==='string'&&RES_FX[r.id].length>0),'11공명 효과 설명 데이터 구비');
 
       // 7종 각각 켜짐/꺼짐 판정 (schoolState().resonance 기반)
       reset();
@@ -759,7 +759,7 @@
       load({best:30,gold:5,unlockV:2});ok(!S.unlockFloor,'새 저장은 바닥값 없이 새 해금표 그대로');
       load({best:72});ok(S.unlockFloor===190&&SK.slice(0,28).every(unlocked),'옛 최고 72: 바닥값 190/기존 28스킬 모두 보존');
       ok(['twinstroke','whitestep','inkrain','halfmoon'].every(id=>!unlocked(skOf(id)))&&AWK.find(a=>a.id==='yinyangsky').unlock>ub(),'옛 최고 72: 수묵 4스킬/양의개천 잠김');
-      load({best:250});ok(S.best===250&&S.unlockFloor===190&&SK.every(unlocked)&&AWK.find(a=>a.id==='yinyangsky').unlock<=ub(),'옛 최고 250: 실제 도달 기록으로 수묵까지 해금');
+      load({best:250});ok(S.best===250&&S.unlockFloor===190&&SK.slice(0,32).every(unlocked)&&AWK.find(a=>a.id==='yinyangsky').unlock<=ub(),'옛 최고 250: 실제 도달 기록으로 수묵까지 해금');
       load({best:72,unlockV:2,unlockFloor:9999});ok(S.unlockFloor===190&&ub()===190&&!unlocked(skOf('twinstroke')),'이미 환산된 저장의 9999 바닥값도 190으로 보정');
       load(JSON.parse(JSON.stringify(S)));ok(S.unlockFloor===190&&ub()===190,'보정한 바닥값 재저장/불러오기 유지');
       S=fresh();ok(S.unlockV===2&&S.unlockFloor===0&&ub()===1,'새 게임은 바닥값 0');
@@ -911,6 +911,134 @@
       for(const speed of [1,2]){reset();S.speed=speed;setLoadout(['twinstroke','inkrain','gravity']);S.auto=true;let finish=0,linked=0;
         cast=function(s,preview){const n=S.combos,result=originalCast(s,preview);if(result&&!preview&&COMBOS.some(c=>c.b===s.id)){finish++;if(pendingCombo||S.combos>n)linked++}return result};
         const start=gt;for(let i=0;i<18000&&gt-start<120;i++)update(1/60);ok(gt-start>=120&&finish>=15&&linked/finish>=14/15,'수묵 포함 '+speed+'배 자동 연계 14/15: '+linked+'/'+finish);lines.push('수묵 '+speed+'배 자동 연계: '+linked+'/'+finish);cast=originalCast;
+      }
+    }finally{skillHit=originalHit;deal=originalDeal;Math.random=random;cast=originalCast;reset();m=null;buildBook();buildBar()}
+  });
+
+  section('무극도법 · 원본 유지 · 집중 · 공명');
+  guard('무극도법',()=>{
+    const reset=()=>{S=fresh();S.best=999;S.auto=false;S.sound=false;ST=stats();CH=null;BI=null;BF=null;CUT=null;BN=null;FX=[];P=[];T=[];B=[];PR=[];C=[];relicQ=[];shieldOn=null;stop=slowT=castLock=frenzyT=circleT=desat=0;gauge=0;lastCast=pendingCombo=null;spawnT=100;miniQ=0;h.stun=0;atkT=1e6;verdantCD=bloodBuffT=0;
+      m=makeMonster(1);m.state='fight';m.x=monX;m.sh=0;m.hp=m.max=1e12;for(const s of SK)cds[s.id]=0};
+    const step=n=>{for(let i=0;i<n;i++)update(1/60)},until=fn=>{for(let i=0;i<1800&&!fn();i++)update(1/60)};
+    const originalHit=skillHit,originalDeal=deal,random=Math.random,originalCast=cast;let hits=[],dealt=0;
+    const data=[['ink_gate',240,26,9,1.2,9,1.2,24],['bind',250,32,13.5,1.8,13.5,1.8,30],['talisman',260,28,9.5,1.2,9.5,1.2,26],['backflow',270,34,14,1.8,14,1.8,32]];
+    try{
+      skillHit=function(mult,pm,x,y,o){hits.push({mult,pm,...o});return originalHit(mult,pm,x,y,o)};
+      deal=function(d,crit,src,x,y,o){if(src==='skill')dealt+=d;return originalDeal(d,crit,src,x,y,o)};
+      ok(JSON.stringify(WUJI_COL)===JSON.stringify(['#05070B','#363F4D','#77808C','#D9DFE5','#FFFFFF']),'수묵 JSON 5색 그대로');
+      for(const [id,unlock,cd,base,slope,ice,iceSlope,iceCD] of data){const s=skOf(id);ok(s.unlock===unlock&&s.cd===cd,id+': 설계서 해금/쿨타임');
+        ok((IC[id].match(/#[0-9a-f]{6}/gi)||[]).every(c=>WUJI_COL.includes(c)),id+': 금색 없는 수묵 아이콘');
+        reset();S.best=unlock-1;ok(!unlocked(s),id+': 바로 전 스테이지 잠금');S.unlockFloor=unlock;ok(unlocked(s),id+': ub 해금 바닥값 적용');
+        for(const [tr,lv] of [[0,0],[1,5],[2,10],[3,20]])for(const b of [null,'a','b']){
+          reset();S.lv.skill=lv;if(b)S.awk[id]=b;ST=stats();ST.cc=0;hits=[];dealt=0;cast(s,true);step(250);
+          const total=base+slope*tr,expected=ST.atk*ST.sk*total*.1*(b==='a'?1.4:1);
+          ok(Math.abs(hits.reduce((n,h)=>n+h.mult,0)-total)<1e-8&&hits.every(h=>h.pm===.1&&h.sid===id),id+': TR '+tr+' 분기 '+b+' 피해/pm/id');
+          ok(dealt>=expected*.9&&dealt<=expected*1.1&&hits.at(-1)?.heavy&&hits.at(-1)?.name===s.name,id+': TR '+tr+' 분기 '+b+' 실제 피해/강타');
+          ok(total/cd<=(ice+iceSlope*tr)/iceCD,id+': TR '+tr+' 분기 '+b+' 음양검결 초당 배율 이하');
+        }
+        reset();S.awk[id]='b';cast(s);ok(Math.abs(cds[id]-s.cd*ST.cdm*.7)<1e-9,id+': B 분기 쿨타임 -30%');
+        reset();s.fn(.1);let frames=0,gray=true;for(let i=0;i<60;i++){const frozen=stop>0;desat=0;update(1/60);if(!frozen&&FX.some(o=>o.inkSchool)){frames++;gray=gray&&desat===1}}ok(frames>20&&gray,id+': 모든 월드 프레임 흑백 갱신')
+        m=null;step(300);ok(FX.length===0&&castLock<=0&&desat===0,id+': 대상 소멸/흑백/잠금 종료');
+      }
+      for(const [id,kind,count,total] of [['ink_gate','gates',2,38.5],['talisman','papers',5,39.5]]){
+        const c=comboOf(id),a=skOf(id),b=skOf(c.b);ok(c.school==='wuji'&&c.keep.release===releaseWuji,id+': 공통 keep 훅 사용');
+        reset();cds[b.id]=30;cast(a);const kept=c.keep.get(),pieces=kept.pieces,refs=[...pieces];
+        ok(pieces.length===count&&cds[b.id]===PRIME_CD,id+': 유지 개수/짝 준비');until(()=>castLock<=0);render();
+        ok(c.keep.get()===kept&&pieces.every((p,i)=>p===refs[i]&&!p.used),id+': 시작 종료 후 원본 유지');
+        until(()=>gt-lastCast.t>=7.8);const cd=cds[id];gauge=0;ok(cast(b),id+': 8초 직전 연계');
+        ok(cds[id]===cd*.5&&gauge===BAL.comboGauge*ST.gg,id+': 기존 연계 보상 유지');until(()=>kept.claimed);const fin=FX.find(o=>o.kept===kept);
+        ok(fin&&kept.pieces===pieces&&pieces.every((p,i)=>p===refs[i]),id+': 배열과 물체 참조 그대로 인계');
+        ok(FX.filter(o=>o.wujiKind===kind).length===1,id+': 유지 물체 재소환 없음');until(()=>kept.consumed);render();
+        ok(pieces.every(p=>p.used&&(kind==='gates'?p.extended:p.absorbed))&&S.combos===1,id+': 원본 문에서 띠 연장/부적 흡수 후 한 번 소모');step(150);
+        ok(!c.keep.get()&&FX.length===0&&castLock<=0,id+': 연계 종료 정리');
+        reset();setLoadout([id]);cast(a);const auto=c.keep.get();S.auto=true;until(()=>auto.claimed);S.auto=false;ok(auto.claimed&&S.combos===1,id+': 자동 연계 인계');
+        reset();cast(a);const expired=c.keep.get();step(560);ok(!FX.includes(expired),id+': 만료 시 원본 정리');
+        reset();cast(a);const interrupted=c.keep.get();until(()=>castLock<=0);cast(skOf('dash'));step(120);ok(interrupted.collapse&&!FX.includes(interrupted),id+': 다른 스킬로 중단');
+        reset();S.best=a.unlock;cast(a);step(240);ok(!c.keep.get(),id+': 짝 미해금은 자연 소멸');
+        reset();CH={mods:[DMODS.find(x=>x.id==='chain')]};cast(a);const long=c.keep.get();until(()=>gt-lastCast.t>=15.7);
+        ok(c.keep.get()===long&&activeLink()?.left>0,id+': 도전 16초 동일 물체 유지');cast(b);until(()=>long.consumed);ok(long.consumed,id+': 16초 직전 인계');
+        reset();cast(a);until(()=>castLock<=0);FX=[];cds[b.id]=0;cast(b);ok(!pendingCombo,id+': 소실 물체 연계 금지');
+        reset();hits=[];let emitted=0,colors=[];const push=P.push;P.push=function(...args){emitted+=args.length;colors.push(...args.map(p=>p.color));return push.apply(this,args)};
+        ok(previewCombo(c),id+': 시작부터 전체 시연');const demo=c.keep.get();step(350);
+        ok(demo.claimed&&demo.consumed&&hits.every(h=>h.pm===.1),id+': 시연 원본 인계/피해 10%');
+        ok(Math.abs(hits.reduce((n,h)=>n+h.mult,0)-total)<1e-8&&hits.filter(h=>h.sid==='combo').length===1,id+': 시작+마무리+16배, 중복 발동 없음');
+        ok(hits.at(-1)?.name===c.name&&hits.at(-1)?.crack===2,id+': 마지막 연계 이름/균열');
+        ok(emitted<=100&&colors.every(col=>WUJI_COL.includes(col)),id+': 입자 100개 이하/금색 없는 5색 ('+emitted+')');delete P.push;
+      }
+      const a=AWK.find(a=>a.id==='wuji_return');ok(a.name==='무극귀일'&&a.unlock===255&&SCHOOLS.find(s=>s.id==='wuji').awk===a.id,'무극귀일 배정/계열');
+      reset();S.awkSel=a.id;S.best=254;ok(awkSel().id==='thousand','무극귀일 254 잠금');S.unlockFloor=255;ok(awkSel()===a,'무극귀일 ub 255 해금');
+      for(const [tr,lv] of [[0,0],[1,5],[2,10],[3,20]]){reset();S.lv.skill=lv;ST=stats();ST.cc=0;hits=[];S.awkSel=a.id;gauge=100;
+        ok(castAwaken()&&gauge===0&&CUT.name===a.name,'무극귀일 TR '+tr+' 게이지/컷인');step(330);
+        ok(Math.abs(hits.reduce((n,h)=>n+h.mult,0)-(48+6*tr))<1e-8&&hits.every(h=>h.pm===1&&h.sid===a.id),'무극귀일 TR '+tr+' 설관 이하 피해');
+        ok(hits.at(-1)?.heavy&&hits.at(-1)?.crack===2,'무극귀일 TR '+tr+' 마지막 강타/균열');
+      }
+      reset();hits=[];a.fn(.1);const awk=FX.find(o=>o.wujiReturn);ok(awk?.dur===2.8,'무극귀일 화면 연출 2.8초');
+      let grayFrames=0,grayAwk=true;for(let i=0;i<150;i++){const frozen=stop>0;desat=0;update(1/60);if(!frozen&&FX.includes(awk)){grayFrames++;grayAwk=grayAwk&&desat===1}}ok(grayFrames>60&&grayAwk,'무극귀일 모든 월드 프레임 흑백 유지')
+      step(200);ok(hits.every(h=>h.pm===.1)&&FX.length===0,'무극귀일 시연/종료');reset();a.fn(1);m=null;step(330);ok(FX.length===0,'무극귀일 대상 소멸 안전');
+      reset();let emitted=0,colors=[];const push=P.push;P.push=function(...args){emitted+=args.length;colors.push(...args.map(p=>p.color));return push.apply(this,args)};a.fn(.1);step(330);
+      ok(emitted<=100&&colors.every(col=>WUJI_COL.includes(col)),'무극귀일 100개 이하 수묵 입자: '+emitted);delete P.push;
+      // 전용 도형의 실제 fill/stroke 색을 수집한다. 배경·공용 컷인은 포함하지 않는다.
+      for(const run of [()=>castInkGate(.1),()=>castWujiBind(.1),()=>castTalisman(.1),()=>castBackflow(.1),()=>previewCombo(comboOf('ink_gate')),()=>previewCombo(comboOf('talisman')),()=>a.fn(.1)]){
+        reset();const paint=[],fill=ctx.fill,stroke=ctx.stroke,rect=ctx.fillRect;
+        ctx.fill=function(...args){paint.push(this.fillStyle);return fill.apply(this,args)};ctx.stroke=function(...args){paint.push(this.strokeStyle);return stroke.apply(this,args)};ctx.fillRect=function(...args){paint.push(this.fillStyle);return rect.apply(this,args)};
+        try{run();const gold=FX.some(o=>o.wujiReturn);for(let i=0;i<400;i++){update(1/60);if(i%8===0)for(const f of FX)if(f.post)f.post(f)}
+          const allowed=(gold?WUJI_COL.concat('#FFD45B'):WUJI_COL).map(c=>c.toLowerCase());ok(paint.length>0&&paint.every(c=>allowed.includes(c.toLowerCase())),'수묵 도형 팔레트/각성기만 금색');if(gold)ok(paint.includes('#ffd45b'),'무극귀일 금색 실제 그리기');
+        }finally{ctx.fill=fill;ctx.stroke=stroke;ctx.fillRect=rect}
+      }
+      // 집중: 연계로 준비한 방어 하나, 25게임초 쿨, 숙련 10/25의 누적 효과.
+      reset();setLoadout(['ink_gate','talisman']);m.boss=true;bossT=1e6;triggerResonanceCombo(comboOf('ink_gate'),false,0);const ward=wujiWard(),ready=ward.readyAt;
+      ok(ward.armed&&Math.abs(ready-gt-25)<1e-8,'무극 집중: 연계로 보스 공격 1회 방어/25초 재사용');
+      ok(resolveHit({ty:'slam'},1,false)==='blocked'&&h.stun===0&&!ward.armed,'먹문이 실제 보스 공격 흡수');
+      ok(resolveHit({ty:'beam'},1,false)==='hit'&&h.stun===1.3,'다음 보스 공격은 흡수하지 않음');h.stun=0;step(10);
+      triggerResonanceCombo(comboOf('ink_gate'),false,0);ok(!ward.armed&&ward.readyAt===ready,'재사용 대기 중 재연계는 방어 재생성 없음');
+      gt=ready-.001;triggerResonanceCombo(comboOf('ink_gate'),false,0);ok(!ward.armed,'25초 직전 방어 잠김');gt=ready;triggerResonanceCombo(comboOf('ink_gate'),false,0);ok(ward.armed,'25초 이후 연계로 재준비');
+      const deadline=ward.readyAt;triggerResonanceCombo(comboOf('ink_gate'),false,0);ok(ward.readyAt===deadline&&FX.filter(f=>f.wujiWard===ward&&f.t<f.dur).length===1,'미사용 방어 중첩/대기 연장 없음');
+      setLoadout([]);ok(!absorbWujiAttack()&&!wujiWard().armed,'집중 해제 시 흡수 불가/준비 해제');
+      reset();setLoadout(['ink_gate','talisman']);triggerResonanceCombo(comboOf('ink_gate'),false,0);ok(!absorbWujiAttack(),'일반 몬스터 공격에는 보스 방어 소모 없음');
+      for(const mode of ['shield','parry']){reset();setLoadout(['ink_gate','talisman']);m.boss=true;triggerWujiFocus();if(mode==='shield')shieldOn={};resolveHit({ty:'slam',parry:mode==='parry'},1,false);ok(wujiWard().armed,'먹문 준비보다 '+mode+' 우선/먹문 보존')}
+      reset();setLoadout(['ink_gate','talisman']);triggerWujiFocus();const armedSave=JSON.parse(JSON.stringify(S));load(armedSave);ok(!wujiWard().armed&&wujiWard().readyAt===0,'일시 방어/재사용은 저장에 유출되지 않음');
+      for(const xp of [0,9,10,24,25]){reset();setLoadout(['ink_gate','talisman']);S.mastery.wuji=xp;dealt=0;const seen=[];
+        deal=function(d,crit,src,x,y,o){if(o?.sid==='wuji_talisman')seen.push(d);return originalDeal(d,crit,src,x,y,o)};
+        for(let i=0;i<SK.length;i++)cds[SK[i].id]=i%3===0?0:i%3===1?.4:8;const before={...cds};triggerResonanceCombo(comboOf('ink_gate'),false,0);
+        ok(SK.every(s=>cds[s.id]===(xp>=25?Math.max(0,before[s.id]-1):before[s.id])),'무극 숙련 '+xp+': 모든 스킬 쿨 -1초/0 바닥');step(65);
+        ok(seen.length===(xp>=10?5:0)&&seen.every(d=>d===ST.atk),'무극 숙련 '+xp+': 부적 5개 각 공격력 ×1');
+      }
+      deal=originalDeal;reset();setLoadout(['ink_gate','talisman']);S.mastery.wuji=25;cast(skOf('ink_gate'));until(()=>castLock<=0);const startCD=cds.ink_gate;cds.dash=8;
+      ok(cast(skOf('bind'))&&cds.ink_gate===Math.max(0,startCD*.5-1)&&cds.bind===skOf('bind').cd*ST.cdm-1&&cds.dash===7,'실제 cast 연계에서 시작/마무리/다른 스킬 쿨 환급');
+      reset();setLoadout(['ink_gate','talisman']);S.mastery.wuji=25;cds.dash=20;previewCombo(comboOf('ink_gate'));step(400);ok(!wujiWard().armed&&cds.dash>13,'시연은 방어 준비/집중 쿨 환급 없음');
+      // 추적탄 각각 독립: 먹문은 한 발만 막고, 이후 구체와 패링 판정은 유지한다.
+      reset();setLoadout(['ink_gate','talisman']);m.boss=true;bossT=1e6;triggerWujiFocus();const orbs={ty:'orbs',t:0,orbs:[0,1,2].map(i=>({imp:1.2+i*.4,res:0,parry:false})),evade:false};m.pat=orbs;
+      for(const orb of orbs.orbs)resolveBossOrb(orbs,orb);ok(orbs.orbs[0].result==='blocked'&&orbs.orbs.slice(1).every(g=>g.result==='hit')&&Math.abs(h.stun-1.3*2/3)<1e-9,'추적탄 1발만 흡수/나머지 기절 비율');
+      // 태허도검: 공명 활성 + 수묵 연출 + 연계 피해 조건을 모두 만족할 때만 적용.
+      reset();setLoadout(['twinstroke','ink_gate']);ST.cc=0;Math.random=()=>.5;const base=ST.atk*ST.sk*2;
+      const hitAmount=(sid='combo')=>{const hp=m.hp;originalHit(2,1,monX,groundY,{sid,light:1});return hp-m.hp};
+      ok(Math.abs(hitAmount()-base)<.001,'태허도검: 수묵 연출 없으면 증폭 없음');desat=1;ok(Math.abs(hitAmount()-base)<.001,'다른 흑백만 켜진 상태는 태허도검 미적용');
+      const scene=castInkGate(.1);ok(Math.abs(hitAmount()-base*1.2)<.001&&T.some(t=>t.text==='태허도검!'),'태허도검 실제 연계 피해 +20%/새 발동 이름');
+      ok(Math.abs(hitAmount('ink_gate')-base)<.001,'태허도검은 일반 스킬 피해 제외');releaseWuji(scene);ok(Math.abs(hitAmount()-base)<.001,'수묵 중단 즉시 태허도검 종료');
+      FX=[];castTwinstroke(.1);ok(Math.abs(hitAmount()-base*1.2)<.001,'음양검결 수묵 연출도 태허도검 적용');
+      FX=[];castInkGate(.1);T=[];originalHit(2,.1,monX,groundY,{sid:'combo',light:1});ok(!T.some(t=>t.text==='태허도검!'),'태허도검 시연은 실전 발동 안내 없음');
+      setLoadout(['ink_gate']);ok(Math.abs(hitAmount()-base)<.001,'공명 비활성은 수묵 중에도 증폭 없음');Math.random=random;
+      // 생무극: 결정 방패/녹광 방호/일반 패링/구체 패링에 각각 1회 반격.
+      for(const mode of ['shield','verdant','parry','orb']){reset();setLoadout(mode==='verdant'?['orb','shield','ink_gate']:['orb','ink_gate']);m.boss=true;bossT=1e6;const seen=[];
+        deal=function(d,crit,src,x,y,o){if(o?.sid==='wuji_talisman')seen.push(d);return originalDeal(d,crit,src,x,y,o)};
+        if(mode==='shield')shieldOn={};if(mode==='orb'){const p={ty:'orbs',orbs:[{imp:1.2,res:0,parry:true},{imp:1.6,res:0,parry:false}],t:1.2};m.pat=p;resolveBossOrb(p,p.orbs[0])}
+        else resolveHit({ty:'slam',parry:mode==='parry'},1,false);
+        ok(T.some(t=>t.text==='생무극!'),'생무극 '+mode+' 새 발동 이름');step(150);
+        ok(seen.length===1&&seen[0]===ST.atk*5,'생무극 '+mode+' 공격력 ×5 한 번');
+      }
+      reset();setLoadout(['orb','ink_gate']);const noCounter=[];deal=function(d,crit,src,x,y,o){if(o?.sid==='wuji_talisman')noCounter.push(d);return originalDeal(d,crit,src,x,y,o)};
+      m.boss=true;resolveHit({ty:'slam'},1,true);step(60);ok(noCounter.length===0,'회피는 생무극 반격 없음');
+      reset();setLoadout(['orb','ink_gate','talisman']);m.boss=true;triggerWujiFocus();resolveHit({ty:'slam'},1,false);step(60);ok(noCounter.length===0,'먹문 흡수는 생무극의 방패/패링 조건에 포함하지 않음');deal=originalDeal;
+      reset();setLoadout(['ink_gate','talisman']);ST.cc=0;S.awkSel='wuji_return';Math.random=()=>.5;let hp=m.hp;originalHit(2,1,monX,groundY,{sid:'wuji_return',light:1});ok(Math.abs(hp-m.hp-ST.atk*ST.sk*3)<.001,'무극 집중 전용 각성기 +50%');Math.random=random;
+      reset();load({unlockV:2,best:270,mastery:{ink:25},loadout:['ink_gate','talisman']});ok(S.mastery.wuji===0&&S.mastery.ink===25&&S.equip.join()==='ink_gate,bind,talisman,backflow','예전 저장 무극 숙련 0 병합/편성 복원');load({...S,mastery:{...S.mastery,wuji:25}});ok(S.mastery.wuji===25,'무극 숙련 재저장 복원');
+      load({best:250});ok(['ink_gate','bind'].every(id=>unlocked(skOf(id)))&&['talisman','backflow'].every(id=>!unlocked(skOf(id)))&&AWK.find(a=>a.id==='wuji_return').unlock>ub(),'옛 최고 250: 무극 앞 2스킬만 해금/뒤 2스킬과 각성기 잠김');
+      reset();setLoadout(['ink_gate','talisman','twinstroke','orb']);schoolOpen='wuji';buildBook();buildBar();
+      ok($('schoolCards').querySelector('[data-school="wuji"]').textContent.includes('무극귀일'),'계열 카드 무극귀일 표시');ok(['ink_wuji','verdant_wuji'].every(id=>$('schoolEffects').querySelector('[data-effect="'+id+'"]')?.textContent.includes(RESONANCES.find(r=>r.id===id).name)),'태허도검/생무극 칩과 설명');
+      for(const [before,after,name] of [[239,240,'새 계열: 무극도법'],[269,270,'무극도법 완성 · 집중 가능']]){reset();S.best=before;schoolSeenState=null;schoolNotices=[];uiTick();S.best=after;uiTick();ok(BN?.text===name,'무극 해금 배너 '+after);BN=null;uiTick();ok(!BN,'무극 해금 배너 중복 없음 '+after)}
+      const started=performance.now();let result;for(let i=0;i<10;i++)result=recommendLoadout(270);const elapsed=performance.now()-started;ok(elapsed<1000&&result.length===4,'9계열 추천 10회 <1초: '+elapsed.toFixed(1)+'ms');lines.push('9계열 추천 10회: '+elapsed.toFixed(1)+'ms');
+      for(const speed of [1,2]){reset();S.speed=speed;setLoadout(['ink_gate','talisman','gravity']);S.auto=true;let finish=0,linked=0;
+        cast=function(s,preview){const n=S.combos,result=originalCast(s,preview);if(result&&!preview&&COMBOS.some(c=>c.b===s.id)){finish++;if(pendingCombo||S.combos>n)linked++}return result};
+        const start=gt;for(let i=0;i<18000&&gt-start<120;i++)update(1/60);ok(gt-start>=120&&finish>=15&&linked/finish>=14/15,'무극 '+speed+'배 자동 연계 14/15: '+linked+'/'+finish);lines.push('무극 '+speed+'배 자동 연계: '+linked+'/'+finish);cast=originalCast;
       }
     }finally{skillHit=originalHit;deal=originalDeal;Math.random=random;cast=originalCast;reset();m=null;buildBook();buildBar()}
   });
