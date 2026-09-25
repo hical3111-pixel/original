@@ -2127,7 +2127,9 @@ const AWK=[
   {id:'hellking',name:'업화 명왕',unlock:185,c:'#FFA05A',fn:awkHellking,d:'검은 불꽃 군주가 세 병기를 펼쳐 내리친다. 주황 업화와 흰 절단선이 전장을 뒤덮는다.'},
 ];
 AWK.push({id:'yinyangsky',name:'양의개천',unlock:205,c:'#FFD45B',fn:awkYinyangsky,d:'흑백 기둥이 태극을 열고 거대한 검이 하늘을 가른다. 금빛 경계가 부서지며 음양이 폭발한다.'});
+AWK.push({id:'taichi',name:'태극묵륜',unlock:235,c:'#D9DFE5',fn:awkTaichi,d:'검을 휘둘러 흑백 초승달을 가르고, 태극의 바퀴를 이루어 적을 벤다. 사방으로 흩어지는 묵흔이 전장을 정화한다.'});
 const AWK_IC={
+  taichi:'<svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="14" fill="#05070B" stroke="#D9DFE5" stroke-width="1.5"/><path d="M16 2a7 7 0 010 14 7 7 0 000 14 14 14 0 010-28" fill="#FFFFFF"/><circle cx="16" cy="9" r="2.5" fill="#05070B"/><circle cx="16" cy="23" r="2.5" fill="#FFFFFF"/><path d="M4 28L28 4" stroke="#FFD45B" stroke-width="1.5"/></svg>',
   yinyangsky:'<svg viewBox="0 0 32 32"><circle cx="16" cy="14" r="12" fill="#FFFFFF" stroke="#FFD45B"/><path d="M16 2a6 6 0 010 12 6 6 0 000 12 12 12 0 010-24" fill="#05070B"/><path d="M16 3l3 21-3 6-3-6z" fill="#D9DFE5" stroke="#FFD45B"/></svg>',
   celestial:'<svg viewBox="0 0 32 32"><circle cx="16" cy="13" r="9" fill="#77808C" stroke="#235C48"/><path d="M13 5l4 8-5 3 8 6" fill="none" stroke="#05070B" stroke-width="2"/><ellipse cx="16" cy="22" rx="14" ry="5" fill="none" stroke="#7DFF5A" stroke-width="2"/><circle cx="16" cy="22" r="4" fill="#05070B" stroke="#FFFFFF"/></svg>',
   judgment:'<svg viewBox="0 0 32 32"><path d="M13 2h6v17l5-2-8 13-8-13 5 2z" fill="#FFD45B" stroke="#895D22"/><path d="M16 3v22" stroke="#FFFFFF" stroke-width="2"/><path d="M4 8q12 6 24 0M6 13q10 5 20 0M8 18q8 4 16 0" fill="none" stroke="#FFD45B" stroke-width="2"/></svg>',
@@ -2264,7 +2266,129 @@ function awkYinyangsky(pm=1){
     const fall=easeIn(clamp((o.t-1.4)/.3,0,1));inkBlade(x,lerp(top-65*U,groundY-100*U,fall),270,0,true,grow*fade);
     if(o.t>1.6){const k=Math.sin(clamp((o.t-1.6)/1.2,0,1)*Math.PI);inkSlash(x,y,350,-1.15,k);inkSlash(x,y,310,1.15,k);ctx.save();ctx.strokeStyle='#FFD45B';ctx.lineWidth=3*U*fade;ctx.beginPath();ctx.ellipse(x,groundY,310*U*k,35*U*k,0,0,7);ctx.stroke();ctx.restore()}}});
 }
+
+/* ================= 태극묵륜 (무계열 수묵 각성기) ================= */
+function drawTaichiBrushStreak(x,y,r,a,white,scale=1){
+  if(scale<=0)return;
+  ctx.save();ctx.translate(x,y);ctx.rotate(a);ctx.scale(U*scale,U*scale);
+  ctx.fillStyle=INK_COL[1];ctx.beginPath();
+  for(let i=0;i<=20;i++){const v=-1.9+i*3.8/20,br=i%2===0?1.12:1.04,px=Math.cos(v)*r*br,py=Math.sin(v)*r*br;i?ctx.lineTo(px,py):ctx.moveTo(px,py)}
+  for(let i=20;i>=0;i--){const v=-1.9+i*3.8/20;ctx.lineTo(Math.cos(v)*r*.6+r*.18,Math.sin(v)*r*.95)}
+  ctx.closePath();ctx.fill();
+  ctx.fillStyle=white?INK_COL[3]:INK_COL[0];ctx.beginPath();
+  for(let i=0;i<=20;i++){const v=-1.85+i*3.7/20,px=Math.cos(v)*r,py=Math.sin(v)*r;i?ctx.lineTo(px,py):ctx.moveTo(px,py)}
+  for(let i=20;i>=0;i--){const v=-1.85+i*3.7/20;ctx.lineTo(Math.cos(v)*r*.65+r*.18,Math.sin(v)*r*.95)}
+  ctx.closePath();ctx.fill();
+  ctx.fillStyle=white?INK_COL[0]:INK_COL[3];ctx.beginPath();
+  for(let i=3;i<=17;i++){const v=-1.85+i*3.7/20,px=Math.cos(v)*r*.88,py=Math.sin(v)*r*.88;i===3?ctx.moveTo(px,py):ctx.lineTo(px,py)}
+  for(let i=17;i>=3;i--){const v=-1.85+i*3.7/20;ctx.lineTo(Math.cos(v)*r*.72+r*.14,Math.sin(v)*r*.9)}
+  ctx.closePath();ctx.fill();
+  ctx.fillStyle=INK_COL[2];
+  for(let i=1;i<6;i++){const v=-1.7+i*.55,dist=r*(1.15+(i%3)*.08);ctx.fillRect(Math.cos(v)*dist-3,Math.sin(v)*dist-3,5,5)}
+  ctx.save();ctx.globalCompositeOperation='lighter';ctx.strokeStyle=INK_COL[4];ctx.lineWidth=2.5;ctx.beginPath();
+  for(let i=4;i<=16;i++){const v=-1.8+i*3.6/20,px=Math.cos(v)*r*.8,py=Math.sin(v)*r*.85;i===4?ctx.moveTo(px,py):ctx.lineTo(px,py)}
+  ctx.stroke();ctx.restore();
+  ctx.restore();
+}
+
+function drawTaichiWheel(x,y,r,rot,cutProgress=0){
+  if(r<=0)return;
+  ctx.save();ctx.translate(x,y);ctx.scale(U,U);
+  ctx.save();ctx.rotate(rot);
+  ctx.strokeStyle=INK_COL[1];ctx.lineWidth=4;ctx.beginPath();
+  for(let i=0;i<=32;i++){const a=i*Math.PI*2/32,br=r*(1+(i%2===0?.06:.02));i?ctx.lineTo(Math.cos(a)*br,Math.sin(a)*br):ctx.moveTo(Math.cos(a)*br,Math.sin(a)*br)}
+  ctx.closePath();ctx.stroke();
+  ctx.fillStyle=INK_COL[2];
+  for(let i=0;i<8;i++){const a=i*Math.PI/4+.2,pr=r*1.14;ctx.beginPath();ctx.rect(Math.cos(a)*pr-3,Math.sin(a)*pr-3,6,6);ctx.fill()}
+  for(let i=0;i<2;i++){
+    ctx.save();ctx.rotate(i*Math.PI);
+    ctx.fillStyle=i?INK_COL[3]:INK_COL[0];ctx.strokeStyle=i?INK_COL[1]:INK_COL[2];ctx.lineWidth=2.5;ctx.beginPath();
+    ctx.arc(0,0,r,-Math.PI/2,Math.PI/2);ctx.arc(0,r/2,r/2,Math.PI/2,-Math.PI/2);ctx.arc(0,-r/2,r/2,Math.PI/2,-Math.PI/2,true);ctx.closePath();ctx.fill();ctx.stroke();
+    ctx.strokeStyle=INK_COL[1];ctx.lineWidth=2;ctx.beginPath();ctx.arc(0,r/2,r*.38,Math.PI/3,-Math.PI/3,true);ctx.stroke();
+    ctx.fillStyle=i?INK_COL[0]:INK_COL[4];ctx.beginPath();ctx.arc(0,-r/2,r*.12,0,7);ctx.fill();
+    ctx.restore();
+  }
+  ctx.restore();
+
+  if(cutProgress>0){
+    const cutLen=r*2.8,cutAng=-.72;
+    ctx.save();ctx.rotate(cutAng);
+    ctx.fillStyle=INK_COL[0];ctx.beginPath();ctx.moveTo(-cutLen*.5,-12);ctx.lineTo(cutLen*.5,-4);ctx.lineTo(cutLen*.5,4);ctx.lineTo(-cutLen*.5,12);ctx.closePath();ctx.fill();
+    ctx.fillStyle=INK_COL[1];ctx.beginPath();ctx.moveTo(-cutLen*.48,-6);ctx.lineTo(cutLen*.48,-2);ctx.lineTo(cutLen*.48,2);ctx.lineTo(-cutLen*.48,6);ctx.closePath();ctx.fill();
+    ctx.fillStyle=INK_COL[3];ctx.beginPath();ctx.moveTo(-cutLen*.45,-3);ctx.lineTo(cutLen*.45,-1);ctx.lineTo(cutLen*.45,1);ctx.lineTo(-cutLen*.45,3);ctx.closePath();ctx.fill();
+    ctx.save();ctx.globalCompositeOperation='lighter';ctx.strokeStyle=INK_COL[4];ctx.lineWidth=3.5;ctx.beginPath();ctx.moveTo(-cutLen*.5,0);ctx.lineTo(cutLen*.5,0);ctx.stroke();
+    ctx.strokeStyle='#FFD45B';ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(-cutLen*.48,0);ctx.lineTo(cutLen*.48,0);ctx.stroke();ctx.restore();
+    ctx.fillStyle=INK_COL[2];
+    for(let i=-4;i<=4;i++){if(i===0)continue;const px=i*cutLen*.1,py=(i%2===0?1:-1)*(14+Math.abs(i)*3);ctx.fillRect(px-3,py-3,6,6)}
+    ctx.restore();
+  }
+  ctx.restore();
+}
+
+function drawTaichiQuadrants(x,y,r,rot,progress,fade){
+  if(r<=0||fade<=0)return;
+  ctx.save();ctx.translate(x,y);ctx.scale(U,U);
+  const dist=easeOut(progress)*115,shrink=Math.max(0,1-progress*.28);
+  const dirs=[
+    {dx:-.75,dy:-.65,ang:rot-progress*.6,col:INK_COL[0],eye:true,eyeCol:INK_COL[4]},
+    {dx:.72,dy:-.70,ang:rot+progress*.5,col:INK_COL[3],eye:false},
+    {dx:.75,dy:.65,ang:rot+progress*.6,col:INK_COL[0],eye:false},
+    {dx:-.72,dy:.70,ang:rot-progress*.5,col:INK_COL[3],eye:true,eyeCol:INK_COL[0]}
+  ];
+  for(let i=0;i<4;i++){
+    const d=dirs[i],qx=d.dx*dist,qy=d.dy*dist;
+    ctx.save();ctx.translate(qx,qy);ctx.rotate(d.ang);ctx.scale(shrink,shrink);
+    ctx.fillStyle=INK_COL[1];ctx.beginPath();ctx.arc(0,0,r*1.05,0,Math.PI*.52);ctx.lineTo(0,0);ctx.closePath();ctx.fill();
+    ctx.fillStyle=d.col;ctx.strokeStyle=INK_COL[1];ctx.lineWidth=2;ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*.5);ctx.lineTo(0,0);ctx.closePath();ctx.fill();ctx.stroke();
+    ctx.strokeStyle=INK_COL[3];ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(r,0);ctx.moveTo(0,0);ctx.lineTo(0,r);ctx.stroke();
+    ctx.save();ctx.globalCompositeOperation='lighter';ctx.strokeStyle=INK_COL[4];ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(r*.9,0);ctx.moveTo(0,0);ctx.lineTo(0,r*.9);ctx.stroke();ctx.restore();
+    if(d.eye){ctx.fillStyle=d.eyeCol;ctx.beginPath();ctx.arc(r*.42,r*.42,r*.12,0,7);ctx.fill()}
+    ctx.fillStyle=INK_COL[2];ctx.fillRect(r*.6,-6,5,5);ctx.fillRect(-6,r*.6,5,5);ctx.fillRect(r*.8,r*.3,4,4);
+    ctx.restore();
+  }
+  ctx.restore();
+}
+
+function awkTaichi(pm=1){
+  cutin('태극묵륜','각성 · 흑백의 묵륜이 적을 가르는 순간',INK_COL[3]);castLock=2.8;sfx.charge();
+  const c=m?mCenter(m):{x:monX,y:groundY-60*U},nx=c.x/W,alt=(groundY-c.y)/U;
+  const TR=tier(),power=(BAL.taichi?BAL.taichi[0]:48)+(BAL.taichi?BAL.taichi[1]:6)*TR;
+  return addFX({dur:2.8,taichi:true,up(dt,o){
+    desat=1;castLock=Math.max(castLock,.05);dimT=Math.max(dimT,.65*clamp((2.8-o.t)/.5,0,1));
+    if(o.t<.45){h.ang=-1.7;h.t=9}
+    else if(o.t<.85){h.ang=1.2;h.t=9}
+    else if(o.t<1.85){h.ang=.9;h.t=9}
+    else{h.ang=lerp(.9,0,clamp((o.t-1.85)/.4,0,1))}
+    const x=nx*W,y=groundY-alt*U;
+    at(o,1.05,()=>{sfx.slash2();sfx.dark();skillHit(power*.125,pm,x,y,{light:1,col:INK_COL[3],sid:'taichi'})});
+    at(o,1.6,()=>{sfx.bigboom();sfx.slash2();inkBurst(x,groundY,70);stop=Math.max(stop,.28);addTrauma(.8);zoom+=.12*FXS;flash(.9,'255,255,255');skillHit(power*.875,pm,x,y,{heavy:1,name:'태극묵륜',sid:'taichi',col:'#FFD45B',fc:'255,255,255',crack:2})});
+  },post(o){
+    const x=nx*W,y=groundY-alt*U,t=o.t;
+    if(t<.5){
+      const k=clamp(t/.45,0,1);ctx.save();ctx.fillStyle=INK_COL[0];ctx.beginPath();ctx.ellipse(heroX-25*U,groundY,35*U*k,8*U*k,0,0,7);ctx.fill();
+      ctx.strokeStyle=INK_COL[1];ctx.lineWidth=2*U;ctx.stroke();ctx.fillStyle=INK_COL[2];for(let i=0;i<5;i++)ctx.fillRect(heroX-(15+i*6)*U,groundY-(4+(i%2)*5)*U,4*U,4*U);ctx.restore();
+    }
+    if(t>=.42&&t<.9){
+      const p2=clamp((t-.45)/.4,0,1),flyX1=lerp(heroX+20*U,heroX+90*U,easeOut(p2)),flyY1=lerp(groundY-50*U,groundY-140*U,easeOut(p2)),flyX2=lerp(heroX+10*U,heroX+75*U,easeOut(p2)),flyY2=lerp(groundY-20*U,groundY-30*U,easeOut(p2)),sc=easeOut(p2);
+      drawTaichiBrushStreak(flyX1,flyY1,65,-.6+p2*.4,false,sc);drawTaichiBrushStreak(flyX2,flyY2,55,2.5-p2*.3,true,sc);
+    }
+    if(t>=.85&&t<1.55){
+      const p3=clamp((t-.85)/.7,0,1),form=clamp((t-.85)/.5,0,1),spin=(t-.85)*5.2,curR=130*easeOut(form);
+      if(form<.8){const sx1=lerp(heroX+90*U,x,easeOut(p3)),sy1=lerp(groundY-140*U,y,easeOut(p3));drawTaichiBrushStreak(sx1,sy1,curR*.65,spin,false,easeOut(form));drawTaichiBrushStreak(sx1,sy1,curR*.65,spin+Math.PI,true,easeOut(form))}
+      else{drawTaichiWheel(x,y,curR,spin,0)}
+    }
+    if(t>=1.55&&t<1.85){const p4=clamp((t-1.55)/.3,0,1),cutGlow=t>=1.6?1:0;drawTaichiWheel(x,y,130,3.64+p4*.3,cutGlow)}
+    if(t>=1.85&&t<2.35){const p5=clamp((t-1.85)/.5,0,1);drawTaichiQuadrants(x,y,130,3.94,p5,1)}
+    if(t>=2.35){
+      const p6=clamp((t-2.35)/.45,0,1),fade=Math.max(0,1-easeIn(p6));
+      drawTaichiQuadrants(x,y,130,4.3,1+p6*.3,fade);
+      ctx.save();ctx.fillStyle=INK_COL[0];ctx.beginPath();ctx.ellipse(x,groundY,140*U*fade,18*U*fade,0,0,7);ctx.fill();ctx.restore();
+    }
+  }});
+}
+
 Object.assign(IC,{
+  taichi:AWK_IC.taichi,
   twinstroke:'<svg viewBox="0 0 32 32"><path d="M14 2Q-7 16 14 30Q3 16 14 2" fill="#05070B" stroke="#D9DFE5"/><path d="M18 2Q39 16 18 30Q29 16 18 2" fill="#FFFFFF"/></svg>',
   whitestep:'<svg viewBox="0 0 32 32"><path d="M3 8l17 4-7 8 15 7-24-2 8-10z" fill="#FFFFFF"/><path d="M2 6l28 22M2 28L30 4" stroke="#77808C"/></svg>',
   inkrain:'<svg viewBox="0 0 32 32"><path d="M4 4v19m6-21v25m6-27v30M22 2v25M28 4v19" stroke="#D9DFE5" stroke-width="3"/><path d="M1 10h30M1 29h30" stroke="#77808C"/></svg>',

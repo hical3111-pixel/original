@@ -22,7 +22,7 @@ function fmt(n){
 /* ================= state ================= */
 const KEY='blade-road-v1';
 // 밸런스 수치는 여기 한곳에 둔다. 축복 시간은 Date.now와 같은 밀리초 단위다.
-const BAL={hpG:1.3,goldG:1.19,comboGauge:8,skillGauge:.8,speed:2,blessSpeed:3,blessPower:2,blessGold:2,blessDuration:30*60*1000,blessCap:2*60*60*1000,blessRecharge:2*60*60*1000,blessCharges:3,blessRitual:3000,
+const BAL={hpG:1.3,goldG:1.19,comboGauge:8,skillGauge:.8,speed:2,blessSpeed:3,blessPower:2,blessGold:2,blessDuration:30*60*1000,blessCap:2*60*60*1000,blessRecharge:2*60*60*1000,blessCharges:3,blessRitual:3000,taichi:[48,6],
   ink:{twinstroke:[9,1.2,24],whitestep:[13.5,1.8,30],inkrain:[9.5,1.2,26],halfmoon:[14,1.8,32],yinyangsky:[48,6],combo:16,focusHit:4,window:2,crit:.2,markTime:5,markDamage:.15,reset:.2},
   wuji:{ink_gate:[9,1.2,26],bind:[13.5,1.8,32],talisman:[9.5,1.2,28],backflow:[14,1.8,34],wuji_return:[48,6],combo:16,wardCD:25,talismanCount:5,talismanHit:1,refund:1,taihe:.2,counter:5}};
 const freshBlessing=()=>({charges:BAL.blessCharges,chargeAt:Date.now(),until:{power:0,gold:0,haste:0},pending:null});
