@@ -46,6 +46,19 @@
       toFight();if(!m){fail++;lines.push('✗ 몬스터가 나오지 않음');return}m.hp=m.max=1e15;castLock=0;frenzyT=0;
       ok(cast(s,true),s.id+(b||'')+': 시연 실패');settle(s.buff?30:300)}
     S.awk={};
+    // 화염 채찍(whip) 피해 총합 및 타수 검증: (1.2+0.1*TR)*2 + (3.5+0.5*TR) = 5.9+0.7*TR
+    const hitW=skillHit;let whipHits=[];
+    try{
+      skillHit=function(mult,pm,x,y,o){whipHits.push({mult,pm,...o});return hitW(mult,pm,x,y,o)};
+      for(const lv of [0,5,20]){
+        toFight();m.hp=m.max=1e15;castLock=0;frenzyT=0;S.lv.skill=lv;const tr=tier();whipHits=[];
+        cast(skOf('whip'),true);settle(140);
+        const expected=5.9+0.7*tr;
+        const totalMult=whipHits.reduce((n,h)=>n+h.mult,0);
+        ok(whipHits.length===3&&Math.abs(totalMult-expected)<1e-8&&whipHits.every(h=>h.pm===.1&&h.sid==='whip'),'화염 채찍 Lv'+lv+': 3타 피해 총합 '+(expected.toFixed(1))+'배(TR='+tr+') / pm=0.1 / sid');
+        ok(whipHits.at(-1)?.heavy&&whipHits.at(-1)?.name==='화염 채찍','화염 채찍 마지막 강타 라벨');
+      }
+    }finally{skillHit=hitW;S.lv.skill=0}
   });
 
   section('연계기');
