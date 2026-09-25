@@ -1,0 +1,100 @@
+CC0 1.0 provenance record — checked 2026-09-25
+This is a source record, not a replacement license.
+License: https://creativecommons.org/publicdomain/zero/1.0/
+
+field_fire
+Author: hnhnh
+Pack: Fire Whoosh
+Page: https://freesound.org/people/hnhnh/sounds/244926/
+Original: 244926__hnhnh__fire-whoosh.wav
+License displayed by source: CC0 1.0 / Creative Commons Zero
+Used official HQ MP3 preview (not original WAV/FLAC): https://cdn.freesound.org/previews/244/244926_3983630-hq.mp3
+
+field_ice
+Author: timbreknight
+Pack: Ice Cracking
+Page: https://freesound.org/people/timbreknight/sounds/342546/
+Original: 342546__timbreknight__ice-cracking.wav
+License displayed by source: CC0 1.0 / Creative Commons Zero
+Used official HQ MP3 preview (not original WAV/FLAC): https://cdn.freesound.org/previews/342/342546_3562222-hq.mp3
+
+field_ice_heavy
+Author: timbreknight
+Pack: Ice Cracking
+Page: https://freesound.org/people/timbreknight/sounds/342546/
+Original: 342546__timbreknight__ice-cracking.wav
+License displayed by source: CC0 1.0 / Creative Commons Zero
+Used official HQ MP3 preview (not original WAV/FLAC): https://cdn.freesound.org/previews/342/342546_3562222-hq.mp3
+
+field_growl
+Author: uagadugu
+Pack: Deep Monster Growl
+Page: https://freesound.org/people/uagadugu/sounds/222523/
+Original: 222523__uagadugu__deep-monster-growl.wav
+License displayed by source: CC0 1.0 / Creative Commons Zero
+Used official HQ MP3 preview (not original WAV/FLAC): https://cdn.freesound.org/previews/222/222523_255863-hq.mp3
+
+spell_fire
+Author: lentikula
+Pack: Basic Spell Impacts
+Page: https://lentikula.itch.io/freecc0-basic-spell-impacts-sfx
+Original: Fire Spell Impacts/Fire Spell Impact 4.wav
+License displayed by source: CC0 1.0 / Creative Commons Zero
+
+spell_fire_heavy
+Author: lentikula
+Pack: Basic Spell Impacts
+Page: https://lentikula.itch.io/freecc0-basic-spell-impacts-sfx
+Original: Fire Spell Impacts/Fire Spell Impact 2.wav
+License displayed by source: CC0 1.0 / Creative Commons Zero
+
+spell_ice
+Author: lentikula
+Pack: Basic Spell Impacts
+Page: https://lentikula.itch.io/freecc0-basic-spell-impacts-sfx
+Original: Ice Spell Impacts/Ice Spell Impact 5.wav
+License displayed by source: CC0 1.0 / Creative Commons Zero
+
+spell_ice_heavy
+Author: lentikula
+Pack: Basic Spell Impacts
+Page: https://lentikula.itch.io/freecc0-basic-spell-impacts-sfx
+Original: Ice Spell Impacts/Ice Spell Impact 2.wav
+License displayed by source: CC0 1.0 / Creative Commons Zero
+
+shatter
+Author: IgnasD
+Pack: Ice breaking/shattering
+Page: https://opengameart.org/content/ice-breakingshattering
+Original: IceShatters/LedasLuzta.ogg
+License displayed by source: CC0 1.0 / Creative Commons Zero
+
+shatter_heavy
+Author: IgnasD
+Pack: Ice breaking/shattering
+Page: https://opengameart.org/content/ice-breakingshattering
+Original: IceShatters/LedasLuzta33.ogg
+License displayed by source: CC0 1.0 / Creative Commons Zero
+
+body_hit
+Author: Independent.nu (submitted by qubodup)
+Pack: 37 hits/punches
+Page: https://opengameart.org/content/37-hitspunches
+Original: hits/hit09.mp3.flac
+License displayed by source: CC0 1.0 / Creative Commons Zero
+
+body_hit_heavy
+Author: Independent.nu (submitted by qubodup)
+Pack: 37 hits/punches
+Page: https://opengameart.org/content/37-hitspunches
+Original: hits/hit10.mp3.flac
+License displayed by source: CC0 1.0 / Creative Commons Zero
+
+field_blast
+Author: unfa
+Pack: Firecracker Explosion
+Page: https://freesound.org/people/unfa/sounds/609588/
+Original: 609588__unfa__firecracker-explosion.flac
+License displayed by source: CC0 1.0 / Creative Commons Zero
+Used official HQ MP3 preview (not original WAV/FLAC): https://cdn.freesound.org/previews/609/609588_1038806-hq.mp3
+

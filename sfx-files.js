@@ -126,19 +126,219 @@ const SFX_FILES={
     "pack": "RPG Audio",
     "original": "Audio/chop.ogg",
     "bytes": 5058
+  },
+  "field_fire": {
+    "path": "sfx/field_fire.mp3",
+    "label": "실녹음 · 거세지는 불꽃",
+    "pack": "Fire Whoosh",
+    "original": "244926__hnhnh__fire-whoosh.wav",
+    "author": "hnhnh",
+    "source": "https://freesound.org/people/hnhnh/sounds/244926/",
+    "license": "CC0 1.0",
+    "preview": true,
+    "trim": [
+      1.65,
+      1.9
+    ],
+    "bytes": 31390,
+    "asset": "https://cdn.freesound.org/previews/244/244926_3983630-hq.mp3"
+  },
+  "field_ice": {
+    "path": "sfx/field_ice.mp3",
+    "label": "실녹음 · 얼음 균열",
+    "pack": "Ice Cracking",
+    "original": "342546__timbreknight__ice-cracking.wav",
+    "author": "timbreknight",
+    "source": "https://freesound.org/people/timbreknight/sounds/342546/",
+    "license": "CC0 1.0",
+    "preview": true,
+    "trim": [
+      0.44,
+      1.0
+    ],
+    "bytes": 17179,
+    "asset": "https://cdn.freesound.org/previews/342/342546_3562222-hq.mp3"
+  },
+  "field_ice_heavy": {
+    "path": "sfx/field_ice_heavy.mp3",
+    "label": "실녹음 · 큰 얼음 균열",
+    "pack": "Ice Cracking",
+    "original": "342546__timbreknight__ice-cracking.wav",
+    "author": "timbreknight",
+    "source": "https://freesound.org/people/timbreknight/sounds/342546/",
+    "license": "CC0 1.0",
+    "preview": true,
+    "trim": [
+      4.02,
+      1.1
+    ],
+    "bytes": 17179,
+    "asset": "https://cdn.freesound.org/previews/342/342546_3562222-hq.mp3"
+  },
+  "field_growl": {
+    "path": "sfx/field_growl.mp3",
+    "label": "목소리 가공 · 깊은 괴수 포효",
+    "pack": "Deep Monster Growl",
+    "original": "222523__uagadugu__deep-monster-growl.wav",
+    "author": "uagadugu",
+    "source": "https://freesound.org/people/uagadugu/sounds/222523/",
+    "license": "CC0 1.0",
+    "preview": true,
+    "trim": [
+      0.26,
+      2.4
+    ],
+    "bytes": 39331,
+    "asset": "https://cdn.freesound.org/previews/222/222523_255863-hq.mp3"
+  },
+  "spell_fire": {
+    "path": "sfx/spell_fire.mp3",
+    "label": "불 마법 · 짧은 폭발",
+    "pack": "Basic Spell Impacts",
+    "original": "Fire Spell Impacts/Fire Spell Impact 4.wav",
+    "author": "lentikula",
+    "source": "https://lentikula.itch.io/freecc0-basic-spell-impacts-sfx",
+    "license": "CC0 1.0",
+    "preview": false,
+    "trim": [
+      0.03,
+      1.8
+    ],
+    "bytes": 29718
+  },
+  "spell_fire_heavy": {
+    "path": "sfx/spell_fire_heavy.mp3",
+    "label": "불 마법 · 번지는 강타",
+    "pack": "Basic Spell Impacts",
+    "original": "Fire Spell Impacts/Fire Spell Impact 2.wav",
+    "author": "lentikula",
+    "source": "https://lentikula.itch.io/freecc0-basic-spell-impacts-sfx",
+    "license": "CC0 1.0",
+    "preview": false,
+    "trim": [
+      0,
+      2.9
+    ],
+    "bytes": 46018
+  },
+  "spell_ice": {
+    "path": "sfx/spell_ice.mp3",
+    "label": "얼음 마법 · 날카로운 결정",
+    "pack": "Basic Spell Impacts",
+    "original": "Ice Spell Impacts/Ice Spell Impact 5.wav",
+    "author": "lentikula",
+    "source": "https://lentikula.itch.io/freecc0-basic-spell-impacts-sfx",
+    "license": "CC0 1.0",
+    "preview": false,
+    "trim": [
+      0.015,
+      1.75
+    ],
+    "bytes": 28882
+  },
+  "spell_ice_heavy": {
+    "path": "sfx/spell_ice_heavy.mp3",
+    "label": "얼음 마법 · 퍼지는 파편",
+    "pack": "Basic Spell Impacts",
+    "original": "Ice Spell Impacts/Ice Spell Impact 2.wav",
+    "author": "lentikula",
+    "source": "https://lentikula.itch.io/freecc0-basic-spell-impacts-sfx",
+    "license": "CC0 1.0",
+    "preview": false,
+    "trim": [
+      0,
+      2.5
+    ],
+    "bytes": 41003
+  },
+  "shatter": {
+    "path": "sfx/shatter.mp3",
+    "label": "얼음 파손 · 짧게 부서짐",
+    "pack": "Ice breaking/shattering",
+    "original": "IceShatters/LedasLuzta.ogg",
+    "author": "IgnasD",
+    "source": "https://opengameart.org/content/ice-breakingshattering",
+    "license": "CC0 1.0",
+    "preview": false,
+    "trim": [
+      0,
+      0.58
+    ],
+    "bytes": 10492
+  },
+  "shatter_heavy": {
+    "path": "sfx/shatter_heavy.mp3",
+    "label": "얼음 파손 · 굵은 파편",
+    "pack": "Ice breaking/shattering",
+    "original": "IceShatters/LedasLuzta33.ogg",
+    "author": "IgnasD",
+    "source": "https://opengameart.org/content/ice-breakingshattering",
+    "license": "CC0 1.0",
+    "preview": false,
+    "trim": [
+      0.03,
+      1.27
+    ],
+    "bytes": 21358
+  },
+  "body_hit": {
+    "path": "sfx/body_hit.mp3",
+    "label": "타격 · 짧고 둔한 충격",
+    "pack": "37 hits/punches",
+    "original": "hits/hit09.mp3.flac",
+    "author": "Independent.nu (submitted by qubodup)",
+    "source": "https://opengameart.org/content/37-hitspunches",
+    "license": "CC0 1.0",
+    "preview": false,
+    "trim": [
+      0.125,
+      0.47
+    ],
+    "bytes": 8402
+  },
+  "body_hit_heavy": {
+    "path": "sfx/body_hit_heavy.mp3",
+    "label": "타격 · 깊게 울리는 충격",
+    "pack": "37 hits/punches",
+    "original": "hits/hit10.mp3.flac",
+    "author": "Independent.nu (submitted by qubodup)",
+    "source": "https://opengameart.org/content/37-hitspunches",
+    "license": "CC0 1.0",
+    "preview": false,
+    "trim": [
+      0.04,
+      1.0
+    ],
+    "bytes": 17179
+  },
+  "field_blast": {
+    "path": "sfx/field_blast.mp3",
+    "label": "실녹음 · 폭죽 폭발",
+    "pack": "Firecracker Explosion",
+    "original": "609588__unfa__firecracker-explosion.flac",
+    "author": "unfa",
+    "source": "https://freesound.org/people/unfa/sounds/609588/",
+    "license": "CC0 1.0",
+    "preview": true,
+    "trim": [
+      0,
+      2.2
+    ],
+    "bytes": 36405,
+    "asset": "https://cdn.freesound.org/previews/609/609588_1038806-hq.mp3"
   }
 };
 // kind 별 시작/적중/마무리. selected는 임시 기본값이며 후보 목록 안에 있어야 한다.
 const sfxSlot=(selected,...candidates)=>({selected,candidates:[selected,...candidates]});
 SFX_SCHOOL.crimson.files={
-  skill:{cast:sfxSlot('fire','fire2','slice','rumble2'),hit:sfxSlot('punch','punch2','chop','crunch'),finish:sfxSlot('crunch','rumble','crunch2','metal')},
-  combo:{cast:sfxSlot('fire2','fire','rumble2'),hit:sfxSlot('crunch2','punch2','metal'),finish:sfxSlot('rumble','crunch','crunch2','rumble2')},
-  awk:{cast:sfxSlot('rumble2','fire2','fire'),hit:sfxSlot('metal','crunch2','punch'),finish:sfxSlot('crunch2','rumble','crunch')}
+  skill:{cast:sfxSlot('field_fire','field_growl','spell_fire','fire','fire2','slice','rumble2'),hit:sfxSlot('body_hit','body_hit_heavy','spell_fire','punch','punch2','chop','crunch'),finish:sfxSlot('field_blast','spell_fire','spell_fire_heavy','crunch','rumble','crunch2','metal')},
+  combo:{cast:sfxSlot('field_growl','field_fire','spell_fire','fire2','fire','rumble2'),hit:sfxSlot('spell_fire','body_hit_heavy','field_blast','crunch2','punch2','metal'),finish:sfxSlot('spell_fire_heavy','field_blast','rumble','crunch','crunch2','rumble2')},
+  awk:{cast:sfxSlot('field_growl','field_fire','rumble2','fire2','fire'),hit:sfxSlot('body_hit_heavy','spell_fire_heavy','metal','crunch2','punch'),finish:sfxSlot('field_blast','spell_fire_heavy','crunch2','rumble','crunch')}
 };
 SFX_SCHOOL.frost.files={
-  skill:{cast:sfxSlot('slice','slice2','bell','glasslight'),hit:sfxSlot('glasslight','glassmid','punch','chop'),finish:sfxSlot('glass','glass2','bell','metal')},
-  combo:{cast:sfxSlot('bell','bell2','slice2'),hit:sfxSlot('glassmid','glasslight','metal'),finish:sfxSlot('glass2','glass','bell2')},
-  awk:{cast:sfxSlot('bell2','bell','slice'),hit:sfxSlot('glass','glassmid','punch2'),finish:sfxSlot('glass2','bell2','glass','metal')}
+  skill:{cast:sfxSlot('field_ice','spell_ice','slice','slice2','bell','glasslight'),hit:sfxSlot('shatter','field_ice_heavy','body_hit','glasslight','glassmid','punch','chop'),finish:sfxSlot('shatter_heavy','spell_ice','field_ice_heavy','glass','glass2','bell','metal')},
+  combo:{cast:sfxSlot('spell_ice','field_ice','bell','bell2','slice2'),hit:sfxSlot('field_ice_heavy','shatter','body_hit_heavy','glassmid','glasslight','metal'),finish:sfxSlot('spell_ice_heavy','shatter_heavy','glass2','glass','bell2')},
+  awk:{cast:sfxSlot('spell_ice_heavy','field_ice','bell2','bell','slice'),hit:sfxSlot('shatter_heavy','field_ice_heavy','glass','glassmid','punch2'),finish:sfxSlot('spell_ice_heavy','shatter_heavy','glass2','bell2','glass','metal')}
 };
 const SFX_CACHE=new WeakMap(),labSoundChoices=Object.create(null);
 let sfxPlaybackEpoch=0,sfxRandomSeed=0x62a914b3;

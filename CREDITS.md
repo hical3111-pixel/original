@@ -1,6 +1,6 @@
 # 효과음 출처
 
-제작·배포: **Kenney**. 모든 효과음은 **Creative Commons Zero (CC0 1.0 / Public Domain)** 입니다. [CC0 원문](https://creativecommons.org/publicdomain/zero/1.0/). 공식 팩의 `License.txt`도 `sfx/licenses/`에 보관합니다. CC0 이외의 음원은 포함하지 않았습니다.
+제작자는 아래 출처별로 기록합니다. 모든 효과음은 **Creative Commons Zero (CC0 1.0 / Public Domain)** 입니다. [CC0 원문](https://creativecommons.org/publicdomain/zero/1.0/). 공식 팩의 `License.txt`도 `sfx/licenses/`에 보관합니다. CC0 이외의 음원은 포함하지 않았습니다.
 
 ## 원본 팩
 
@@ -10,7 +10,7 @@
 
 ## 사용 파일
 
-공식 배포 ZIP의 `Audio/` 파일을 변환했습니다. mono MP3, 44.1 kHz, 128 kbps. 저역 35 Hz / 고역 6.5 kHz 필터와 -20 LUFS / -3 dBTP 정규화만 적용했습니다. 게임 실행에 변환 도구는 필요하지 않습니다.
+기존 Kenney 후보는 공식 배포 ZIP의 `Audio/` 파일을 변환했습니다. mono MP3, 44.1 kHz, 128 kbps. 저역 35 Hz / 고역 6.5 kHz 필터와 -20 LUFS / -3 dBTP 정규화만 적용했습니다. 게임 실행에 변환 도구는 필요하지 않습니다.
 
 | 저장 파일 | 팩 | 원본 파일 | 라이선스 | 크기 (bytes) |
 |---|---|---|---|---:|
@@ -33,6 +33,38 @@
 | `sfx/slice2.mp3` | RPG Audio | `Audio/knifeSlice2.ogg` | CC0 1.0 | 10074 |
 | `sfx/chop.mp3` | RPG Audio | `Audio/chop.ogg` | CC0 1.0 | 5058 |
 
-음원 합계: **359,793 bytes / 18개** (5 MB 이하). 후보 팩 전체는 저장소에 포함하지 않습니다.
+기존 Kenney 후보: **359,793 bytes / 18개**. 비교를 위해 모두 유지합니다.
 
 파일 이름에서 성격을 추정해 임시 배정했습니다. ‘얼음’, ‘불꽃’ 등은 게임 속 용도이며 원본 녹음 대상에 대한 주장이 아닙니다. 수련장의 소리 고르기로 실제 소리를 비교할 수 있습니다.
+
+## 2차 후보 — 불꽃·얼음·포효·타격
+
+2026-09-25 각 공식 배포 페이지의 CC0 표시를 확인했습니다. Freesound 4종은 로그인 없는 **공식 HQ MP3 미리듣기**를 사용했습니다. 아래 원본 파일명은 원본 다운로드 링크에 표시된 이름이며 WAV/FLAC 원본을 받은 것으로 표기하지 않습니다. 나머지는 공식 무료 팩에서 추출했습니다. 출처 확인 기록은 [recordings.txt](sfx/licenses/recordings.txt)에 있습니다.
+
+- [Fire Whoosh](https://freesound.org/people/hnhnh/sounds/244926/) — hnhnh, **CC0 1.0**
+- [Ice Cracking](https://freesound.org/people/timbreknight/sounds/342546/) — timbreknight, **CC0 1.0**
+- [Deep Monster Growl](https://freesound.org/people/uagadugu/sounds/222523/) — uagadugu, **CC0 1.0**
+- [Basic Spell Impacts](https://lentikula.itch.io/freecc0-basic-spell-impacts-sfx) — lentikula, **CC0 1.0**
+- [Ice breaking/shattering](https://opengameart.org/content/ice-breakingshattering) — IgnasD, **CC0 1.0**
+- [37 hits/punches](https://opengameart.org/content/37-hitspunches) — Independent.nu (submitted by qubodup), **CC0 1.0**
+- [Firecracker Explosion](https://freesound.org/people/unfa/sounds/609588/) — unfa, **CC0 1.0**
+
+mono MP3 / 44.1 kHz / 128 kbps. 먼저 mono로 합친 뒤 35 Hz~6.5 kHz 필터, -20 LUFS / -3 dBTP 정규화, 시작 3ms·끝 80ms 페이드를 적용했습니다. 아래 시간은 입력 파일에서 자른 시작/길이(초)입니다. 마법 팩은 제작자가 녹음과 CC0 소리를 섞어 만든 효과음이며, 모든 후보를 생녹음이라고 주장하지 않습니다.
+
+| 저장 파일 | 팩 | 원본 파일 | 구간 시작 / 길이 | 라이선스 | 크기 (bytes) |
+|---|---|---|---|---|---:|
+| `sfx/field_fire.mp3` | Fire Whoosh | `244926__hnhnh__fire-whoosh.wav` | 1.65 / 1.9 | CC0 1.0 | 31390 |
+| `sfx/field_ice.mp3` | Ice Cracking | `342546__timbreknight__ice-cracking.wav` | 0.44 / 1.0 | CC0 1.0 | 17179 |
+| `sfx/field_ice_heavy.mp3` | Ice Cracking | `342546__timbreknight__ice-cracking.wav` | 4.02 / 1.1 | CC0 1.0 | 17179 |
+| `sfx/field_growl.mp3` | Deep Monster Growl | `222523__uagadugu__deep-monster-growl.wav` | 0.26 / 2.4 | CC0 1.0 | 39331 |
+| `sfx/spell_fire.mp3` | Basic Spell Impacts | `Fire Spell Impacts/Fire Spell Impact 4.wav` | 0.03 / 1.8 | CC0 1.0 | 29718 |
+| `sfx/spell_fire_heavy.mp3` | Basic Spell Impacts | `Fire Spell Impacts/Fire Spell Impact 2.wav` | 0 / 2.9 | CC0 1.0 | 46018 |
+| `sfx/spell_ice.mp3` | Basic Spell Impacts | `Ice Spell Impacts/Ice Spell Impact 5.wav` | 0.015 / 1.75 | CC0 1.0 | 28882 |
+| `sfx/spell_ice_heavy.mp3` | Basic Spell Impacts | `Ice Spell Impacts/Ice Spell Impact 2.wav` | 0 / 2.5 | CC0 1.0 | 41003 |
+| `sfx/shatter.mp3` | Ice breaking/shattering | `IceShatters/LedasLuzta.ogg` | 0 / 0.58 | CC0 1.0 | 10492 |
+| `sfx/shatter_heavy.mp3` | Ice breaking/shattering | `IceShatters/LedasLuzta33.ogg` | 0.03 / 1.27 | CC0 1.0 | 21358 |
+| `sfx/body_hit.mp3` | 37 hits/punches | `hits/hit09.mp3.flac` | 0.125 / 0.47 | CC0 1.0 | 8402 |
+| `sfx/body_hit_heavy.mp3` | 37 hits/punches | `hits/hit10.mp3.flac` | 0.04 / 1.0 | CC0 1.0 | 17179 |
+| `sfx/field_blast.mp3` | Firecracker Explosion | `609588__unfa__firecracker-explosion.flac` | 0 / 2.2 | CC0 1.0 | 36405 |
+
+추가 **344,536 bytes / 13개**, 전체 **704,329 bytes / 31개** (5 MB 이하). Sonniss 음원은 포함하지 않았습니다.
