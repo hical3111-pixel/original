@@ -25,7 +25,7 @@
 
 | 파일 | 역할 |
 |---|---|
-| `index.html` | 화면 뼈대, CSS 전체, 스크립트 로드. `?selftest`면 `selftest.js`를 추가로 불러온다 |
+| `index.html` | 화면 뼈대, CSS 전체, 스크립트 로드. 스크립트는 캐시를 피하려고 `?v=시각`을 붙여 순서대로(`async=false`) 불러오며, `?selftest`면 `selftest.js`를 이어서 불러온다. `<script src>`를 직접 추가하지 말고 이 목록에 넣는다 |
 | `core.js` | 유틸, 상태(`S`)·저장, 일일 도전, 유물·업적 데이터, 스탯(`stats`), 강화(`UP`), 사운드(`sfx`), 월드 전역 변수, 몬스터 생성, 연출 도우미, 전투(`heroStrike`, `deal`, `skillHit`, `kill`) |
 | `skills.js` | 스킬 그리기 도우미, 모든 스킬·연계기·각성기 함수, `SK`/`COMBOS`/`AWK`/`BR`/`IC` 데이터, 시전(`cast`)·자동 시전(`autoCast`), 유물 상자, 분기 효과(`branchFX`) |
 | `main.js` | `resize`, 보스 패턴·등장 컷신·2페이즈, 동료, `update`(게임 루프), `render`와 모든 `draw*`, 패널 UI(`build*`, `uiTick`), 오프라인 보상, 부팅(`start`) |

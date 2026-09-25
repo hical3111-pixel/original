@@ -356,9 +356,7 @@ details.fold>*+*{margin-top:10px}
 
 <dialog id="pairPicker" aria-labelledby="pairPickerTitle"><div class="picker-head"><b id="pairPickerTitle">연계 쌍 선택</b><button type="button" id="closePairPicker">닫기</button></div><div id="pairOptions" class="pair-options"></div></dialog>
 <dialog id="blessPicker" aria-labelledby="blessTitle"><div class="picker-head"><b id="blessTitle">축복을 선택하세요</b><button id="closeBlessPicker">닫기</button></div><div id="blessSelection"><p>2시간마다 1회 충전 · 최대 3회<br>각 30분, 같은 축복은 최대 2시간까지 연장됩니다.<br>전투 중 적용되며 오프라인 보상에는 적용되지 않습니다.</p><div id="blessChoices" class="bless-choices"></div></div><div id="blessRitual" class="bless-ritual" hidden><div class="bless-seal"><i></i><i></i><i></i><span id="blessSymbol">✦</span></div><strong id="blessRitualName"></strong><small>금빛 축복이 깨어납니다…</small></div></dialog>
-<script src="core.js"></script>
-<script src="skills.js"></script>
-<script src="main.js"></script>
-<script>if(new URLSearchParams(location.search).has("selftest")){const s=document.createElement("script");s.src="selftest.js";document.body.appendChild(s)}</script>
+<!-- 스크립트는 매번 최신 파일을 받는다(GitHub Pages 캐시로 새 index.html과 옛 스크립트가 섞이는 것을 막음). async=false로 순서는 그대로 유지한다. -->
+<script>{const v=Date.now(),f=["core.js","skills.js","main.js"];if(new URLSearchParams(location.search).has("selftest"))f.push("selftest.js");for(const n of f){const s=document.createElement("script");s.src=n+"?v="+v;s.async=false;document.body.appendChild(s)}}</script>
 </body>
 </html>
