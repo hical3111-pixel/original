@@ -383,10 +383,10 @@
     const reset=()=>{S=fresh();S.auto=false;S.sound=false;ST=stats();CH=null;BI=null;BF=null;CUT=null;BN=null;FX=[];P=[];T=[];B=[];PR=[];C=[];relicQ=[];shieldOn=null;stop=0;slowT=0;castLock=0;frenzyT=0;circleT=0;gauge=0;lastCast=null;pendingCombo=null;spawnT=100;miniQ=0;h.stun=0;atkT=1e6;
       m=makeMonster(1);m.state='fight';m.x=monX;m.sh=0;m.hp=m.max=1e12;for(const s of SK)cds[s.id]=0};
     const equal=(a,b)=>JSON.stringify(a)===JSON.stringify(b),derived=()=>S.loadout.flatMap(id=>{const c=COMBOS.find(c=>c.a===id);return[c.a,c.b]});
-    const mapping=[['crimson','진홍','#ff4f5e','inferno',['breath','demon']],['eclipse','월식','#9a7bff','dragon',['shadow','archers']],['verdant','녹광','#7dff5a','celestial',['orb','shield']],['abyss','심연','#b06bff','circle',['swords','gravity']],['storm','뇌전','#ffe853','judgment',['dash','spear']],['hellfire','업화','#ffa05a','hellking',['whip','hands']],['frost','빙정','#61dcf3','frostcrown',['frostcut','iceflower']]];
-    const ring=[['crimson','hellfire','홍련작'],['hellfire','eclipse','그림자 왈츠'],['eclipse','abyss','칠흑'],['abyss','frost','절대영도'],['frost','storm','초전도'],['storm','verdant','질풍신'],['verdant','crimson','역린혈공']];
+    const mapping=[['crimson','진홍','#ff4f5e','inferno',['breath','demon']],['eclipse','월식','#9a7bff','dragon',['shadow','archers']],['verdant','녹광','#7dff5a','celestial',['orb','shield']],['abyss','심연','#b06bff','circle',['swords','gravity']],['storm','뇌전','#ffe853','judgment',['dash','spear']],['hellfire','업화','#ffa05a','hellking',['whip','hands']],['frost','빙정','#61dcf3','frostcrown',['frostcut','iceflower']],['ink','음양검결','#D9DFE5','yinyangsky',['twinstroke','inkrain']]];
+    const ring=[['crimson','hellfire','홍련작'],['hellfire','eclipse','그림자 왈츠'],['eclipse','abyss','칠흑'],['abyss','frost','절대영도'],['frost','storm','초전도'],['storm','verdant','질풍신'],['verdant','crimson','역린혈공'],['eclipse','ink','묵월'],['abyss','ink','현묵']];
     try{
-      ok(SCHOOLS.length===7&&new Set(SCHOOLS.map(s=>s.id)).size===7,'서로 다른 계열 7개');
+      ok(SCHOOLS.length===8&&new Set(SCHOOLS.map(s=>s.id)).size===8,'서로 다른 계열 8개');
       for(const [id,name,color,awk,pairs] of mapping){const s=SCHOOLS.find(s=>s.id===id),cs=COMBOS.filter(c=>c.school===id);
         ok(s?.name===name&&s.c===color&&s.awk===awk,id+': 계열 이름/색/전용 각성기');
         ok(cs.length===2&&pairs.every(a=>cs.some(c=>c.a===a))&&equal(s.pairs,cs.map(c=>c.a)),id+': 설계서 연계 2쌍');
@@ -394,10 +394,10 @@
       }
       for(const c of COMBOS)ok(SCHOOLS.filter(s=>s.id===c.school&&s.pairs.includes(c.a)).length===1,c.name+': 정확히 한 계열 소속');
       ok(!SCHOOLS.some(s=>s.awk==='thousand'),'천검멸은 기본 각성기로 유지');
-      ok(RESONANCES.length===7&&new Set(RESONANCES.map(r=>r.id)).size===7,'공명 7개/고유 id');
+      ok(RESONANCES.length===9&&new Set(RESONANCES.map(r=>r.id)).size===9,'공명 9개/고유 id');
       for(const [a,b,name] of ring)ok(RESONANCES.filter(r=>r.name===name&&r.a===a&&r.b===b).length===1,name+': 설계서 공명 연결');
-      for(const s of SCHOOLS){const ns=RESONANCES.filter(r=>r.a===s.id||r.b===s.id).map(r=>r.a===s.id?r.b:r.a);ok(ns.length===2&&new Set(ns).size===2&&!ns.includes(s.id),s.name+': 서로 다른 공명 이웃 2개')}
-      const reached=new Set([SCHOOLS[0].id]);for(let i=0;i<7;i++)for(const r of RESONANCES)if(reached.has(r.a)||reached.has(r.b)){reached.add(r.a);reached.add(r.b)}ok(reached.size===7,'공명 고리가 하나로 연결됨');
+      for(const s of SCHOOLS){const ns=RESONANCES.filter(r=>r.a===s.id||r.b===s.id).map(r=>r.a===s.id?r.b:r.a);const expected=ring.filter(([a,b])=>a===s.id||b===s.id).map(([a,b])=>a===s.id?b:a);ok(ns.length===expected.length&&new Set(ns).size===expected.length&&!ns.includes(s.id)&&expected.every(id=>ns.includes(id)),s.name+': 설계서의 정확한 공명 이웃 '+expected.length+'개')}
+      const reached=new Set([SCHOOLS[0].id]);for(let i=0;i<8;i++)for(const r of RESONANCES)if(reached.has(r.a)||reached.has(r.b)){reached.add(r.a);reached.add(r.b)}ok(reached.size===8,'기존 고리와 음양검결이 하나로 연결됨');
       reset();const original={best:72,gold:321,lv:{atk:7},relics:{coin:2},awk:{frostcut:'a'},codex:{'0_0':3},equip:['meteor','gravity','sniper','neon','wolf','frostcut']},copy=JSON.stringify(original);load(original);
       ok(equal(S.loadout,['gravity','shield','dash','archers']),'예전 장착 순서로 쌍 추정/중복 제거/앞 4쌍 유지');
       ok(equal(S.equip,derived())&&S.equip.length===8,'변환 후 equip에 각 쌍 두 스킬 보존');
@@ -423,7 +423,7 @@
       ok(schoolState([],OB(72)).resonance.length===0&&schoolState([],OB(72)).focus.length===0,'해제 후 집중/공명 모두 꺼짐');
       reset();S.best=OB(72);const st=stats(),cw=comboWin();setLoadout(both);schoolState();ok(equal(stats(),st)&&comboWin()===cw,'A단계는 스탯/연계 창에 효과 수치를 적용하지 않음');
       // 독립 비트마스크 완전 탐색으로 추천의 전역 최댓값을 확인한다(그리기/전투 반복 없음).
-      for(const best of [0,1,3,8,11,17,21,30,36,40,48,56,60,64,68,72,999].map(OB)){
+      for(const best of [...[0,1,3,8,11,17,21,30,36,40,48,56,60,64,68,72,999].map(OB),199,200,205,209,210,219,220,229,230]){
         const before=JSON.stringify(S),ids=recommendLoadout(best),eligible=COMBOS.filter(c=>[c.a,c.b].some(id=>skOf(id).unlock<=best)),n=Math.min(4,eligible.length);
         ok(ids.length===n&&new Set(ids).size===n&&ids.every(id=>eligible.some(c=>c.a===id)),'STAGE '+best+': 추천은 해금 상황에 맞는 쌍만');
         let maximum=-1;for(let mask=0;mask<(1<<eligible.length);mask++){let bits=mask,count=0;while(bits){bits&=bits-1;count++}if(count!==n)continue;
@@ -452,13 +452,13 @@
     const equal=(a,b)=>JSON.stringify(a)===JSON.stringify(b),row=id=>$('book').querySelector('[data-skill="'+id+'"]'),slot=i=>$('loadoutGrid').children[i];
     const shown=root=>[...root.querySelectorAll('[data-effect]')].map(e=>e.dataset.kind+':'+e.dataset.effect);
     try{
-      reset(1);ok($('schoolCards').children.length===7,'계열 카드 7장');ok($('loadoutGrid').children.length===4,'항상 편성 4칸 표시');
+      reset(1);ok($('schoolCards').children.length===8,'계열 카드 8장');ok($('loadoutGrid').children.length===4,'항상 편성 4칸 표시');
       for(const s of SCHOOLS){const card=$('schoolCards').querySelector('[data-school="'+s.id+'"]'),skills=schoolSkills(s),icons=[...card.querySelectorAll('.school-skill')];
         ok(card.style.getPropertyValue('--c')===s.c&&card.querySelector('.school-heading b').textContent===s.name,s.name+': 카드 이름/색');
         ok(icons.length===4&&equal(icons.map(e=>e.dataset.skill),skills.map(sk=>sk.id)),s.name+': 스킬 아이콘 4개');
         ok(icons.every((e,i)=>e.classList.contains('locked')===!unlocked(skills[i])&&!!e.querySelector('.school-lock')===!unlocked(skills[i])),s.name+': 아이콘 잠금 표시');
         const a=AWK.find(a=>a.id===s.awk);ok(card.querySelector('.school-awakening').textContent.includes(a?a.name:'미정'),s.name+': 전용 각성기');
-        const ns=RESONANCES.filter(r=>r.a===s.id||r.b===s.id).map(r=>SCHOOLS.find(n=>n.id===(r.a===s.id?r.b:r.a)).name);ok(ns.every(n=>card.querySelector('.school-neighbors').textContent.includes(n)),s.name+': 공명 이웃 이름 2개');
+        const ns=RESONANCES.filter(r=>r.a===s.id||r.b===s.id).map(r=>SCHOOLS.find(n=>n.id===(r.a===s.id?r.b:r.a)).name);ok(ns.every(n=>card.querySelector('.school-neighbors').textContent.includes(n)),s.name+': 설계서 공명 이웃 이름');
         $('school-toggle-'+s.id).click();const visible=[...$('book').children].filter(e=>!e.hidden);
         ok($('school-toggle-'+s.id).getAttribute('aria-expanded')==='true'&&!$('book').hidden&&$('book').parentElement.id==='school-body-'+s.id,s.name+': 카드 펼침');
         ok(visible.length===4&&visible.every(e=>e.dataset.school===s.id&&e.querySelector('.eq')&&e.querySelector('.pv')&&e.querySelector('small').textContent),s.name+': 기존 설명/편성/시연 행 재사용');
@@ -484,7 +484,7 @@
       S.best=OB(63);setLoadout(['swords','frostcut']);buildBook();S.best=OB(64);uiTick();ok(shown($('schoolEffects')).includes('resonance:abyss_frost'),'해금 순간 uiTick에서 공명 칩 자동 갱신');
       ok(!$('schoolCards').querySelector('[data-skill="icedragon"]').classList.contains('locked'),'해금 순간 카드 잠금 자동 갱신');
       $('recommendBtn').click();ok(equal(S.loadout,recommendLoadout())&&$('recommendBtn').closest('.formation'),'추천 버튼을 편성 영역으로 이동/동작 유지');
-      for(const [before,after,text] of [[2,3,'새 계열: 심연'],[59,60,'새 계열: 빙정'],[71,72,'빙정 완성 · 집중 가능']]){reset(OB(before));S.best=OB(after);BN={text:'새 스킬 해금',t:0,dur:2};uiTick();ok(BN?.text===text,'계열 해금 배너: '+text);BN=null;uiTick();ok(!BN,'같은 해금을 반복 안내하지 않음')}
+      for(const [before,after,text] of [[4,5,'새 계열: 심연'],[159,160,'새 계열: 빙정'],[189,190,'빙정 완성 · 집중 가능'],[199,200,'새 계열: 음양검결'],[229,230,'음양검결 완성 · 집중 가능']]){reset(before);S.best=after;BN={text:'새 스킬 해금',t:0,dur:2};uiTick();ok(BN?.text===text,'계열 해금 배너: '+text);BN=null;uiTick();ok(!BN,'같은 해금을 반복 안내하지 않음')}
       reset(OB(2));S.best=OB(9);BN=null;uiTick();const notices=[BN.text];while(schoolNotices.length){BN=null;uiTick();notices.push(BN.text)}ok(equal(notices,['새 계열: 심연','새 계열: 진홍','새 계열: 월식','새 계열: 업화']),'여러 해금은 순서대로 안내');
       reset(OB(72));ok(!BN&&schoolNotices.length===0,'이미 해금된 저장을 불러와도 배너 재생 없음');
       reset(skOf('frostcut').unlock-1);S.stage=skOf('frostcut').unlock-1;S.kills=KPS-1;kill();uiTick();ok(S.best===skOf('frostcut').unlock&&BN?.text==='새 계열: 빙정','실제 몬스터 처치/해금 경로에서도 계열 배너 표시');
@@ -497,7 +497,7 @@
       m=makeMonster(1);m.state='fight';m.x=monX;m.sh=0;m.hp=m.max=1e12;for(const s of SK)cds[s.id]=0};
     const equal=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
     try{
-      ok(Object.keys(FOCUS_FX).length===7&&SCHOOLS.every(s=>Array.isArray(FOCUS_FX[s.id])&&FOCUS_FX[s.id].length===3),'7계열 3단계 효과 설명 데이터 구비');
+      ok(Object.keys(FOCUS_FX).length===8&&SCHOOLS.every(s=>Array.isArray(FOCUS_FX[s.id])&&FOCUS_FX[s.id].length===3),'8계열 3단계 효과 설명 데이터 구비');
       reset();load({best:72,equip:['dash']});
       ok(S.mastery&&typeof S.mastery==='object'&&SCHOOLS.every(s=>S.mastery[s.id]===0),'숙련 필드 없는 옛 저장에 기본값(0) 병합');
       load({best:72,mastery:{crimson:12,frost:28}});
@@ -599,7 +599,7 @@
       skillHit=function(mult,pm,x,y,o){hits.push({mult,pm,...o});return hit(mult,pm,x,y,o)};
       deal=function(d,crit,src,x,y,o){if(src==='skill')dealt+=d;return damage(d,crit,src,x,y,o)};
       ok(new Set(AWK.map(a=>a.id)).size===AWK.length,'각성기 id 중복 없음');
-      ok(SCHOOLS.every(s=>AWK.some(a=>a.id===s.awk)),'7계열 모두 유효한 전용 각성기');
+      ok(SCHOOLS.every(s=>AWK.some(a=>a.id===s.awk)),'8계열 모두 유효한 전용 각성기');
       for(const [id,school,unlock,base,slope,count] of data){const a=AWK.find(a=>a.id===id),s=SCHOOLS.find(s=>s.id===school),p=SCHOOL_AWK_COL[id];
         ok(a.unlock===unlock&&s.awk===id,id+': 해금/계열 배정');ok((awkIcon(a).match(/#[0-9a-f]{6}/gi)||[]).every(c=>p.includes(c)),id+': 아이콘 전용 5색');
         reset();S.best=unlock-1;S.awkSel=id;buildBook();ok(awkSel().id==='thousand',id+': 해금 전 실전 선택 차단');
@@ -641,7 +641,7 @@
     const reset=()=>{S=fresh();S.best=999;S.stage=72;S.auto=false;S.sound=false;ST=stats();CH=null;BI=null;BF=null;CUT=null;BN=null;FX=[];P=[];T=[];B=[];PR=[];C=[];relicQ=[];shieldOn=null;stop=0;slowT=0;castLock=0;frenzyT=0;circleT=0;gauge=0;lastCast=null;pendingCombo=null;spawnT=100;miniQ=0;h.stun=0;atkT=1e6;verdantCD=0;bloodBuffT=0;
       m=makeMonster(1);m.state='fight';m.x=monX;m.sh=0;m.hp=m.max=1e12;for(const s of SK)cds[s.id]=0};
     try{
-      ok(Object.keys(RES_FX).length===7&&RESONANCES.every(r=>typeof RES_FX[r.id]==='string'&&RES_FX[r.id].length>0),'7공명 효과 설명 데이터 구비');
+      ok(Object.keys(RES_FX).length===9&&RESONANCES.every(r=>typeof RES_FX[r.id]==='string'&&RES_FX[r.id].length>0),'9공명 효과 설명 데이터 구비');
 
       // 7종 각각 켜짐/꺼짐 판정 (schoolState().resonance 기반)
       reset();
@@ -739,14 +739,19 @@
   guard('해금 배치 v2',()=>{
     try{
       const oldU=OLD_UNLOCK,newU=NEW_UNLOCK,byOld=[...SK].sort((a,b)=>a.unlock-b.unlock);
-      ok(oldU.length===SK.length&&newU.length===SK.length&&byOld.every((s,i)=>s.unlock===newU[i]),'새 해금표가 스킬 순서와 1:1');
+      ok(oldU.length===28&&newU.length===28&&byOld.slice(0,28).every((s,i)=>s.unlock===newU[i]),'해금 순 앞 28개 스킬이 NEW_UNLOCK과 1:1');
       ok(newU.every((v,i)=>!i||v>newU[i-1]),'새 해금 스테이지는 엄격히 증가');
-      for(const a of AWK)ok(unlockFloorOf(a.id==='thousand'?1:{circle:15,dragon:25,inferno:35,frostcrown:45,celestial:50,judgment:60,hellking:70}[a.id])>=a.unlock,a.id+': 옛 해금 위치를 환산하면 새 해금 이상');
+      for(const a of AWK.filter(a=>['thousand','circle','dragon','inferno','frostcrown','celestial','judgment','hellking'].includes(a.id)))ok(unlockFloorOf(a.id==='thousand'?1:{circle:15,dragon:25,inferno:35,frostcrown:45,celestial:50,judgment:60,hellking:70}[a.id])>=a.unlock,a.id+': 옛 해금 위치를 환산하면 새 해금 이상');
       for(const b of [1,2,9,21,30,47,63,71,72,120]){load({best:b,gold:5});const lost=SK.filter((s,i)=>oldU[i]<=b&&!unlocked(s));
         ok(!lost.length&&S.unlockV===2,'예전 저장 STAGE '+b+': 이미 연 스킬 유지'+(lost.length?' '+lost.map(s=>s.id):''))}
       load({best:30,gold:5});const floor=S.unlockFloor;ok(floor===unlockFloorOf(30)&&floor>30,'예전 저장 바닥값 환산');
       load(JSON.parse(JSON.stringify(S)));ok(S.unlockFloor===floor,'새 형식으로 다시 불러와도 바닥값 유지(재환산 없음)');
       load({best:30,gold:5,unlockV:2});ok(!S.unlockFloor,'새 저장은 바닥값 없이 새 해금표 그대로');
+      load({best:72});ok(S.unlockFloor===190&&SK.slice(0,28).every(unlocked),'옛 최고 72: 바닥값 190/기존 28스킬 모두 보존');
+      ok(['twinstroke','whitestep','inkrain','halfmoon'].every(id=>!unlocked(skOf(id)))&&AWK.find(a=>a.id==='yinyangsky').unlock>ub(),'옛 최고 72: 수묵 4스킬/양의개천 잠김');
+      load({best:250});ok(S.best===250&&S.unlockFloor===190&&SK.every(unlocked)&&AWK.find(a=>a.id==='yinyangsky').unlock<=ub(),'옛 최고 250: 실제 도달 기록으로 수묵까지 해금');
+      load({best:72,unlockV:2,unlockFloor:9999});ok(S.unlockFloor===190&&ub()===190&&!unlocked(skOf('twinstroke')),'이미 환산된 저장의 9999 바닥값도 190으로 보정');
+      load(JSON.parse(JSON.stringify(S)));ok(S.unlockFloor===190&&ub()===190,'보정한 바닥값 재저장/불러오기 유지');
       S=fresh();ok(S.unlockV===2&&S.unlockFloor===0&&ub()===1,'새 게임은 바닥값 0');
       S.best=31;S.maxStage=31;S.unlockFloor=90;Object.assign(S,{gold:0,stage:1,kills:0,maxStage:1,farm:false,farmKills:0,lv:freshLv()});ok(S.unlockFloor===90&&ub()===90,'환생 필드 초기화에 바닥값 포함 안 됨');
       ok(BAL.hpG===1.3&&BAL.comboGauge===12,'밸런스 v2 수치(체력 증가율 1.3, 연계 게이지 12)');
@@ -798,6 +803,106 @@
       cast=function(s,preview){const n=S.combos,result=originalCast(s,preview);if(result&&!preview&&COMBOS.some(c=>c.b===s.id)){finish++;if(pendingCombo||S.combos>n)linked++}return result};
       const startTime=gt;for(let i=0;i<14400&&gt-startTime<120;i++)update(1/60);ok(gt-startTime>=120,'2배속 120 게임초 도달');ok(finish>=15&&linked/finish>=14/15,'2배속 자동 연계 기준 14/15 유지: '+linked+'/'+finish);lines.push('2배속 자동 연계: '+linked+'/'+finish+' (게임 시간 120초)');
     }finally{Date.now=dateNow;Math.random=random;cast=originalCast;reset();m=null;spawnT=100;pending=0;$('modal').hidden=true;buildBar();buildBook();blessingUI()}
+  });
+
+  section('음양검결 · 원본 유지 · 집중 · 공명');
+  guard('음양검결',()=>{
+    const reset=()=>{S=fresh();S.best=999;S.auto=false;S.sound=false;ST=stats();CH=null;BI=null;BF=null;CUT=null;BN=null;FX=[];P=[];T=[];B=[];PR=[];C=[];relicQ=[];shieldOn=null;stop=slowT=castLock=frenzyT=circleT=desat=0;gauge=0;lastCast=pendingCombo=null;spawnT=100;miniQ=0;h.stun=0;atkT=1e6;verdantCD=bloodBuffT=0;
+      m=makeMonster(1);m.state='fight';m.x=monX;m.sh=0;m.hp=m.max=1e12;for(const s of SK)cds[s.id]=0};
+    const step=n=>{for(let i=0;i<n;i++)update(1/60)},until=fn=>{for(let i=0;i<1800&&!fn();i++)update(1/60)};
+    const originalHit=skillHit,originalDeal=deal,random=Math.random,originalCast=cast;let hits=[],dealt=0;
+    const data=[['twinstroke',200,24,9,1.2,9.5,1.2,22],['whitestep',210,30,13.5,1.8,14,1.9,28],['inkrain',220,26,9.5,1.2,10,1.2,24],['halfmoon',230,32,14,1.8,14.5,1.9,30]];
+    try{
+      skillHit=function(mult,pm,x,y,o){hits.push({mult,pm,...o});return originalHit(mult,pm,x,y,o)};
+      deal=function(d,crit,src,x,y,o){if(src==='skill')dealt+=d;return originalDeal(d,crit,src,x,y,o)};
+      ok(JSON.stringify(INK_COL)===JSON.stringify(['#05070B','#363F4D','#77808C','#D9DFE5','#FFFFFF']),'수묵 JSON 5색 그대로');
+      for(const [id,unlock,cd,base,slope,ice,iceSlope,iceCD] of data){const s=skOf(id);ok(s.unlock===unlock&&s.cd===cd,id+': 설계서 해금/쿨타임');
+        ok((IC[id].match(/#[0-9a-f]{6}/gi)||[]).every(c=>INK_COL.includes(c)),id+': 금색 없는 수묵 아이콘');
+        reset();S.best=unlock-1;ok(!unlocked(s),id+': 바로 전 스테이지 잠금');S.unlockFloor=unlock;ok(unlocked(s),id+': ub 해금 바닥값 적용');
+        for(const [tr,lv] of [[0,0],[1,5],[2,10],[3,20]])for(const b of [null,'a','b']){
+          reset();S.lv.skill=lv;if(b)S.awk[id]=b;ST=stats();ST.cc=0;hits=[];dealt=0;cast(s,true);step(250);
+          const total=base+slope*tr,expected=ST.atk*ST.sk*total*.1*(b==='a'?1.4:1);
+          ok(Math.abs(hits.reduce((n,h)=>n+h.mult,0)-total)<1e-8&&hits.every(h=>h.pm===.1&&h.sid===id),id+': TR '+tr+' 분기 '+b+' 피해/pm/id');
+          ok(dealt>=expected*.9&&dealt<=expected*1.1&&hits.at(-1)?.heavy&&hits.at(-1)?.name===s.name,id+': TR '+tr+' 분기 '+b+' 실제 피해/강타');
+          ok(total/cd<=(ice+iceSlope*tr)/iceCD,id+': TR '+tr+' 분기 '+b+' 빙정 초당 배율 이하');
+        }
+        reset();S.awk[id]='b';cast(s);ok(Math.abs(cds[id]-s.cd*ST.cdm*.7)<1e-9,id+': B 분기 쿨타임 -30%');
+        reset();s.fn(.1);let frames=0,gray=true;for(let i=0;i<60;i++){const frozen=stop>0;desat=0;update(1/60);if(!frozen&&FX.some(o=>o.inkSchool)){frames++;gray=gray&&desat===1}}ok(frames>20&&gray,id+': 모든 월드 프레임 흑백 갱신')
+        m=null;step(300);ok(FX.length===0&&castLock<=0&&desat===0,id+': 대상 소멸/흑백/잠금 종료');
+      }
+      for(const [id,kind,count,total] of [['twinstroke','strokes',2,38.5],['inkrain','swords',5,39.5]]){
+        const c=comboOf(id),a=skOf(id),b=skOf(c.b);ok(c.school==='ink'&&c.keep.release===releaseInk,id+': 공통 keep 훅 사용');
+        reset();cds[b.id]=30;cast(a);const kept=c.keep.get(),pieces=kept.pieces,refs=[...pieces];
+        ok(pieces.length===count&&cds[b.id]===PRIME_CD,id+': 유지 개수/짝 준비');until(()=>castLock<=0);render();
+        ok(c.keep.get()===kept&&pieces.every((p,i)=>p===refs[i]&&!p.used),id+': 시작 종료 후 원본 유지');
+        until(()=>gt-lastCast.t>=7.8);const cd=cds[id];gauge=0;ok(cast(b),id+': 8초 직전 연계');
+        ok(cds[id]===cd*.5&&gauge===BAL.comboGauge*ST.gg,id+': 기존 연계 보상 유지');until(()=>kept.claimed);const fin=FX.find(o=>o.kept===kept);
+        ok(fin&&kept.pieces===pieces&&pieces.every((p,i)=>p===refs[i]),id+': 배열과 물체 참조 그대로 인계');
+        ok(FX.filter(o=>o.inkKind===kind).length===1,id+': 유지 물체 재소환 없음');until(()=>kept.consumed);render();
+        ok(pieces.every(p=>p.used&&(kind==='strokes'?p.crossed:p.recalled))&&S.combos===1,id+': 모든 획 통과/먹검 회수 후 한 번 소모');step(150);
+        ok(!c.keep.get()&&FX.length===0&&castLock<=0,id+': 연계 종료 정리');
+        reset();setLoadout([id]);cast(a);const auto=c.keep.get();S.auto=true;until(()=>auto.claimed);S.auto=false;ok(auto.claimed&&S.combos===1,id+': 자동 연계 인계');
+        reset();cast(a);const expired=c.keep.get();step(560);ok(!FX.includes(expired),id+': 만료 시 원본 정리');
+        reset();cast(a);const interrupted=c.keep.get();until(()=>castLock<=0);cast(skOf('dash'));step(120);ok(interrupted.collapse&&!FX.includes(interrupted),id+': 다른 스킬로 중단');
+        reset();S.best=a.unlock;cast(a);step(240);ok(!c.keep.get(),id+': 짝 미해금은 자연 소멸');
+        reset();CH={mods:[DMODS.find(x=>x.id==='chain')]};cast(a);const long=c.keep.get();until(()=>gt-lastCast.t>=15.7);
+        ok(c.keep.get()===long&&activeLink()?.left>0,id+': 도전 16초 동일 물체 유지');cast(b);until(()=>long.consumed);ok(long.consumed,id+': 16초 직전 인계');
+        reset();cast(a);until(()=>castLock<=0);FX=[];cds[b.id]=0;cast(b);ok(!pendingCombo,id+': 소실 물체 연계 금지');
+        reset();hits=[];let emitted=0,colors=[];const push=P.push;P.push=function(...args){emitted+=args.length;colors.push(...args.map(p=>p.color));return push.apply(this,args)};
+        ok(previewCombo(c),id+': 시작부터 전체 시연');const demo=c.keep.get();step(350);
+        ok(demo.claimed&&demo.consumed&&hits.every(h=>h.pm===.1),id+': 시연 원본 인계/피해 10%');
+        ok(Math.abs(hits.reduce((n,h)=>n+h.mult,0)-total)<1e-8&&hits.filter(h=>h.sid==='combo').length===1,id+': 시작+마무리+16배, 중복 발동 없음');
+        ok(hits.at(-1)?.name===c.name&&hits.at(-1)?.crack===2,id+': 마지막 연계 이름/균열');
+        ok(emitted<=100&&colors.every(col=>INK_COL.includes(col)),id+': 입자 100개 이하/금색 없는 5색 ('+emitted+')');delete P.push;
+      }
+      const a=AWK.find(a=>a.id==='yinyangsky');ok(a.name==='양의개천'&&a.unlock===205&&SCHOOLS.find(s=>s.id==='ink').awk===a.id,'양의개천 배정/계열');
+      reset();S.awkSel=a.id;S.best=204;ok(awkSel().id==='thousand','양의개천 204 잠금');S.unlockFloor=205;ok(awkSel()===a,'양의개천 ub 205 해금');
+      for(const [tr,lv] of [[0,0],[1,5],[2,10],[3,20]]){reset();S.lv.skill=lv;ST=stats();ST.cc=0;hits=[];S.awkSel=a.id;gauge=100;
+        ok(castAwaken()&&gauge===0&&CUT.name===a.name,'양의개천 TR '+tr+' 게이지/컷인');step(330);
+        ok(Math.abs(hits.reduce((n,h)=>n+h.mult,0)-(48+6*tr))<1e-8&&hits.every(h=>h.pm===1&&h.sid===a.id),'양의개천 TR '+tr+' 설관 이하 피해');
+        ok(hits.at(-1)?.heavy&&hits.at(-1)?.crack===2,'양의개천 TR '+tr+' 마지막 강타/균열');
+      }
+      reset();hits=[];a.fn(.1);const awk=FX.find(o=>o.yinyangsky);ok(awk?.dur===2.8,'양의개천 화면 연출 2.8초');
+      let grayFrames=0,grayAwk=true;for(let i=0;i<150;i++){const frozen=stop>0;desat=0;update(1/60);if(!frozen&&FX.includes(awk)){grayFrames++;grayAwk=grayAwk&&desat===1}}ok(grayFrames>60&&grayAwk,'양의개천 모든 월드 프레임 흑백 유지')
+      step(200);ok(hits.every(h=>h.pm===.1)&&FX.length===0,'양의개천 시연/종료');reset();a.fn(1);m=null;step(330);ok(FX.length===0,'양의개천 대상 소멸 안전');
+      reset();let emitted=0,colors=[];const push=P.push;P.push=function(...args){emitted+=args.length;colors.push(...args.map(p=>p.color));return push.apply(this,args)};a.fn(.1);step(330);
+      ok(emitted<=100&&colors.every(col=>INK_COL.includes(col)),'양의개천 100개 이하 수묵 입자: '+emitted);delete P.push;
+      // 전용 도형의 실제 fill/stroke 색을 수집한다. 배경·공용 컷인은 포함하지 않는다.
+      for(const run of [()=>castTwinstroke(.1),()=>castWhitestep(.1),()=>castInkrain(.1),()=>castHalfmoon(.1),()=>previewCombo(comboOf('twinstroke')),()=>previewCombo(comboOf('inkrain')),()=>a.fn(.1)]){
+        reset();const paint=[],fill=ctx.fill,stroke=ctx.stroke,rect=ctx.fillRect;
+        ctx.fill=function(...args){paint.push(this.fillStyle);return fill.apply(this,args)};ctx.stroke=function(...args){paint.push(this.strokeStyle);return stroke.apply(this,args)};ctx.fillRect=function(...args){paint.push(this.fillStyle);return rect.apply(this,args)};
+        try{run();const gold=FX.some(o=>o.yinyangsky);for(let i=0;i<400;i++){update(1/60);if(i%8===0)for(const f of FX)if(f.post)f.post(f)}
+          const allowed=(gold?INK_COL.concat('#FFD45B'):INK_COL).map(c=>c.toLowerCase());ok(paint.length>0&&paint.every(c=>allowed.includes(c.toLowerCase())),'수묵 도형 팔레트/각성기만 금색');if(gold)ok(paint.includes('#ffd45b'),'양의개천 금색 실제 그리기');
+        }finally{ctx.fill=fill;ctx.stroke=stroke;ctx.fillRect=rect}
+      }
+      // 집중: 발동 한 번당 고정 추가타, 숙련 경계, 수묵 연출에만 치명타 보너스.
+      reset();setLoadout(['twinstroke','inkrain']);for(const [xp,w,cc] of [[0,8,0],[9,8,0],[10,10,0],[24,10,0],[25,10,.2]]){
+        S.mastery.ink=xp;ok(comboWin()===w,'음양검결 숙련 '+xp+' 연계 창');FX=[];ST.cc=.1;desat=1;ok(combatCritChance()===.1,'숙련 '+xp+' 다른 흑백 연출 보너스 없음');
+        const effect=castTwinstroke(.1);ok(Math.abs(combatCritChance()-(.1+cc))<1e-9,'숙련 '+xp+' 수묵 중 치명타 +20%p');releaseInk(effect);ok(combatCritChance()===.1,'중단 시 치명타 보너스 종료');FX=[];
+      }
+      reset();setLoadout(['twinstroke','inkrain']);S.mastery.ink=25;ST.cc=.1;castTwinstroke(.1);Math.random=()=>.25;const hp=m.hp;
+      originalHit(1,1,monX,groundY,{light:1,sid:'twinstroke'});ok(T.at(-1)?.label==='치명타'&&m.hp<hp,'수묵 치명타 실제 피해 판정에 반영');Math.random=random;
+      reset();setLoadout(['twinstroke','inkrain']);dealt=0;triggerResonanceCombo(comboOf('twinstroke'),false,0);step(40);ok(Math.abs(dealt-ST.atk*4)<1e-9,'음양검결 집중 일섬은 정확히 공격력 ×4 한 번');
+      reset();dealt=0;triggerResonanceCombo(comboOf('twinstroke'),false,0);step(40);ok(dealt===0,'집중 비활성은 일섬 없음');
+      reset();setLoadout(['twinstroke','inkrain']);S.awkSel=a.id;ST.cc=0;Math.random=()=>.5;const before=m.hp;originalHit(2,1,monX,groundY,{sid:a.id,light:1});ok(Math.abs(before-m.hp-ST.atk*ST.sk*3)<.001,'음양검결 집중 전용 각성기 +50%');Math.random=random;
+      // 묵월: 실제 적중 뒤 표식, 모든 피해 경로 증폭, 게임 시간 만료, 시연 제외.
+      reset();setLoadout(['shadow','twinstroke']);ST.cc=0;Math.random=()=>.5;const first=m.hp;originalHit(2,1,monX,groundY,{sid:'combo',light:1});
+      ok(m.inkMark===5&&Math.abs(first-m.hp-ST.atk*ST.sk*2)<.001,'묵월 첫 적중 후 5초 표식');
+      for(const src of ['hero','tap','skill','ally','dot']){const hp=m.hp;originalDeal(100,false,src,monX,groundY,{light:1});ok(Math.abs(hp-m.hp-115)<.001,'먹물 표식 '+src+' 피해 +15%')}
+      step(301);ok(m.inkMark===0,'묵월 5게임초 만료');const cleared=m.hp;originalDeal(100,false,'hero',monX,groundY,{light:1});ok(Math.abs(cleared-m.hp-100)<.001,'표식 만료 후 피해 복귀');
+      reset();setLoadout(['shadow','twinstroke']);originalHit(2,.1,monX,groundY,{sid:'combo',light:1});ok(!m.inkMark,'시연은 묵월 표식 없음');Math.random=random;
+      // 현묵: 정확히 20% 경계, 실제 cast 경로에서도 덮어쓰기 없이 초기화.
+      for(const roll of [.1999,.2,.8]){reset();setLoadout(['swords','twinstroke']);Math.random=()=>roll;cds.whitestep=30;triggerResonanceCombo(comboOf('twinstroke'),false,0);ok(cds.whitestep===(roll<.2?0:30),'현묵 확률 경계 '+roll);Math.random=random}
+      reset();setLoadout(['swords','twinstroke']);cast(skOf('twinstroke'));until(()=>castLock<=0);Math.random=()=>.1;cast(skOf('whitestep'));ok(cds.whitestep===0&&pendingCombo?.a==='twinstroke','현묵 실제 연계 시 마무리 쿨 즉시 초기화');Math.random=random;
+      reset();setLoadout(['swords','twinstroke']);cds.whitestep=30;Math.random=()=>0;previewCombo(comboOf('twinstroke'));step(330);ok(cds.whitestep>20,'연계 시연은 현묵 초기화 없음');Math.random=random;
+      reset();load({unlockV:2,best:230,mastery:{crimson:12},loadout:['twinstroke','inkrain']});ok(S.mastery.ink===0&&S.mastery.crimson===12&&S.equip.join()==='twinstroke,whitestep,inkrain,halfmoon','기존 저장 숙련 병합/수묵 편성 복원');
+      load({...S,mastery:{...S.mastery,ink:25}});ok(S.mastery.ink===25,'수묵 숙련 저장 복원');buildBook();ok($('schoolCards').querySelector('[data-school="ink"]')?.textContent.includes('양의개천'),'새 계열 카드 전용 각성기 이름');
+      const started=performance.now();let result;for(let i=0;i<10;i++)result=recommendLoadout(230);const elapsed=performance.now()-started;ok(elapsed<1000&&result.length===4,'8계열 추천 10회 <1초: '+elapsed.toFixed(1)+'ms');lines.push('8계열 추천 10회: '+elapsed.toFixed(1)+'ms');
+      for(const speed of [1,2]){reset();S.speed=speed;setLoadout(['twinstroke','inkrain','gravity']);S.auto=true;let finish=0,linked=0;
+        cast=function(s,preview){const n=S.combos,result=originalCast(s,preview);if(result&&!preview&&COMBOS.some(c=>c.b===s.id)){finish++;if(pendingCombo||S.combos>n)linked++}return result};
+        const start=gt;for(let i=0;i<18000&&gt-start<120;i++)update(1/60);ok(gt-start>=120&&finish>=15&&linked/finish>=14/15,'수묵 포함 '+speed+'배 자동 연계 14/15: '+linked+'/'+finish);lines.push('수묵 '+speed+'배 자동 연계: '+linked+'/'+finish);cast=originalCast;
+      }
+    }finally{skillHit=originalHit;deal=originalDeal;Math.random=random;cast=originalCast;reset();m=null;buildBook();buildBar()}
   });
 
   section('정리');

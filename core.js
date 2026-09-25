@@ -22,15 +22,16 @@ function fmt(n){
 /* ================= state ================= */
 const KEY='blade-road-v1';
 // 밸런스 수치는 여기 한곳에 둔다. 축복 시간은 Date.now와 같은 밀리초 단위다.
-const BAL={hpG:1.3,goldG:1.19,comboGauge:12,skillGauge:1.2,speed:2,blessSpeed:3,blessPower:2,blessGold:2,blessDuration:30*60*1000,blessCap:2*60*60*1000,blessRecharge:2*60*60*1000,blessCharges:3,blessRitual:3000};
+const BAL={hpG:1.3,goldG:1.19,comboGauge:12,skillGauge:1.2,speed:2,blessSpeed:3,blessPower:2,blessGold:2,blessDuration:30*60*1000,blessCap:2*60*60*1000,blessRecharge:2*60*60*1000,blessCharges:3,blessRitual:3000,
+  ink:{twinstroke:[9,1.2,24],whitestep:[13.5,1.8,30],inkrain:[9.5,1.2,26],halfmoon:[14,1.8,32],yinyangsky:[48,6],combo:16,focusHit:4,window:2,crit:.2,markTime:5,markDamage:.15,reset:.2}};
 const freshBlessing=()=>({charges:BAL.blessCharges,chargeAt:Date.now(),until:{power:0,gold:0,haste:0},pending:null});
 const freshLv=()=>({atk:0,spd:0,crit:0,critd:0,skill:0,spirit:0,archer:0,mage:0,greed:0});
 const fresh=()=>({gold:0,stage:1,kills:0,maxStage:1,best:1,farm:false,farmKills:0,lv:freshLv(),souls:0,auto:true,sound:true,speed:1,hasteSpeed:3,blessing:freshBlessing(),t:Date.now(),totalKills:0,
   relics:{},ach:{},title:'',loadout:['dash'],equip:['dash','neon'],maxCombo:0,bossKills:0,parries:0,legends:0,rebirths:0,combos:0,awakes:0,eclBoss:0,pulls:0,
   awk:{},daily:{key:'',done:false},dailyWins:0,phase2:0,awkSel:'thousand',codex:{},unlockFloor:0,unlockV:2,
-  mastery:{crimson:0,eclipse:0,verdant:0,abyss:0,storm:0,hellfire:0,frost:0}});
+  mastery:{crimson:0,eclipse:0,verdant:0,abyss:0,storm:0,hellfire:0,frost:0,ink:0}});
 let S=fresh();
-function load(d){try{const raw=d||JSON.parse(localStorage.getItem(KEY)||'null');if(raw){S=Object.assign(fresh(),raw);if(!raw.unlockV){S.unlockFloor=unlockFloorOf(raw.best||1);S.unlockV=2}S.lv=Object.assign(freshLv(),raw.lv||{});S.relics=Object.assign({},raw.relics||{});S.ach=Object.assign({},raw.ach||{});S.awk=Object.assign({},raw.awk||{});S.daily=Object.assign({key:'',done:false},raw.daily||{});S.codex=Object.assign({},raw.codex||{});S.mastery=Object.assign({crimson:0,eclipse:0,verdant:0,abyss:0,storm:0,hellfire:0,frost:0},raw.mastery||{});S.speed=raw.speed===BAL.speed?BAL.speed:1;S.hasteSpeed=[1,2,3].includes(raw.hasteSpeed)?raw.hasteSpeed:BAL.blessSpeed;restoreBlessing(raw.blessing);restoreLoadout(raw)}}catch(e){}}
+function load(d){try{const raw=d||JSON.parse(localStorage.getItem(KEY)||'null');if(raw){S=Object.assign(fresh(),raw);if(!raw.unlockV){S.unlockFloor=unlockFloorOf(raw.best||1);S.unlockV=2}S.unlockFloor=Math.min(S.unlockFloor||0,NEW_UNLOCK[NEW_UNLOCK.length-1]);S.lv=Object.assign(freshLv(),raw.lv||{});S.relics=Object.assign({},raw.relics||{});S.ach=Object.assign({},raw.ach||{});S.awk=Object.assign({},raw.awk||{});S.daily=Object.assign({key:'',done:false},raw.daily||{});S.codex=Object.assign({},raw.codex||{});S.mastery=Object.assign({crimson:0,eclipse:0,verdant:0,abyss:0,storm:0,hellfire:0,frost:0,ink:0},raw.mastery||{});S.speed=raw.speed===BAL.speed?BAL.speed:1;S.hasteSpeed=[1,2,3].includes(raw.hasteSpeed)?raw.hasteSpeed:BAL.blessSpeed;restoreBlessing(raw.blessing);restoreLoadout(raw)}}catch(e){}}
 function save(){S.t=Date.now();const out=CH?Object.assign({},S,CH.saved):S;try{localStorage.setItem(KEY,JSON.stringify(out))}catch(e){}}
 
 /* 실제 시각 기준 축복: 충전 잔여분은 보존하고, 가득 찬 동안은 다음 충전을 쌓지 않는다. */
@@ -83,7 +84,7 @@ const KPS=8;
 const isBoss=s=>s%5===0;
 // 해금 기준 스테이지. 예전 저장(해금 기준 v1)은 그때 도달했던 위치를 새 기준으로 환산해 S.unlockFloor에 두어, 이미 연 스킬이 다시 잠기지 않게 한다.
 const OLD_UNLOCK=[1,3,5,8,9,11,12,14,17,18,20,21,23,26,27,30,32,34,36,40,44,48,52,56,60,64,68,72],NEW_UNLOCK=[1,5,10,15,20,26,32,38,45,52,60,68,76,84,90,96,102,108,114,120,128,136,144,152,160,170,180,190];
-function unlockFloorOf(best){for(let i=1;i<OLD_UNLOCK.length;i++)if(best<OLD_UNLOCK[i]){const a=OLD_UNLOCK[i-1],b=OLD_UNLOCK[i];return Math.floor(NEW_UNLOCK[i-1]+(best-a)/(b-a)*(NEW_UNLOCK[i]-NEW_UNLOCK[i-1]))}return 9999}
+function unlockFloorOf(best){for(let i=1;i<OLD_UNLOCK.length;i++)if(best<OLD_UNLOCK[i]){const a=OLD_UNLOCK[i-1],b=OLD_UNLOCK[i];return Math.floor(NEW_UNLOCK[i-1]+(best-a)/(b-a)*(NEW_UNLOCK[i]-NEW_UNLOCK[i-1]))}return NEW_UNLOCK[NEW_UNLOCK.length-1]}
 const ub=()=>Math.max(S.best,S.unlockFloor||0);
 const monHp=s=>12*Math.pow(BAL.hpG,s-1);
 const goldDrop=s=>4*Math.pow(BAL.goldG,s-1);
@@ -315,7 +316,7 @@ function addCrack(x,y,big){
 function heroStrike(tap){
   if(!fighting()||h.stun>0)return;
   h.t=0;h.dir=-h.dir;h.from=h.dir>0?-2.15:1.15;h.to=h.dir>0?.95:-1.75;
-  const crit=Math.random()<ST.cc,dem=frenzyT>0;
+  const crit=Math.random()<combatCritChance(),dem=frenzyT>0;
   const d=ST.atk*(tap?1.5:1)*(dem?1.4:1)*(1+Math.min(combo,100)*.005)*(crit?ST.cm:1)*rnd(.9,1.1);
   const c=mCenter(m),r=m.rb*U*m.sc;
   const hx=c.x+rnd(-.2,.2)*r,hy=c.y+rnd(-.25,.25)*r;
@@ -346,6 +347,7 @@ function deal(d,crit,src,x,y,o={}){
   if(m.vuln>0)d*=1.3*(typeof focusTier==='function'&&focusTier('hellfire')>=1?1.3:1);
   if(m.freeze>0&&typeof focusTier==='function'&&focusTier('frost')>=2)d*=1.2;
   if(m.freeze>0&&src==='skill'&&typeof hasRes==='function'&&hasRes('frost_storm'))d*=1.15;
+  if(m.inkMark>0)d*=1+BAL.ink.markDamage;
   const light=o.light||src==='spirit'||src==='ally',heavy=o.heavy;
   let col=o.col||(src==='spirit'?'#8ff6ff':src==='ally'?'#c8ffb0':crit?'#ffe066':'#ffffff');
   if(m.sh>0){m.sh-=d;col='#7fe8ff';if(Math.random()<.5)P.push({t:'ring',x,y,r0:6*U,r1:40*U,w:3*U,life:.2,max:.2,color:'#7fe8ff'});
@@ -424,8 +426,9 @@ function triggerBossFinisher(fin,o){
   CUT=null;stop=Math.max(stop,.38);addTrauma(.75);zoom+=.12*FXS;flash(.85,'255,255,255');
   sfx.slash2();sfx.cutin();slowT=1.35;ink(c.x,c.y,35,'#120008');addCrack(c.x,c.y,true);
 }
+function combatCritChance(){return Math.min(1,ST.cc+(FX.some(o=>o.inkSchool&&!o.collapse&&o.t<o.dur)&&focusTier('ink')>=3?BAL.ink.crit:0))}
 function skillHit(mult,pm,x,y,o){
-  const crit=Math.random()<ST.cc;
+  const crit=Math.random()<combatCritChance();
   if(o&&o.sid&&BR[o.sid]&&BR[o.sid].gen&&br(o.sid)==='a')mult*=1.4;
   if(o&&o.sid==='combo'){
     if(typeof focusTier==='function'&&focusTier('crimson')>=1)mult*=1.3;
@@ -433,7 +436,8 @@ function skillHit(mult,pm,x,y,o){
   }
   const isAwk=o&&(o.sid==='awaken'||o.sid==='awk'||(typeof AWK!=='undefined'&&AWK.some(a=>a.id===o.sid)));
   if(isAwk&&typeof isFocusAwk==='function'&&isFocusAwk())mult*=1.5;
-  deal(ST.atk*ST.sk*mult*pm*(crit?ST.cm:1)*rnd(.9,1.1),crit,'skill',x,y,o);
+  const target=m;deal(ST.atk*ST.sk*mult*pm*(crit?ST.cm:1)*rnd(.9,1.1),crit,'skill',x,y,o);
+  if(pm===1&&o?.sid==='combo'&&target===m&&fighting()&&hasRes('eclipse_ink')){m.inkMark=BAL.ink.markTime;inkMarkFX(m)}
 }
 function shieldBreak(){
   const c=mCenter(m),r=m.rb*U;
