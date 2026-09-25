@@ -225,7 +225,7 @@ function updAllies(dt,fg){
   if(S.lv.mage&&fg){comp.mgT-=dt;if(comp.mgT<=0){comp.mgT=2.6;allyShoot('orb')}}
   for(let i=PR.length-1;i>=0;i--){const p=PR[i];p.t+=dt;const k=Math.min(1,p.t/p.dur),q=1-k;
     p.x=q*q*p.x0+2*q*k*p.cx+k*k*p.x1;p.y=q*q*p.y0+2*q*k*p.cy+k*k*p.y1;p.tr.push(p.x,p.y);if(p.tr.length>20)p.tr.splice(0,2);
-    if(k>=1){const crit=Math.random()<ST.cc;
+    if(k>=1){const crit=Math.random()<combatCritChance();
       if(p.k==='arrow'){burst(p.x,p.y,['#c8ffb0','#fff'],5,500);deal(ST.ar*(crit?ST.cm:1)*rnd(.9,1.1),crit,'ally',p.x,p.y,{col:'#c8ffb0'})}
       else{P.push({t:'ring',x:p.x,y:p.y,r0:8*U,r1:80*U,w:5*U,life:.3,max:.3,color:'#7aa8ff'});P.push({t:'glow',x:p.x,y:p.y,size:80*U,life:.2,max:.2,color:'#7aa8ff'});
         burst(p.x,p.y,['#b8ccff','#7aa8ff','#fff'],14,800);deal(ST.mg*(crit?ST.cm:1)*rnd(.9,1.1),crit,'ally',p.x,p.y,{col:'#b8ccff'});addTrauma(.1);sfx.zap()}
@@ -298,7 +298,7 @@ function updateWorld(dt,realDt){
         B.push({x0:s.x,y0:s.y,cx:lerp(s.x,c.x,.5)+rnd(-60,60)*U,cy:Math.min(s.y,c.y)-rnd(80,180)*U,x1:c.x+rnd(-.3,.3)*m.rb*U,y1:c.y+rnd(-.3,.3)*m.rb*U,t:0,dur:rnd(.3,.42),tr:[]});}}}
   for(let i=B.length-1;i>=0;i--){const b=B[i];b.t+=dt;const k=Math.min(1,b.t/b.dur),q=1-k;
     b.x=q*q*b.x0+2*q*k*b.cx+k*k*b.x1;b.y=q*q*b.y0+2*q*k*b.cy+k*k*b.y1;b.tr.push(b.x,b.y);if(b.tr.length>18)b.tr.splice(0,2);
-    if(k>=1){const crit=Math.random()<ST.cc;
+    if(k>=1){const crit=Math.random()<combatCritChance();
       for(let j=0;j<7;j++){const a=rnd(0,Math.PI*2),sp=rnd(150,500)*U;P.push({t:'spark',x:b.x,y:b.y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,drag:6,g:0,w:2*U,life:.2,max:.2,color:'#8ff6ff'})}
       P.push({t:'ring',x:b.x,y:b.y,r0:4*U,r1:34*U,w:3*U,life:.2,max:.2,color:'#6ff2ff'});
       deal(ST.sd*(crit?ST.cm:1)*rnd(.9,1.1),false,'spirit',b.x,b.y);sfx.zap();
@@ -330,6 +330,7 @@ function updateWorld(dt,realDt){
           deal(ST.atk*.4*ST.sk*bMul,false,'dot',c.x,c.y,{light:1,col:'#ff5a2a',name:bMul>1?'홍련작':'화상'})}
       }
     }else{m.burnNotified=false}
+    if(m.inkMark>0)m.inkMark=Math.max(0,m.inkMark-dt);
     if(m.freeze>0)m.freeze-=dt;else{m.freezeCancel=false}
     if(m.chipT>0)m.chipT-=dt;else m.chip+=(m.hp-m.chip)*Math.min(1,dt*7);
     if(m.state==='enter'){
@@ -952,7 +953,7 @@ function uiTick(force){
   watchSchoolUnlocks();{const st=schoolState();if(schoolUIKey!==JSON.stringify([S.best,S.loadout,st,st.focus.map(focusTier)]))buildBook()};
   $('goldTxt').textContent=fmt(dispGold);
   $('dpsTxt').textContent=fmt(dps());
-  $('critTxt').textContent=Math.round(ST.cc*100)+'% · ×'+ST.cm.toFixed(1);
+  $('critTxt').textContent=Math.round(combatCritChance()*100)+'% · ×'+ST.cm.toFixed(1);
   $('bestTxt').textContent=S.best;
   $('soulTxt').textContent=S.souls+' (+'+S.souls*10+'%)';
   const key=JSON.stringify(S.lv)+S.souls+mode+Math.floor(Math.log10(S.gold+1)*20)+Object.keys(S.relics).length;
