@@ -12,6 +12,7 @@
   const settle=n=>{for(let i=0;i<n;i++){update(1/60);if(++frameNo%4===0)render();if(i>=30&&FX.length===0&&castLock<=0&&!pendingCombo)break}render()};
   const toFight=()=>{for(let k=0;k<120&&(!fighting()||castLock>0);k++){if(BI)skipBossIntro();tick(10)}};
   const guard=(name,fn)=>{try{fn()}catch(e){fail++;lines.push('✗ '+name+' 예외: '+e.message+' @ '+String(e.stack||'').split('\n')[1])}};
+  const OB=b=>unlockFloorOf(b);                      // 옛 해금 기준 스테이지를 새 기준(해금 배치 v2)으로 옮겨 검사 의미를 그대로 유지한다
 
   save=function(){};                                  // 점검 중에는 절대 저장하지 않는다
   $('modal').hidden=true;pending=0;                   // 오프라인 보상 창은 점검과 무관하므로 닫는다
@@ -70,12 +71,12 @@
     const reset=()=>{S=fresh();S.best=999;S.auto=false;S.sound=false;S.equip=['spear','thunder'];ST=stats();CH=null;BI=null;BF=null;FX=[];P=[];T=[];B=[];PR=[];C=[];relicQ=[];stop=0;slowT=0;castLock=0;frenzyT=0;gauge=0;lastCast=null;pendingCombo=null;spawnT=100;miniQ=0;
       m=makeMonster(1);m.state='fight';m.x=monX;m.hp=m.max=1e15;atkT=1e6;for(const s of SK)cds[s.id]=0;buildBar()};
     const until=fn=>{for(let i=0;i<1500&&!fn();i++)tick(1)};
-    ok(ta.unlock===44&&tb.unlock===48,'뇌창/천뢰 해금 스테이지');ok(ta.cd===18&&tb.cd===24,'뇌창/천뢰 기본 쿨타임');
+    ok(ta.unlock===128&&tb.unlock===136,'뇌창/천뢰 해금 스테이지');ok(ta.cd===18&&tb.cd===24,'뇌창/천뢰 기본 쿨타임');
     reset();cds.thunder=30;ok(cast(ta),'뇌창 투척 실전 시전');const sp=thunderSpear();
     ok(cds.thunder===PRIME_CD,'뇌창 투척 연계 준비 쿨타임');ok(activeLink()?.c===tc,'뇌신 강림 연계 창');
     until(()=>castLock<=0);ok(thunderSpear()===sp&&FX.includes(sp),'시작 연출 종료 후 박힌 창 유지');ok(!sp.collapse,'연계 대기 중 창 붕괴 금지');
     until(()=>gt-lastCast.t>=7.8);cds.thunder=0;gauge=0;const cd=cds.spear;
-    ok(cast(tb),'8초 직전 수동 천뢰 연계');ok(pendingCombo===tc,'뇌신 강림 예약');ok(Math.abs(cds.spear-cd*.5)<1e-9,'시작 스킬 쿨타임 절반 보상');ok(gauge===20*ST.gg,'각성 게이지 연계 보상');
+    ok(cast(tb),'8초 직전 수동 천뢰 연계');ok(pendingCombo===tc,'뇌신 강림 예약');ok(Math.abs(cds.spear-cd*.5)<1e-9,'시작 스킬 쿨타임 절반 보상');ok(gauge===BAL.comboGauge*ST.gg,'각성 게이지 연계 보상');
     until(()=>sp.claimed);const god=FX.find(o=>o.spear===sp);ok(god?.spear===sp,'뇌신 강림이 박힌 동일 창 인계');
     ok(FX.filter(o=>o.thunderSpear).length===1,'창 중복 소환 금지');
     until(()=>sp.consumed);ok(sp.consumed&&stop>=.16,'번개 폭풍 적중 시 창 소모와 히트스톱');ok(S.combos===1,'뇌신 강림 발동 횟수');tick(200);ok(!thunderSpear()&&castLock<=0,'뇌신 강림 종료 정리');
@@ -83,7 +84,7 @@
     ok(autoSp.claimed&&S.combos===1,'자동 뇌신 강림 창 인계');
     reset();cast(ta);const expired=thunderSpear();tick(550);ok(!FX.includes(expired),'8초 만료 시 창 전기를 잃고 붕괴/제거');
     reset();cast(ta);until(()=>castLock<=0);cast(skOf('dash'));tick(40);ok(!thunderSpear(),'다른 스킬로 연계 중단 시 창 정리');
-    reset();S.best=44;cast(ta);tick(160);ok(!thunderSpear(),'천뢰 미해금 시 창 붕괴');
+    reset();S.best=ta.unlock;cast(ta);tick(160);ok(!thunderSpear(),'천뢰 미해금 시 창 붕괴');
     reset();cast(ta,true);tick(160);ok(!thunderSpear(),'뇌창 단독 시연 종료 후 창 붕괴');
     reset();CH={mods:[DMODS.find(x=>x.id==='chain')]};cast(ta);const longSp=thunderSpear();until(()=>gt-lastCast.t>=15.7);
     ok(thunderSpear()===longSp&&activeLink()?.left>0,'일일 도전 16초 연계 창 동안 동일 창 유지');cast(tb);until(()=>longSp.claimed);ok(longSp.claimed,'16초 직전 뇌신 강림 인계');
@@ -98,13 +99,13 @@
     const reset=()=>{S=fresh();S.best=999;S.auto=false;S.sound=false;S.equip=['gravity','meteor'];ST=stats();CH=null;BI=null;BF=null;FX=[];P=[];T=[];B=[];PR=[];C=[];relicQ=[];stop=0;slowT=0;castLock=0;frenzyT=0;gauge=0;lastCast=null;pendingCombo=null;spawnT=100;miniQ=0;
       m=makeMonster(1);m.state='fight';m.x=monX;m.hp=m.max=1e15;atkT=1e6;for(const s of SK)cds[s.id]=0;buildBar()};
     const until=fn=>{for(let i=0;i<1500&&!fn();i++)tick(1)};
-    ok(ga.unlock===52&&gb.unlock===56,'중력/운석 해금 스테이지');ok(ga.cd===20&&gb.cd===26,'중력/운석 기본 쿨타임');
+    ok(ga.unlock===144&&gb.unlock===152,'중력/운석 해금 스테이지');ok(ga.cd===20&&gb.cd===26,'중력/운석 기본 쿨타임');
     reset();cds.meteor=30;ok(cast(ga),'중력 구속 실전 시전');const well=gravityWell(),pos=gravityPoint(well);
     ok(cds.meteor===PRIME_CD,'중력 구속 연계 준비 쿨타임');ok(activeLink()?.c===gc,'천붕 연계 창');
     until(()=>well.t>=1.4);ok(m.sq>.2&&m.ly>0,'중력 구속의 찌그러짐/지면 침하');
     until(()=>castLock<=0);ok(gravityWell()===well&&FX.includes(well),'시작 연출 종료 후 동일 구체 유지');ok(!well.collapse,'연계 대기 중 구체 붕괴 금지');
     until(()=>gt-lastCast.t>=7.8);cds.meteor=0;gauge=0;const cd=cds.gravity;
-    ok(cast(gb),'8초 직전 수동 운석 연계');ok(pendingCombo===gc,'천붕 예약');ok(Math.abs(cds.gravity-cd*.5)<1e-9,'시작 스킬 쿨타임 절반 보상');ok(gauge===20*ST.gg,'각성 게이지 연계 보상');
+    ok(cast(gb),'8초 직전 수동 운석 연계');ok(pendingCombo===gc,'천붕 예약');ok(Math.abs(cds.gravity-cd*.5)<1e-9,'시작 스킬 쿨타임 절반 보상');ok(gauge===BAL.comboGauge*ST.gg,'각성 게이지 연계 보상');
     until(()=>well.claimed);const flight=FX.find(o=>o.meteorFlight);ok(flight?.well===well,'운석이 시작 스킬의 동일 구체 인계');
     ok(FX.filter(o=>o.gravityWell).length===1&&FX.filter(o=>o.meteorFlight).length===1,'구체/운석 중복 소환 금지');
     ok(gravityPoint(well).x===pos.x&&gravityPoint(well).y===pos.y,'연계 인계 시 구체 좌표 연속성');
@@ -114,7 +115,7 @@
     reset();cast(ga);const expired=gravityWell();tick(550);ok(!FX.includes(expired),'8초 만료 시 구체 붕괴/제거');
     cds.meteor=0;cast(gb);ok(!pendingCombo&&!FX.find(o=>o.meteorFlight)?.well,'시간 만료 후 운석 단독 발동');
     reset();cast(ga);until(()=>castLock<=0);cast(skOf('dash'));tick(40);ok(!gravityWell(),'다른 스킬로 연계 중단 시 구체 정리');
-    reset();S.best=52;cast(ga);tick(160);ok(!gravityWell(),'운석 미해금 시 구체 붕괴');
+    reset();S.best=ga.unlock;cast(ga);tick(160);ok(!gravityWell(),'운석 미해금 시 구체 붕괴');
     reset();cast(ga,true);tick(160);ok(!gravityWell(),'중력 단독 시연 종료 후 구체 붕괴');
     reset();CH={mods:[DMODS.find(x=>x.id==='chain')]};cast(ga);const longWell=gravityWell();until(()=>gt-lastCast.t>=15.7);
     ok(gravityWell()===longWell&&activeLink()?.left>0,'일일 도전 16초 연계 창 동안 동일 구체 유지');cast(gb);until(()=>longWell.claimed);ok(longWell.claimed,'16초 직전 천붕 인계');
@@ -297,7 +298,7 @@
       m=makeMonster(1);m.state='fight';m.x=monX;m.sh=0;m.hp=m.max=1e12;atkT=1e6;for(const s of SK)cds[s.id]=0};
     // 긴 대기·수치 검사는 update만 실행. 실제 그리기는 기존 전체 시연과 아래 핵심 컷에서 확인한다.
     const step=n=>{for(let i=0;i<n;i++)update(1/60)},until=fn=>{for(let i=0;i<1800&&!fn();i++)update(1/60)};
-    const data=[['frostcut',60,22,9.5,1.2],['icedragon',64,28,14,1.9],['iceflower',68,24,10,1.2],['frostspiral',72,30,14.5,1.9]];
+    const data=[['frostcut',160,22,9.5,1.2],['icedragon',170,28,14,1.9],['iceflower',180,24,10,1.2],['frostspiral',190,30,14.5,1.9]];
     const hit=skillHit,damage=deal;let hits=[],dealt=0;
     try{
       skillHit=function(mult,pm,x,y,o){hits.push({mult,pm,...o});return hit(mult,pm,x,y,o)};
@@ -322,7 +323,7 @@
         ok(pieces.length===count&&cds[b.id]===PRIME_CD,id+': 유지 개수/짝 준비');until(()=>castLock<=0);render();
         ok(c.keep.get()===kept&&pieces.every((p,i)=>p===refs[i]&&!p.used),id+': 시작 연출 뒤 같은 물체 유지');
         until(()=>gt-lastCast.t>=7.8);const cd=cds[id];gauge=0;ok(cast(b),id+': 8초 직전 수동 연계');
-        ok(cds[id]===cd*.5&&gauge===20*ST.gg,id+': 연계 보상');until(()=>kept.claimed);const fin=FX.find(o=>o.kept===kept);
+        ok(cds[id]===cd*.5&&gauge===BAL.comboGauge*ST.gg,id+': 연계 보상');until(()=>kept.claimed);const fin=FX.find(o=>o.kept===kept);
         ok(fin&&kept.pieces===pieces&&pieces.every((p,i)=>p===refs[i]),id+': 마무리에 원본 배열/객체 인계');
         ok(FX.filter(o=>o.iceKind===kind).length===1,id+': 유지 물체 중복 소환 금지');until(()=>pieces.some(p=>p.used));render();
         ok(pieces.some(p=>!p.used),id+': 한 번에 지우지 않고 순차 파괴/흡수');until(()=>kept.consumed);render();
@@ -346,7 +347,7 @@
         ok(hits.at(-1)?.name===c.name&&hits.at(-1)?.crack===2,id+': 연계 강타/균열 이름');
         ok(emitted<=100&&colors.every(col=>ICE_COL.includes(col)),id+': 전체 연계 입자 100개 이하/5색: '+emitted);delete P.push;
       }
-      const a=AWK.find(a=>a.id==='frostcrown');ok(a.unlock===45&&a.name==='영원의 설관','빙정 각성기 배정');
+      const a=AWK.find(a=>a.id==='frostcrown');ok(a.unlock===130&&a.name==='영원의 설관','빙정 각성기 배정');
       for(const [tr,lv] of [[0,0],[3,20]]){reset();S.lv.skill=lv;ST=stats();hits=[];S.awkSel=a.id;gauge=100;
         ok(castAwaken()&&gauge===0&&CUT.name===a.name,'설관 게이지 소비/컷인');step(300);
         ok(Math.abs(hits.reduce((n,h)=>n+h.mult,0)-(48+6*tr))<1e-8&&hits.every(h=>h.pm===1&&h.sid===a.id),'설관 TR '+tr+' 실전 피해');
@@ -389,27 +390,27 @@
       ok(equal(S.equip,derived())&&S.equip.length===8,'변환 후 equip에 각 쌍 두 스킬 보존');
       ok(S.gold===321&&S.lv.atk===7&&S.relics.coin===2&&S.awk.frostcut==='a'&&S.codex['0_0']===3,'기존 성장/유물/분기/도감 보존');ok(JSON.stringify(original)===copy,'저장 원본 객체를 변경하지 않음');
       load({best:72,equip:['wolf','missing','wolf']});ok(S.loadout[0]==='archers'&&S.loadout.length===4&&new Set(S.loadout).size===4,'부분 장착은 짝 보완, 빈칸은 중복 없이 추천');
-      ok(equal(S.loadout,recommendLoadout(72,['archers'])),'추천으로 빈칸만 채우며 추정 쌍 고정');
+      ok(equal(S.loadout,recommendLoadout(OB(72),['archers'])),'추천으로 빈칸만 채우며 추정 쌍 고정');
       load({best:1,equip:['dash']});ok(equal(S.loadout,['dash'])&&equal(S.equip,['dash','neon']),'초반은 해금된 쌍 후보만 채우고 잠긴 짝 유지');
-      load({best:72,equip:['invalid',null,7]});ok(equal(S.loadout,recommendLoadout(72)),'유효 장착이 없으면 추천 편성');
-      load({best:72});ok(equal(S.loadout,recommendLoadout(72)),'장착 필드 없는 예전 저장도 추천');
+      load({best:72,equip:['invalid',null,7]});ok(equal(S.loadout,recommendLoadout(OB(72))),'유효 장착이 없으면 추천 편성');
+      load({best:72});ok(equal(S.loadout,recommendLoadout(OB(72))),'장착 필드 없는 예전 저장도 추천');
       load({best:72,loadout:['iceflower','frostcut'],equip:['dash']});ok(equal(S.loadout,['iceflower','frostcut'])&&equal(S.equip,derived()),'새 저장은 loadout 우선, 의도적인 빈칸 유지');
       const saved=JSON.parse(JSON.stringify(S));load(saved);ok(equal(S.loadout,saved.loadout)&&equal(S.equip,saved.equip),'새 저장 왕복 시 편성 순서 유지');
       load({best:72,loadout:[],equip:['dash']});ok(S.loadout.length===0&&S.equip.length===0,'빈 편성을 추천으로 덮어쓰지 않음');
       load({best:72,loadout:['dash','dash','bad',null,'swords','breath','shadow','gravity']});ok(equal(S.loadout,['dash','swords','breath','shadow']),'손상된 편성의 중복/잘못된 id/초과 칸 정리');
       load({best:72,loadout:'broken',equip:['meteor']});ok(S.loadout[0]==='gravity'&&S.loadout.length===4,'배열 아닌 편성은 예전 장착에서 복원');
       reset();ok(equal(S.loadout,['dash'])&&equal(S.equip,derived())&&('mastery' in S)&&SCHOOLS.every(s=>S.mastery[s.id]===0),'새 게임 기본 쌍/파생 equip, 숙련 필드 초기화');
-      const both=['frostcut','iceflower','dash','spear'];let state=schoolState(both,72);
+      const both=['frostcut','iceflower','dash','spear'];let state=schoolState(both,OB(72));
       ok(equal(state.focus,['storm','frost'])&&equal(state.resonance,['frost_storm']),'빙정 2쌍+뇌전 2쌍: 집중 2/초전도');
-      state=schoolState(both,71);ok(equal(state.focus,['storm'])&&state.counts.frost===1,'짝 하나 미해금이면 빙정 집중 꺼짐');
-      state=schoolState(both,63);ok(state.counts.frost===0&&!state.resonance.includes('frost_storm'),'양쪽이 열린 쌍만 활성 집계');
-      state=schoolState(['breath','demon','whip','shadow'],72);ok(equal(state.focus,['crimson'])&&equal(state.resonance,['crimson_hellfire','hellfire_eclipse']),'진홍 집중+업화/월식 공명');
-      state=schoolState(['whip','shadow','swords','frostcut'],72);ok(state.focus.length===0&&state.resonance.length===3,'서로 다른 4계열 공명 사슬 3개');
-      state=schoolState(['frostcut','frostcut'],72);ok(state.counts.frost===1&&!state.focus.length,'같은 쌍 중복은 집중으로 세지 않음');
-      ok(schoolState([],72).resonance.length===0&&schoolState([],72).focus.length===0,'해제 후 집중/공명 모두 꺼짐');
-      reset();S.best=72;const st=stats(),cw=comboWin();setLoadout(both);schoolState();ok(equal(stats(),st)&&comboWin()===cw,'A단계는 스탯/연계 창에 효과 수치를 적용하지 않음');
+      state=schoolState(both,OB(71));ok(equal(state.focus,['storm'])&&state.counts.frost===1,'짝 하나 미해금이면 빙정 집중 꺼짐');
+      state=schoolState(both,OB(63));ok(state.counts.frost===0&&!state.resonance.includes('frost_storm'),'양쪽이 열린 쌍만 활성 집계');
+      state=schoolState(['breath','demon','whip','shadow'],OB(72));ok(equal(state.focus,['crimson'])&&equal(state.resonance,['crimson_hellfire','hellfire_eclipse']),'진홍 집중+업화/월식 공명');
+      state=schoolState(['whip','shadow','swords','frostcut'],OB(72));ok(state.focus.length===0&&state.resonance.length===3,'서로 다른 4계열 공명 사슬 3개');
+      state=schoolState(['frostcut','frostcut'],OB(72));ok(state.counts.frost===1&&!state.focus.length,'같은 쌍 중복은 집중으로 세지 않음');
+      ok(schoolState([],OB(72)).resonance.length===0&&schoolState([],OB(72)).focus.length===0,'해제 후 집중/공명 모두 꺼짐');
+      reset();S.best=OB(72);const st=stats(),cw=comboWin();setLoadout(both);schoolState();ok(equal(stats(),st)&&comboWin()===cw,'A단계는 스탯/연계 창에 효과 수치를 적용하지 않음');
       // 독립 비트마스크 완전 탐색으로 추천의 전역 최댓값을 확인한다(그리기/전투 반복 없음).
-      for(const best of [0,1,3,8,11,17,21,30,36,40,48,56,60,64,68,72,999]){
+      for(const best of [0,1,3,8,11,17,21,30,36,40,48,56,60,64,68,72,999].map(OB)){
         const before=JSON.stringify(S),ids=recommendLoadout(best),eligible=COMBOS.filter(c=>[c.a,c.b].some(id=>skOf(id).unlock<=best)),n=Math.min(4,eligible.length);
         ok(ids.length===n&&new Set(ids).size===n&&ids.every(id=>eligible.some(c=>c.a===id)),'STAGE '+best+': 추천은 해금 상황에 맞는 쌍만');
         let maximum=-1;for(let mask=0;mask<(1<<eligible.length);mask++){let bits=mask,count=0;while(bits){bits&=bits-1;count++}if(count!==n)continue;
@@ -423,17 +424,17 @@
       row('gravity').querySelector('.eq').click();ok(S.loadout.length===0&&S.equip.length===0,'시작 스킬 버튼으로 쌍 전체 해제');
       setLoadout(['iceflower','frostcut','dash','spear']);buildBar();ok(equal(barOrder().map(s=>s.id),derived()),'스킬 바가 편성 칸 순서/시작→마무리 순서 유지');
       const full=JSON.stringify(S.loadout);ok(!toggleEquip('meteor')&&JSON.stringify(S.loadout)===full,'편성 4쌍 초과 금지');ok(!toggleEquip('invalid'),'없는 스킬 편성 거부');
-      S.best=72;$('recommendBtn').click();ok(equal(S.loadout,recommendLoadout())&&equal(S.equip,derived()),'추천 버튼으로 편성/equip 동시 반영');
+      S.best=OB(72);$('recommendBtn').click();ok(equal(S.loadout,recommendLoadout())&&equal(S.equip,derived()),'추천 버튼으로 편성/equip 동시 반영');
       ok($('slotTxt').textContent.includes('4/4쌍')&&$('skBar').querySelectorAll('.skill:not(.awk)').length===8,'편성 수/스킬 바 8칸 갱신');
-      reset();S.stage=S.best=2;S.kills=KPS-1;kill();ok(S.best===3&&equal(S.loadout,['dash','swords'])&&equal(S.equip,derived()),'진행 중 새 스킬 해금도 쌍 단위 자동 편성');
-      reset();S.stage=S.best=16;S.kills=KPS-1;kill();ok(S.best===17&&equal(S.loadout,['dash'])&&equal(S.equip,derived()),'편성한 잠긴 짝 해금 시 중복 칸 없음');
-      reset();setLoadout(['dash','breath','gravity','frostcut']);S.stage=S.best=2;S.kills=KPS-1;kill();ok(!S.loadout.includes('swords')&&equal(S.equip,derived()),'빈칸 없는 해금은 기존 편성 보존');
+      reset();S.stage=S.best=skOf('swords').unlock-1;S.kills=KPS-1;kill();ok(S.best===skOf('swords').unlock&&equal(S.loadout,['dash','swords'])&&equal(S.equip,derived()),'진행 중 새 스킬 해금도 쌍 단위 자동 편성');
+      reset();S.stage=S.best=skOf('neon').unlock-1;S.kills=KPS-1;kill();ok(S.best===skOf('neon').unlock&&equal(S.loadout,['dash'])&&equal(S.equip,derived()),'편성한 잠긴 짝 해금 시 중복 칸 없음');
+      reset();setLoadout(['dash','breath','gravity','frostcut']);S.stage=S.best=skOf('swords').unlock-1;S.kills=KPS-1;kill();ok(!S.loadout.includes('swords')&&equal(S.equip,derived()),'빈칸 없는 해금은 기존 편성 보존');
     }finally{reset();m=null;buildBar();buildBook()}
   });
 
   section('계열 B · 카드 · 편성 · 효과 칩 · 해금 안내');
   guard('계열 UI',()=>{
-    const reset=(best=72)=>{if($('pairPicker').open)$('pairPicker').close();S=fresh();S.best=best;S.auto=false;S.sound=false;S.gold=1e30;ST=stats();CH=null;BI=null;BF=null;CUT=null;BN=null;FX=[];P=[];T=[];B=[];PR=[];C=[];relicQ=[];shieldOn=null;stop=slowT=castLock=frenzyT=circleT=0;gauge=0;lastCast=pendingCombo=null;spawnT=100;miniQ=0;h.stun=0;atkT=1e6;
+    const reset=(best=OB(72))=>{if($('pairPicker').open)$('pairPicker').close();S=fresh();S.best=best;S.auto=false;S.sound=false;S.gold=1e30;ST=stats();CH=null;BI=null;BF=null;CUT=null;BN=null;FX=[];P=[];T=[];B=[];PR=[];C=[];relicQ=[];shieldOn=null;stop=slowT=castLock=frenzyT=circleT=0;gauge=0;lastCast=pendingCombo=null;spawnT=100;miniQ=0;h.stun=0;atkT=1e6;
       m=makeMonster(1);m.state='fight';m.x=monX;m.sh=0;m.hp=m.max=1e12;for(const s of SK)cds[s.id]=0;schoolOpen=null;schoolSeenState=null;schoolNotices=[];buildBar();buildBook();uiTick()};
     const equal=(a,b)=>JSON.stringify(a)===JSON.stringify(b),row=id=>$('book').querySelector('[data-skill="'+id+'"]'),slot=i=>$('loadoutGrid').children[i];
     const shown=root=>[...root.querySelectorAll('[data-effect]')].map(e=>e.dataset.kind+':'+e.dataset.effect);
@@ -460,20 +461,20 @@
       ok(S.equip.length===8&&equal(barOrder().map(s=>s.id),S.equip),'편성 UI에서 스킬 바까지 반영');
       for(let i=3;i>=0;i--){slot(i).click();ok(S.loadout.length===i&&!slot(i).dataset.pair,(i+1)+'번: 편성된 칸 다시 눌러 해제')}
       slot(0).click();$('closePairPicker').click();ok(!$('pairPicker').open&&S.loadout.length===0,'선택 창 닫기는 편성을 변경하지 않음');
-      reset(1);setLoadout([]);buildBar();slot(0).click();const locked=$('pairOptions').querySelector('[data-pair="iceflower"]');ok(locked.textContent.includes('72')&&!locked.disabled,'잠긴 연계도 해금 시각 안내 후 선택 가능');locked.click();ok(equal(S.loadout,['iceflower'])&&!cast(skOf('frostspiral')),'잠긴 쌍 편성은 해금/시전 조건을 바꾸지 않음');
-      reset();for(const [ids,best] of [[[],72],[['frostcut','iceflower','dash','spear'],72],[['frostcut','iceflower','dash','spear'],71],[['frostcut','iceflower','dash','spear'],63],[['breath','demon','whip','shadow'],72],[['whip','shadow','swords','frostcut'],72]]){
+      reset(1);setLoadout([]);buildBar();slot(0).click();const locked=$('pairOptions').querySelector('[data-pair="iceflower"]');ok(locked.textContent.includes(String(skOf('frostspiral').unlock))&&!locked.disabled,'잠긴 연계도 해금 시각 안내 후 선택 가능');locked.click();ok(equal(S.loadout,['iceflower'])&&!cast(skOf('frostspiral')),'잠긴 쌍 편성은 해금/시전 조건을 바꾸지 않음');
+      reset();for(const [ids,best] of [[[],OB(72)],[['frostcut','iceflower','dash','spear'],OB(72)],[['frostcut','iceflower','dash','spear'],OB(71)],[['frostcut','iceflower','dash','spear'],OB(63)],[['breath','demon','whip','shadow'],OB(72)],[['whip','shadow','swords','frostcut'],OB(72)]]){
         S.best=best;setLoadout(ids);buildBook();const state=schoolState(),expected=[...state.focus.map(id=>'focus:'+id),...state.resonance.map(id=>'resonance:'+id)];
         ok(equal(shown($('schoolEffects')),expected),'편성 칩은 schoolState 그대로: '+ids.join('/')+' @'+best);
         ok(equal(shown($('battleEffects')),expected)&&$('battleEffects').hidden===!expected.length,'전투 배지도 같은 상태/빈 상태 숨김');
         ok([...$('schoolEffects').querySelectorAll('.effect-chip')].every(e=>{const focus=e.dataset.kind==='focus',d=(focus?SCHOOLS:RESONANCES).find(d=>d.id===e.dataset.effect);const tr=focus?focusTier(d.id):0;return e.querySelector('span').textContent===(focus?'집중':'공명')+' · '+d.name&&e.querySelector('.effect-desc').textContent===(focus?tr+'단계 · '+FOCUS_FX[d.id].slice(0,tr).join(' · '):RES_FX[d.id])}),'칩: 활성 이름 + 집중/공명 효과 설명');
       }
-      S.best=63;setLoadout(['swords','frostcut']);buildBook();S.best=64;uiTick();ok(shown($('schoolEffects')).includes('resonance:abyss_frost'),'해금 순간 uiTick에서 공명 칩 자동 갱신');
+      S.best=OB(63);setLoadout(['swords','frostcut']);buildBook();S.best=OB(64);uiTick();ok(shown($('schoolEffects')).includes('resonance:abyss_frost'),'해금 순간 uiTick에서 공명 칩 자동 갱신');
       ok(!$('schoolCards').querySelector('[data-skill="icedragon"]').classList.contains('locked'),'해금 순간 카드 잠금 자동 갱신');
       $('recommendBtn').click();ok(equal(S.loadout,recommendLoadout())&&$('recommendBtn').closest('.formation'),'추천 버튼을 편성 영역으로 이동/동작 유지');
-      for(const [before,after,text] of [[2,3,'새 계열: 심연'],[59,60,'새 계열: 빙정'],[71,72,'빙정 완성 · 집중 가능']]){reset(before);S.best=after;BN={text:'새 스킬 해금',t:0,dur:2};uiTick();ok(BN?.text===text,'계열 해금 배너: '+text);BN=null;uiTick();ok(!BN,'같은 해금을 반복 안내하지 않음')}
-      reset(2);S.best=9;BN=null;uiTick();const notices=[BN.text];while(schoolNotices.length){BN=null;uiTick();notices.push(BN.text)}ok(equal(notices,['새 계열: 심연','새 계열: 진홍','새 계열: 월식','새 계열: 업화']),'여러 해금은 순서대로 안내');
-      reset(72);ok(!BN&&schoolNotices.length===0,'이미 해금된 저장을 불러와도 배너 재생 없음');
-      reset(59);S.stage=59;S.kills=KPS-1;kill();uiTick();ok(S.best===60&&BN?.text==='새 계열: 빙정','실제 몬스터 처치/해금 경로에서도 계열 배너 표시');
+      for(const [before,after,text] of [[2,3,'새 계열: 심연'],[59,60,'새 계열: 빙정'],[71,72,'빙정 완성 · 집중 가능']]){reset(OB(before));S.best=OB(after);BN={text:'새 스킬 해금',t:0,dur:2};uiTick();ok(BN?.text===text,'계열 해금 배너: '+text);BN=null;uiTick();ok(!BN,'같은 해금을 반복 안내하지 않음')}
+      reset(OB(2));S.best=OB(9);BN=null;uiTick();const notices=[BN.text];while(schoolNotices.length){BN=null;uiTick();notices.push(BN.text)}ok(equal(notices,['새 계열: 심연','새 계열: 진홍','새 계열: 월식','새 계열: 업화']),'여러 해금은 순서대로 안내');
+      reset(OB(72));ok(!BN&&schoolNotices.length===0,'이미 해금된 저장을 불러와도 배너 재생 없음');
+      reset(skOf('frostcut').unlock-1);S.stage=skOf('frostcut').unlock-1;S.kills=KPS-1;kill();uiTick();ok(S.best===skOf('frostcut').unlock&&BN?.text==='새 계열: 빙정','실제 몬스터 처치/해금 경로에서도 계열 배너 표시');
     }finally{reset();m=null;spawnT=100}
   });
 
@@ -576,7 +577,7 @@
 
   section('계열 전용 각성기 · 천체 창례 · 천벌 병기 · 업화 명왕');
   guard('계열 전용 각성기',()=>{
-    const data=[['celestial','verdant',50,44,5,5],['judgment','storm',60,46,5.5,4],['hellking','hellfire',70,48,6,4]],hit=skillHit,damage=deal,random=Math.random;
+    const data=[['celestial','verdant',140,44,5,5],['judgment','storm',160,46,5.5,4],['hellking','hellfire',185,48,6,4]],hit=skillHit,damage=deal,random=Math.random;
     let hits=[],dealt=0;
     const reset=()=>{S=fresh();S.best=999;S.auto=false;S.sound=false;setLoadout([]);ST=stats();ST.atk=100;ST.sk=1;ST.cc=0;CH=null;BI=null;BF=null;CUT=null;BN=null;FX=[];P=[];T=[];B=[];PR=[];C=[];relicQ=[];shieldOn=null;stop=slowT=castLock=frenzyT=circleT=desat=0;gauge=0;lastCast=pendingCombo=null;spawnT=100;miniQ=0;h.stun=0;atkT=1e6;verdantCD=0;
       m=makeMonster(1);m.state='fight';m.x=monX;m.sh=0;m.hp=m.max=1e12;hits=[];dealt=0;for(const s of SK)cds[s.id]=0};
@@ -604,7 +605,7 @@
         reset();S.awkSel=id;setLoadout([s.pairs[0]]);ST.atk=100;ST.sk=1;ST.cc=0;gauge=100;castAwaken();settle(360);
         ok(!isFocusAwk()&&Math.abs(dealt-100*base)<1e-6,id+': 한 쌍만 편성하면 집중 보너스 없음');
         reset();S.best=1;gauge=43;const mastery=JSON.stringify(S.mastery);ok(previewAwk(a),id+': 잠긴 각성기 시연');settle(360);
-        ok(hits.every(h=>h.pm===.1)&&Math.abs(dealt-10*base)<1e-6&&Math.abs(gauge-(43+(count-1)*.12+2))<1e-6&&S.awakes===0&&JSON.stringify(S.mastery)===mastery,id+': 시연 0.1배/게이지 소비 없음/기존 적중 충전/숙련 보존');
+        ok(hits.every(h=>h.pm===.1)&&Math.abs(dealt-10*base)<1e-6&&Math.abs(gauge-(43+(count-1)*.12+BAL.skillGauge))<1e-6&&S.awakes===0&&JSON.stringify(S.mastery)===mastery,id+': 시연 0.1배/게이지 소비 없음/기존 적중 충전/숙련 보존');
         reset();a.fn(.1);m=null;settle(360);ok(FX.length===0&&castLock<=0,id+': 발동 직후 대상 소멸 안전');
         reset();m=null;a.fn(.1);settle(360);ok(FX.length===0&&castLock<=0,id+': 대상 없는 직접 시연도 안전');
         // 전용 FX만 분리해 팔레트·입자 예산·예약 이벤트·지속 흑백을 검증한다.
@@ -618,7 +619,7 @@
         ok(locked&&gray,id+': 매 프레임 시전 잠금/필요 구간 흑백 유지');ok(hits.length===count,id+': 이벤트 중복 적중 없음');
         skillHit=function(mult,pm,x,y,o){hits.push({mult,pm,...o});return hit(mult,pm,x,y,o)};
       }
-      reset();S.best=59;S.stage=59;S.kills=KPS-1;schoolSeenState=null;uiTick();kill();uiTick();ok(BN?.text==='새 계열: 빙정','STAGE 60 동시 해금: 계열 안내 우선');BN=null;uiTick();ok(BN?.text==='새 각성기 해금'&&BN.sub.includes('천벌 병기'),'동시 해금: 각성기 안내도 잃지 않고 다음 배너로 표시');
+      reset();S.best=S.stage=skOf('frostcut').unlock-1;S.kills=KPS-1;schoolSeenState=null;uiTick();kill();uiTick();ok(BN?.text==='새 계열: 빙정','STAGE 60 동시 해금: 계열 안내 우선');BN=null;uiTick();ok(BN?.text==='새 각성기 해금'&&BN.sub.includes('천벌 병기'),'동시 해금: 각성기 안내도 잃지 않고 다음 배너로 표시');
     }finally{skillHit=hit;deal=damage;Math.random=random;reset();m=null;buildBar();buildBook()}
   });
 
@@ -698,7 +699,7 @@
       // 6. 질풍신 (storm_verdant) 검증
       reset();setLoadout(['dash','orb']);gauge=10;cds.dash=0;cds.neon=0;
       cast(skOf('dash'));castLock=0;cast(skOf('neon'));
-      ok(gauge>=10+20+5,'질풍신: 연계기 발동 시 각성 게이지 +5 추가 충전');
+      ok(gauge>=10+BAL.comboGauge+5,'질풍신: 연계기 발동 시 각성 게이지 +5 추가 충전');
 
       // 7. 역린혈공 (verdant_crimson) 막기/패링 4종 및 피해 증폭 검증
       reset();setLoadout(['orb','breath']);bloodBuffT=0;
@@ -719,6 +720,24 @@
         ok(Math.abs(buffCombo-normCombo*1.2)<1e-4,'역린혈공: 버프 지속 중 연계기 피해 +20%');
       }finally{Math.random=origR;ST=stats()}
     }finally{reset();m=null;buildBar();buildBook()}
+  });
+
+  section('해금 배치 v2 · 예전 저장 보호');
+  guard('해금 배치 v2',()=>{
+    try{
+      const oldU=OLD_UNLOCK,newU=NEW_UNLOCK,byOld=[...SK].sort((a,b)=>a.unlock-b.unlock);
+      ok(oldU.length===SK.length&&newU.length===SK.length&&byOld.every((s,i)=>s.unlock===newU[i]),'새 해금표가 스킬 순서와 1:1');
+      ok(newU.every((v,i)=>!i||v>newU[i-1]),'새 해금 스테이지는 엄격히 증가');
+      for(const a of AWK)ok(unlockFloorOf(a.id==='thousand'?1:{circle:15,dragon:25,inferno:35,frostcrown:45,celestial:50,judgment:60,hellking:70}[a.id])>=a.unlock,a.id+': 옛 해금 위치를 환산하면 새 해금 이상');
+      for(const b of [1,2,9,21,30,47,63,71,72,120]){load({best:b,gold:5});const lost=SK.filter((s,i)=>oldU[i]<=b&&!unlocked(s));
+        ok(!lost.length&&S.unlockV===2,'예전 저장 STAGE '+b+': 이미 연 스킬 유지'+(lost.length?' '+lost.map(s=>s.id):''))}
+      load({best:30,gold:5});const floor=S.unlockFloor;ok(floor===unlockFloorOf(30)&&floor>30,'예전 저장 바닥값 환산');
+      load(JSON.parse(JSON.stringify(S)));ok(S.unlockFloor===floor,'새 형식으로 다시 불러와도 바닥값 유지(재환산 없음)');
+      load({best:30,gold:5,unlockV:2});ok(!S.unlockFloor,'새 저장은 바닥값 없이 새 해금표 그대로');
+      S=fresh();ok(S.unlockV===2&&S.unlockFloor===0&&ub()===1,'새 게임은 바닥값 0');
+      S.best=31;S.maxStage=31;S.unlockFloor=90;Object.assign(S,{gold:0,stage:1,kills:0,maxStage:1,farm:false,farmKills:0,lv:freshLv()});ok(S.unlockFloor===90&&ub()===90,'환생 필드 초기화에 바닥값 포함 안 됨');
+      ok(BAL.hpG===1.3&&BAL.comboGauge===12,'밸런스 v2 수치(체력 증가율 1.3, 연계 게이지 12)');
+    }finally{S=fresh();S.best=999;S.gold=1e300;S.auto=false;S.sound=false;ST=stats();m=null;spawnT=100;buildBar();buildBook()}
   });
 
   section('정리');

@@ -777,7 +777,7 @@ function buildSchoolCards(){
     card.className='school-card';card.dataset.school=s.id;card.style.setProperty('--c',s.c);
     card.innerHTML=`<button type="button" class="school-toggle" id="school-toggle-${s.id}" aria-expanded="${open}" aria-controls="school-body-${s.id}"><span class="school-heading"><b>${s.name}</b><small>${skills.filter(unlocked).length}/4 해금 · ${open?'접기':'펼치기'}</small></span><span class="school-icons">`+
       skills.map(sk=>`<span class="school-skill${unlocked(sk)?'':' locked'}" data-skill="${sk.id}" title="${sk.name}${unlocked(sk)?'':' · STAGE '+sk.unlock}" aria-label="${sk.name}${unlocked(sk)?'':' · 잠금 · STAGE '+sk.unlock}">${IC[sk.id]}${unlocked(sk)?'':`<span class="school-lock" aria-hidden="true">🔒${sk.unlock}</span>`}</span>`).join('')+
-      `</span><span class="school-meta"><span class="school-awakening">전용 각성기 · ${a?a.name+(S.best<a.unlock?' (STAGE '+a.unlock+')':''):'미정'}</span><span class="school-neighbors">공명 이웃 · ${neighbors.join(' · ')}</span></span></button><div class="school-body" id="school-body-${s.id}" role="region" aria-labelledby="school-toggle-${s.id}"${open?'':' hidden'}></div>`;
+      `</span><span class="school-meta"><span class="school-awakening">전용 각성기 · ${a?a.name+(ub()<a.unlock?' (STAGE '+a.unlock+')':''):'미정'}</span><span class="school-neighbors">공명 이웃 · ${neighbors.join(' · ')}</span></span></button><div class="school-body" id="school-body-${s.id}" role="region" aria-labelledby="school-toggle-${s.id}"${open?'':' hidden'}></div>`;
     card.querySelector('.school-toggle').addEventListener('click',()=>{schoolOpen=schoolOpen===s.id?null:s.id;buildSchoolCards();$('school-toggle-'+s.id).focus()});cards.appendChild(card);
     if(open){card.querySelector('.school-body').appendChild(book);book.hidden=false}
   }
@@ -809,11 +809,11 @@ $('closePairPicker').addEventListener('click',()=>$('pairPicker').close());
 $('pairPicker').addEventListener('click',e=>{if(e.target===$('pairPicker'))$('pairPicker').close()});
 $('pairPicker').addEventListener('close',()=>{const slot=loadoutPickerSlot;loadoutPickerSlot=null;if(slot!==null)$('loadoutGrid').children[Math.min(slot,S.loadout.length)]?.focus()});
 function watchSchoolUnlocks(){
-  if(schoolSeenState!==S||S.best<schoolSeenBest){schoolSeenState=S;schoolSeenBest=S.best;schoolNotices=[];return}
-  if(S.best>schoolSeenBest){for(const s of SCHOOLS){const stages=schoolSkills(s).map(sk=>sk.unlock),first=Math.min(...stages),full=Math.max(...stages);
-      if(first>schoolSeenBest&&first<=S.best)schoolNotices.push({stage:first,text:'새 계열: '+s.name,sub:'계열 카드에서 스킬을 확인하세요',c:s.c});
-      if(full>schoolSeenBest&&full<=S.best)schoolNotices.push({stage:full,text:s.name+' 완성 · 집중 가능',sub:'두 연계 쌍을 편성하면 집중이 켜집니다',c:s.c})}
-    schoolNotices.sort((a,b)=>a.stage-b.stage);schoolSeenBest=S.best}
+  if(schoolSeenState!==S||ub()<schoolSeenBest){schoolSeenState=S;schoolSeenBest=ub();schoolNotices=[];return}
+  if(ub()>schoolSeenBest){for(const s of SCHOOLS){const stages=schoolSkills(s).map(sk=>sk.unlock),first=Math.min(...stages),full=Math.max(...stages);
+      if(first>schoolSeenBest&&first<=ub())schoolNotices.push({stage:first,text:'새 계열: '+s.name,sub:'계열 카드에서 스킬을 확인하세요',c:s.c});
+      if(full>schoolSeenBest&&full<=ub())schoolNotices.push({stage:full,text:s.name+' 완성 · 집중 가능',sub:'두 연계 쌍을 편성하면 집중이 켜집니다',c:s.c})}
+    schoolNotices.sort((a,b)=>a.stage-b.stage);schoolSeenBest=ub()}
   if(schoolNotices.length&&(!BN||BN.text==='새 스킬 해금'||BN.text==='새 각성기 해금')){const n=schoolNotices.shift();if(BN?.text==='새 각성기 해금')schoolNotices.push({text:BN.text,sub:BN.sub,c:BN.color});banner(n.text,n.sub,n.c,2.2)}
 }
 function barOrder(){const o=[];for(const id of S.equip){const c=comboOf(id);if(c)for(const sid of [c.a,c.b]){const s=skOf(sid);if(equipped(s)&&!o.includes(s))o.push(s)}}return o}
@@ -1089,7 +1089,7 @@ function drawRain(){
 function awkHTML(s){
   if(!unlocked(s))return'';const B=br(s.id),D=BR[s.id];
   if(B)return `<div class="brs">${['a','b'].map(k=>`<button type="button" data-br="${k}" class="${B===k?'on':''}">${k.toUpperCase()} · ${D[k][0]}</button>`).join('')}</div><small class="brd">${D[B][1]}</small>`;
-  if(S.best>=awkReq(s))return `<button type="button" class="awkbuy">스킬 각성 <i class="coin"></i>${fmt(awkCost(s))}</button><small class="brd">${D.a[0]} / ${D.b[0]} 중 선택</small>`;
+  if(ub()>=awkReq(s))return `<button type="button" class="awkbuy">스킬 각성 <i class="coin"></i>${fmt(awkCost(s))}</button><small class="brd">${D.a[0]} / ${D.b[0]} 중 선택</small>`;
   return `<small class="brd dim">STAGE ${awkReq(s)}에 각성 가능 · ${D.a[0]} / ${D.b[0]}</small>`;
 }
 
@@ -1106,7 +1106,7 @@ function chUI(){
 /* ================= awakening picker ================= */
 function buildAwk(){
   const el=$('awks');if(!el)return;el.innerHTML='';const sel=awkSel();
-  for(const a of AWK){const lk=S.best<a.unlock,on=sel.id===a.id,r=document.createElement('div');r.className='bk'+(lk?' locked':'');r.style.setProperty('--c',a.c);
+  for(const a of AWK){const lk=ub()<a.unlock,on=sel.id===a.id,r=document.createElement('div');r.className='bk'+(lk?' locked':'');r.style.setProperty('--c',a.c);
     r.innerHTML=`<i></i><div><b>${a.name}</b><small>${a.d}</small></div><div class="st">${lk?'STAGE '+a.unlock:''}<span class="btns">${lk?'':`<button type="button" class="eq${on?' on':''}">${on?'선택됨':'선택'}</button>`}<button type="button" class="pv">시연</button></span></div>`;
     const eb=r.querySelector('.eq');if(eb&&!on)eb.addEventListener('click',()=>{S.awkSel=a.id;sfx.link();buildBar();buildAwk();save()});
     r.querySelector('.pv').addEventListener('click',()=>{ensureAudio();if(!previewAwk(a))banner('지금은 시연할 수 없음','몬스터와 싸우는 중에 다시 눌러 주세요','#9d95c4',1.4)});

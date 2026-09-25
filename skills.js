@@ -688,12 +688,12 @@ const RESONANCES=[
 ];
 // 저장에는 안정적인 시작 스킬 id를 최대 4개 보관한다. 빈 편성도 그대로 유지한다.
 function cleanLoadout(ids){return [...new Set((Array.isArray(ids)?ids:[]).filter(id=>COMBOS.some(c=>c.a===id)))].slice(0,4)}
-function schoolState(loadout=S.loadout,best=S.best){
+function schoolState(loadout=S.loadout,best=ub()){
   const counts=Object.fromEntries(SCHOOLS.map(s=>[s.id,0]));
   for(const id of cleanLoadout(loadout)){const c=COMBOS.find(c=>c.a===id);if([c.a,c.b].every(id=>skOf(id).unlock<=best))counts[c.school]++}
   return{counts,focus:SCHOOLS.filter(s=>counts[s.id]===2).map(s=>s.id),resonance:RESONANCES.filter(r=>counts[r.a]>0&&counts[r.b]>0).map(r=>r.id)};
 }
-function recommendLoadout(best=S.best,keep=[]){
+function recommendLoadout(best=ub(),keep=[]){
   const fixed=cleanLoadout(keep),pool=COMBOS.filter(c=>!fixed.includes(c.a)&&[c.a,c.b].some(id=>skOf(id).unlock<=best)),n=Math.min(4-fixed.length,pool.length);
   let result=fixed,bestScore=[-1,-1,-1];
   const visit=(i,picked)=>{if(picked.length===n){const ids=fixed.concat(picked),st=schoolState(ids,best),skills=ids.map(id=>COMBOS.find(c=>c.a===id)).flatMap(c=>[c.a,c.b]);
@@ -707,7 +707,7 @@ function syncEquip(){S.loadout=cleanLoadout(S.loadout);S.equip=S.loadout.flatMap
 function restoreLoadout(raw){
   if(Array.isArray(raw?.loadout))S.loadout=cleanLoadout(raw.loadout);
   else{const equip=Array.isArray(raw?.equip)?raw.equip:[],inferred=equip.map(id=>comboOf(id)?.a);
-    S.loadout=recommendLoadout(S.best,cleanLoadout(inferred))}
+    S.loadout=recommendLoadout(ub(),cleanLoadout(inferred))}
   syncEquip();
 }
 function setLoadout(ids){S.loadout=cleanLoadout(ids);syncEquip()}
@@ -861,37 +861,37 @@ const IC={
 };
 const SK=[
   {id:'dash',name:'원소 질주',unlock:1,cd:8,c:'#7fe3ff',fn:castDash,d:'빙결·화염·대지·질풍을 번갈아 두르고 적을 꿰뚫는다.'},
-  {id:'swords',name:'심연 비검',unlock:3,cd:13,c:'#9b6bff',fn:castSwords,d:'곁에 보랏빛 검이 떠올라 차례로 날아가 박힌 뒤, 한꺼번에 터진다.'},
-  {id:'breath',name:'마룡 숨결',unlock:5,cd:20,c:'#ff3d8b',fn:castBreath,d:'힘을 모아 분홍빛 파괴 광선을 내뿜는다.'},
-  {id:'shadow',name:'그림자 분신',unlock:8,cd:24,c:'#5a7bff',fn:castShadow,d:'그림자들이 차례로 벤 뒤 가시로 솟아오른다.'},
-  {id:'cannon',name:'진홍 대포',unlock:11,cd:22,c:'#ff4f5e',fn:castCannon,d:'기계 대포를 꺼내 한 발. 붉은 살점 같은 폭발이 부풀어 오른다.'},
-  {id:'eclipse',name:'일식',unlock:14,cd:32,c:'#e8e8ff',fn:castEclipse,d:'검은 태양이 적을 끌어올리고 검은 번개로 무너진다.'},
-  {id:'neon',name:'네온 연무',unlock:17,cd:20,c:'#ff4fd8',fn:castNeon,d:'분홍 리본 궤적을 그리며 적 주위를 휘감아 연속으로 벤다.'},
-  {id:'shield',name:'결정 방패',unlock:20,cd:26,c:'#b7a6ff',fn:castShield,d:'방패가 보스 공격을 막고, 파편이 거대한 검이 되어 내리꽂힌다. 막아내면 피해 1.5배. 자동 스킬이면 보스 공격에 맞춰 발동.'},
-  {id:'demon',name:'악귀 변신',unlock:23,cd:45,c:'#ff5fa8',fn:castDemon,buff:1,d:'일정 시간 공격 속도 2배, 베기마다 참격파가 날아간다.'},
-  {id:'orb',name:'녹광 구체',unlock:26,cd:28,c:'#7dff5a',fn:castOrb,d:'초록 구체에 몸을 싸고 돌진해 노란 불꽃 돔으로 터진다.'},
-  {id:'portal',name:'차원문',unlock:30,cd:30,c:'#c9b8ff',fn:castPortal,d:'적 뒤에 가시 돋친 차원문을 열어 빨아들였다가 뱉어낸다.'},
-  {id:'beast',name:'괴수 돌진',unlock:34,cd:30,c:'#ff3d8b',fn:castBeast,d:'가면 쓴 괴수를 불러내 검은 폭발과 함께 들이받는다.'},
-  {id:'whip',name:'화염 채찍',unlock:9,cd:14,c:'#ff8a2a',fn:castWhip,d:'불꽃 사슬로 두 번 후려친 뒤 적을 휘감아 끌어당겨 내리꽂는다.'},
-  {id:'dslash',name:'악마 참격파',unlock:12,cd:12,c:'#ff5fb0',fn:castDSlash,d:'분홍 초승달 참격파를 연달아 날리고, 마지막에 X자로 교차시킨다.'},
-  {id:'hands',name:'그림자 손아귀',unlock:18,cd:22,c:'#a58bff',fn:castHands,d:'땅에서 검은 손들이 솟아 적을 붙잡는다. 붙잡힌 동안 받는 피해 +30%.'},
-  {id:'skulls',name:'망령 해골',unlock:21,cd:16,c:'#ff6fb5',fn:castSkulls,d:'불타는 해골 망령들이 적을 쫓아가 차례로 폭발한다.'},
-  {id:'archers',name:'망령 궁수대',unlock:27,cd:18,c:'#7fd8ff',fn:castArchers,d:'푸른 유령 궁수 셋이 일제 사격하고, 마지막에 굵은 화살 한 발을 꽂는다.'},
-  {id:'wolf',name:'그림자 늑대',unlock:32,cd:20,c:'#6f8cff',fn:castWolf,d:'그림자가 늑대로 변해 적 주위를 튀어 다니며 물어뜯고 할퀸다.'},
-  {id:'sniper',name:'녹광 저격',unlock:36,cd:24,c:'#7dff5a',fn:castSniper,d:'링을 겹쳐 힘을 모은 뒤 화면 끝까지 뻗는 초록 레이저 한 발.'},
-  {id:'upper',name:'진홍 승천격',unlock:40,cd:22,c:'#ff4f5e',fn:castUpper,d:'올려 베어 적을 띄우고, 공중에서 연타한 뒤 땅으로 내리꽂는다.'},
-  {id:'spear',name:'뇌창 투척',unlock:44,cd:18,c:'#ffe853',fn:castSpear,d:'번개로 벼려낸 창을 던져 적에게 꽂고, 잔류 전격으로 연쇄 감전시킨다.'},
-  {id:'thunder',name:'천뢰 낙하',unlock:48,cd:24,c:'#5ce1e6',fn:castThunder,d:'먹구름이 드리우고 하늘에서 거대한 낙뢰가 연달아 내리꽂힌다.'},
-  {id:'gravity',name:'중력 구속',unlock:52,cd:20,c:'#c9c6df',fn:castGravity,d:'검은 구체가 파편을 빨아들이고 적을 땅에 짓누른다. 연계 가능 중에는 구체가 남고, 연계가 끊기면 붕괴한다.'},
-  {id:'meteor',name:'운석 낙하',unlock:56,cd:26,c:'#ff9470',fn:castMeteor,d:'붉게 갈라진 하늘에서 불타는 운석이 대각선으로 낙하한다. 중력 구속 뒤에는 남은 구체로 휘어져 천붕을 일으킨다.'},
-  {id:'frostcut',name:'서리 월참',unlock:60,cd:22,c:'#61DCF3',fn:castFrostcut,d:'얼음 검의 초승달 참격이 적을 베고 바닥 가시 3개를 남긴다. 백룡 돌진으로 이어 가시를 깨뜨린다.'},
-  {id:'icedragon',name:'백룡 돌진',unlock:64,cd:28,c:'#61DCF3',fn:castIcedragon,d:'하얀 얼음 용이 적을 관통한다. 서리 월참의 가시가 남아 있으면 같은 가시를 파괴해 빙룡쇄파가 된다.'},
-  {id:'iceflower',name:'빙화 장벽',unlock:68,cd:24,c:'#61DCF3',fn:castIceflower,d:'공격용 결정 꽃잎 6개를 펼쳐 적을 벤다. 남은 꽃잎은 동결 나선에 흡수된다.'},
-  {id:'frostspiral',name:'동결 나선',unlock:72,cd:30,c:'#61DCF3',fn:castFrostspiral,d:'나선형 냉기가 적을 휘감아 빙정을 터뜨린다. 빙화 장벽의 꽃잎 6개를 흡수하면 만화빙정이 된다.'},
+  {id:'swords',name:'심연 비검',unlock:5,cd:13,c:'#9b6bff',fn:castSwords,d:'곁에 보랏빛 검이 떠올라 차례로 날아가 박힌 뒤, 한꺼번에 터진다.'},
+  {id:'breath',name:'마룡 숨결',unlock:10,cd:20,c:'#ff3d8b',fn:castBreath,d:'힘을 모아 분홍빛 파괴 광선을 내뿜는다.'},
+  {id:'shadow',name:'그림자 분신',unlock:15,cd:24,c:'#5a7bff',fn:castShadow,d:'그림자들이 차례로 벤 뒤 가시로 솟아오른다.'},
+  {id:'cannon',name:'진홍 대포',unlock:26,cd:22,c:'#ff4f5e',fn:castCannon,d:'기계 대포를 꺼내 한 발. 붉은 살점 같은 폭발이 부풀어 오른다.'},
+  {id:'eclipse',name:'일식',unlock:38,cd:32,c:'#e8e8ff',fn:castEclipse,d:'검은 태양이 적을 끌어올리고 검은 번개로 무너진다.'},
+  {id:'neon',name:'네온 연무',unlock:45,cd:20,c:'#ff4fd8',fn:castNeon,d:'분홍 리본 궤적을 그리며 적 주위를 휘감아 연속으로 벤다.'},
+  {id:'shield',name:'결정 방패',unlock:60,cd:26,c:'#b7a6ff',fn:castShield,d:'방패가 보스 공격을 막고, 파편이 거대한 검이 되어 내리꽂힌다. 막아내면 피해 1.5배. 자동 스킬이면 보스 공격에 맞춰 발동.'},
+  {id:'demon',name:'악귀 변신',unlock:76,cd:45,c:'#ff5fa8',fn:castDemon,buff:1,d:'일정 시간 공격 속도 2배, 베기마다 참격파가 날아간다.'},
+  {id:'orb',name:'녹광 구체',unlock:84,cd:28,c:'#7dff5a',fn:castOrb,d:'초록 구체에 몸을 싸고 돌진해 노란 불꽃 돔으로 터진다.'},
+  {id:'portal',name:'차원문',unlock:96,cd:30,c:'#c9b8ff',fn:castPortal,d:'적 뒤에 가시 돋친 차원문을 열어 빨아들였다가 뱉어낸다.'},
+  {id:'beast',name:'괴수 돌진',unlock:108,cd:30,c:'#ff3d8b',fn:castBeast,d:'가면 쓴 괴수를 불러내 검은 폭발과 함께 들이받는다.'},
+  {id:'whip',name:'화염 채찍',unlock:20,cd:14,c:'#ff8a2a',fn:castWhip,d:'불꽃 사슬로 두 번 후려친 뒤 적을 휘감아 끌어당겨 내리꽂는다.'},
+  {id:'dslash',name:'악마 참격파',unlock:32,cd:12,c:'#ff5fb0',fn:castDSlash,d:'분홍 초승달 참격파를 연달아 날리고, 마지막에 X자로 교차시킨다.'},
+  {id:'hands',name:'그림자 손아귀',unlock:52,cd:22,c:'#a58bff',fn:castHands,d:'땅에서 검은 손들이 솟아 적을 붙잡는다. 붙잡힌 동안 받는 피해 +30%.'},
+  {id:'skulls',name:'망령 해골',unlock:68,cd:16,c:'#ff6fb5',fn:castSkulls,d:'불타는 해골 망령들이 적을 쫓아가 차례로 폭발한다.'},
+  {id:'archers',name:'망령 궁수대',unlock:90,cd:18,c:'#7fd8ff',fn:castArchers,d:'푸른 유령 궁수 셋이 일제 사격하고, 마지막에 굵은 화살 한 발을 꽂는다.'},
+  {id:'wolf',name:'그림자 늑대',unlock:102,cd:20,c:'#6f8cff',fn:castWolf,d:'그림자가 늑대로 변해 적 주위를 튀어 다니며 물어뜯고 할퀸다.'},
+  {id:'sniper',name:'녹광 저격',unlock:114,cd:24,c:'#7dff5a',fn:castSniper,d:'링을 겹쳐 힘을 모은 뒤 화면 끝까지 뻗는 초록 레이저 한 발.'},
+  {id:'upper',name:'진홍 승천격',unlock:120,cd:22,c:'#ff4f5e',fn:castUpper,d:'올려 베어 적을 띄우고, 공중에서 연타한 뒤 땅으로 내리꽂는다.'},
+  {id:'spear',name:'뇌창 투척',unlock:128,cd:18,c:'#ffe853',fn:castSpear,d:'번개로 벼려낸 창을 던져 적에게 꽂고, 잔류 전격으로 연쇄 감전시킨다.'},
+  {id:'thunder',name:'천뢰 낙하',unlock:136,cd:24,c:'#5ce1e6',fn:castThunder,d:'먹구름이 드리우고 하늘에서 거대한 낙뢰가 연달아 내리꽂힌다.'},
+  {id:'gravity',name:'중력 구속',unlock:144,cd:20,c:'#c9c6df',fn:castGravity,d:'검은 구체가 파편을 빨아들이고 적을 땅에 짓누른다. 연계 가능 중에는 구체가 남고, 연계가 끊기면 붕괴한다.'},
+  {id:'meteor',name:'운석 낙하',unlock:152,cd:26,c:'#ff9470',fn:castMeteor,d:'붉게 갈라진 하늘에서 불타는 운석이 대각선으로 낙하한다. 중력 구속 뒤에는 남은 구체로 휘어져 천붕을 일으킨다.'},
+  {id:'frostcut',name:'서리 월참',unlock:160,cd:22,c:'#61DCF3',fn:castFrostcut,d:'얼음 검의 초승달 참격이 적을 베고 바닥 가시 3개를 남긴다. 백룡 돌진으로 이어 가시를 깨뜨린다.'},
+  {id:'icedragon',name:'백룡 돌진',unlock:170,cd:28,c:'#61DCF3',fn:castIcedragon,d:'하얀 얼음 용이 적을 관통한다. 서리 월참의 가시가 남아 있으면 같은 가시를 파괴해 빙룡쇄파가 된다.'},
+  {id:'iceflower',name:'빙화 장벽',unlock:180,cd:24,c:'#61DCF3',fn:castIceflower,d:'공격용 결정 꽃잎 6개를 펼쳐 적을 벤다. 남은 꽃잎은 동결 나선에 흡수된다.'},
+  {id:'frostspiral',name:'동결 나선',unlock:190,cd:30,c:'#61DCF3',fn:castFrostspiral,d:'나선형 냉기가 적을 휘감아 빙정을 터뜨린다. 빙화 장벽의 꽃잎 6개를 흡수하면 만화빙정이 된다.'},
 ];
 SK.sort((a,b)=>a.unlock-b.unlock);
 const cds={};SK.forEach(s=>cds[s.id]=0);
-const unlocked=s=>S.best>=s.unlock;
+const unlocked=s=>ub()>=s.unlock;
 const equipped=s=>Array.isArray(S.equip)&&S.equip.includes(s.id);
 function canCast(s){return fighting()&&(s.buff?frenzyT<=0:castLock<=0)}
 const PRIME_CD=3;            // 시작 스킬을 쓰면 짝 스킬 재사용 대기가 이 값 이하로 줄어든다
@@ -902,7 +902,7 @@ function cast(s,preview){
   if(!preview){if(!unlocked(s)||cds[s.id]>0||sealed(s))return false;cds[s.id]=s.cd*ST.cdm*(BR[s.id]&&BR[s.id].gen&&br(s.id)==='b'?.7:1);
     const cb=COMBOS.find(c=>lastCast&&c.a===lastCast.id&&c.b===s.id&&gt-lastCast.t<comboWin()&&(!c.keep||c.keep.get()));
     if(cb){pendingCombo=cb;sfx.link();
-      cds[cb.a]*=.5;gauge=Math.min(100,gauge+20*ST.gg);
+      cds[cb.a]*=.5;gauge=Math.min(100,gauge+BAL.comboGauge*ST.gg);
       addMastery(cb.school,3);
       if(focusTier('eclipse')>=2){
         later(.2,()=>{if(fighting()){const c=mCenter(m);P.push({t:'ghost',x:heroX+50*U,y:groundY-45*U,vx:200*U,vy:0,life:.4,max:.4,color:'#9a7bff'});
@@ -982,7 +982,7 @@ const awkReq=s=>s.unlock+8;
 const awkCost=s=>goldDrop(s.unlock+12)*40;
 const sealed=s=>hasMod('seal')&&S.equip.indexOf(s.id)>1;
 function buyAwk(s){
-  if(br(s.id)||S.best<awkReq(s))return false;const c=awkCost(s);
+  if(br(s.id)||ub()<awkReq(s))return false;const c=awkCost(s);
   if(S.gold<c){banner('골드가 부족합니다',fmt(c)+' 골드가 필요해요','#9d95c4',1.3);return false}
   S.gold-=c;dispGold=S.gold;S.awk[s.id]='a';
   P.push({t:'ring',x:heroX,y:groundY-50*U,r0:10*U,r1:180*U,w:8*U,life:.5,max:.5,color:s.c});flash(.3);sfx.fanfare();
@@ -1774,13 +1774,13 @@ function drawCircleBuff(){
 }
 const AWK=[
   {id:'thousand',name:'천검멸',unlock:1,c:'#ff2a3a',fn:awkThousand,d:'세상이 흑백으로 멈추고, 붉은 참격 수십 줄이 한꺼번에 터진다.'},
-  {id:'circle',name:'암흑 마법진',unlock:15,c:'#b89aff',fn:awkCircle,d:'거대한 마법진과 검은 결정이 적을 짓누르고, 12초 동안 모든 스킬 재사용 대기가 2배 빨라진다.'},
-  {id:'dragon',name:'그림자 용',unlock:25,c:'#5a7bff',fn:pm=>castDragon(pm*2.5),d:'먹물로 된 용이 하늘을 휘감고 내려와 적을 물어뜯는다.'},
-  {id:'inferno',name:'염마 강림',unlock:35,c:'#ff8a2a',fn:pm=>castInferno(pm*2.5),d:'불꽃 마왕을 불러내 거대한 화염 기둥을 일으킨다.'},
-  {id:'frostcrown',name:'영원의 설관',unlock:45,c:'#61DCF3',fn:awkFrostcrown,d:'얼음 검과 여섯 결정의 설관을 세운다. 검을 휘감던 백룡이 내려꽂혀 거대한 빙정 가시를 터뜨린다.'},
-  {id:'celestial',name:'천체 창례',unlock:50,c:'#7DFF5A',fn:awkCelestial,d:'거대한 천체를 갈라 녹광 궤도로 압축하고, 검은 핵에서 백색 폭발을 일으킨다.'},
-  {id:'judgment',name:'천벌 병기',unlock:60,c:'#FFD45B',fn:awkJudgment,d:'하늘에 세 집속 고리를 펼친다. 거대한 번개 창이 고리를 관통해 지면을 분쇄한다.'},
-  {id:'hellking',name:'업화 명왕',unlock:70,c:'#FFA05A',fn:awkHellking,d:'검은 불꽃 군주가 세 병기를 펼쳐 내리친다. 주황 업화와 흰 절단선이 전장을 뒤덮는다.'},
+  {id:'circle',name:'암흑 마법진',unlock:40,c:'#b89aff',fn:awkCircle,d:'거대한 마법진과 검은 결정이 적을 짓누르고, 12초 동안 모든 스킬 재사용 대기가 2배 빨라진다.'},
+  {id:'dragon',name:'그림자 용',unlock:81,c:'#5a7bff',fn:pm=>castDragon(pm*2.5),d:'먹물로 된 용이 하늘을 휘감고 내려와 적을 물어뜯는다.'},
+  {id:'inferno',name:'염마 강림',unlock:111,c:'#ff8a2a',fn:pm=>castInferno(pm*2.5),d:'불꽃 마왕을 불러내 거대한 화염 기둥을 일으킨다.'},
+  {id:'frostcrown',name:'영원의 설관',unlock:130,c:'#61DCF3',fn:awkFrostcrown,d:'얼음 검과 여섯 결정의 설관을 세운다. 검을 휘감던 백룡이 내려꽂혀 거대한 빙정 가시를 터뜨린다.'},
+  {id:'celestial',name:'천체 창례',unlock:140,c:'#7DFF5A',fn:awkCelestial,d:'거대한 천체를 갈라 녹광 궤도로 압축하고, 검은 핵에서 백색 폭발을 일으킨다.'},
+  {id:'judgment',name:'천벌 병기',unlock:160,c:'#FFD45B',fn:awkJudgment,d:'하늘에 세 집속 고리를 펼친다. 거대한 번개 창이 고리를 관통해 지면을 분쇄한다.'},
+  {id:'hellking',name:'업화 명왕',unlock:185,c:'#FFA05A',fn:awkHellking,d:'검은 불꽃 군주가 세 병기를 펼쳐 내리친다. 주황 업화와 흰 절단선이 전장을 뒤덮는다.'},
 ];
 const AWK_IC={
   celestial:'<svg viewBox="0 0 32 32"><circle cx="16" cy="13" r="9" fill="#77808C" stroke="#235C48"/><path d="M13 5l4 8-5 3 8 6" fill="none" stroke="#05070B" stroke-width="2"/><ellipse cx="16" cy="22" rx="14" ry="5" fill="none" stroke="#7DFF5A" stroke-width="2"/><circle cx="16" cy="22" r="4" fill="#05070B" stroke="#FFFFFF"/></svg>',
@@ -1790,7 +1790,7 @@ const AWK_IC={
   thousand:'<svg viewBox="0 0 32 32"><path d="M16 2l2 11 11-2-9 6 6 10-10-7-10 7 6-10-9-6 11 2z" fill="#ff2a3a" stroke="#fff" stroke-width="1"/></svg>',
   circle:'<svg viewBox="0 0 32 32"><ellipse cx="16" cy="16" rx="14" ry="14" fill="none" stroke="#b89aff" stroke-width="1.6"/><path d="M16 4l10.4 18H5.6zM16 28L5.6 10h20.8z" fill="none" stroke="#e0d4ff" stroke-width="1.4"/></svg>',
 };
-const awkSel=()=>{const a=AWK.find(x=>x.id===S.awkSel);return a&&S.best>=a.unlock?a:AWK[0]};
+const awkSel=()=>{const a=AWK.find(x=>x.id===S.awkSel);return a&&ub()>=a.unlock?a:AWK[0]};
 const awkIcon=a=>AWK_IC[a.id]||IC[a.id];
 function castAwaken(){if(gauge<100||!fighting()||castLock>0)return false;gauge=0;S.awakes++;awkSel().fn(1);return true}
 function previewAwk(a){if(!fighting()||castLock>0)return false;a.fn(.1);return true}

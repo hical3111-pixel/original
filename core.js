@@ -24,10 +24,10 @@ const KEY='blade-road-v1';
 const freshLv=()=>({atk:0,spd:0,crit:0,critd:0,skill:0,spirit:0,archer:0,mage:0,greed:0});
 const fresh=()=>({gold:0,stage:1,kills:0,maxStage:1,best:1,farm:false,farmKills:0,lv:freshLv(),souls:0,auto:true,sound:true,t:Date.now(),totalKills:0,
   relics:{},ach:{},title:'',loadout:['dash'],equip:['dash','neon'],maxCombo:0,bossKills:0,parries:0,legends:0,rebirths:0,combos:0,awakes:0,eclBoss:0,pulls:0,
-  awk:{},daily:{key:'',done:false},dailyWins:0,phase2:0,awkSel:'thousand',codex:{},
+  awk:{},daily:{key:'',done:false},dailyWins:0,phase2:0,awkSel:'thousand',codex:{},unlockFloor:0,unlockV:2,
   mastery:{crimson:0,eclipse:0,verdant:0,abyss:0,storm:0,hellfire:0,frost:0}});
 let S=fresh();
-function load(d){try{const raw=d||JSON.parse(localStorage.getItem(KEY)||'null');if(raw){S=Object.assign(fresh(),raw);S.lv=Object.assign(freshLv(),raw.lv||{});S.relics=Object.assign({},raw.relics||{});S.ach=Object.assign({},raw.ach||{});S.awk=Object.assign({},raw.awk||{});S.daily=Object.assign({key:'',done:false},raw.daily||{});S.codex=Object.assign({},raw.codex||{});S.mastery=Object.assign({crimson:0,eclipse:0,verdant:0,abyss:0,storm:0,hellfire:0,frost:0},raw.mastery||{});restoreLoadout(raw)}}catch(e){}}
+function load(d){try{const raw=d||JSON.parse(localStorage.getItem(KEY)||'null');if(raw){S=Object.assign(fresh(),raw);if(!raw.unlockV){S.unlockFloor=unlockFloorOf(raw.best||1);S.unlockV=2}S.lv=Object.assign(freshLv(),raw.lv||{});S.relics=Object.assign({},raw.relics||{});S.ach=Object.assign({},raw.ach||{});S.awk=Object.assign({},raw.awk||{});S.daily=Object.assign({key:'',done:false},raw.daily||{});S.codex=Object.assign({},raw.codex||{});S.mastery=Object.assign({crimson:0,eclipse:0,verdant:0,abyss:0,storm:0,hellfire:0,frost:0},raw.mastery||{});restoreLoadout(raw)}}catch(e){}}
 function save(){S.t=Date.now();const out=CH?Object.assign({},S,CH.saved):S;try{localStorage.setItem(KEY,JSON.stringify(out))}catch(e){}}
 
 /* ================= daily challenge ================= */
@@ -54,8 +54,14 @@ function chMul(src,crit,o){if(!CH)return 1;let k=1;
 
 const KPS=8;
 const isBoss=s=>s%5===0;
-const monHp=s=>12*Math.pow(1.2,s-1);
-const goldDrop=s=>4*Math.pow(1.19,s-1);
+// 밸런스 수치는 여기 한곳에 모은다(성장 곡선 시뮬레이션이 이 값을 바꿔 가며 측정한다)
+const BAL={hpG:1.3,goldG:1.19,comboGauge:12,skillGauge:1.2};
+// 해금 기준 스테이지. 예전 저장(해금 기준 v1)은 그때 도달했던 위치를 새 기준으로 환산해 S.unlockFloor에 두어, 이미 연 스킬이 다시 잠기지 않게 한다.
+const OLD_UNLOCK=[1,3,5,8,9,11,12,14,17,18,20,21,23,26,27,30,32,34,36,40,44,48,52,56,60,64,68,72],NEW_UNLOCK=[1,5,10,15,20,26,32,38,45,52,60,68,76,84,90,96,102,108,114,120,128,136,144,152,160,170,180,190];
+function unlockFloorOf(best){for(let i=1;i<OLD_UNLOCK.length;i++)if(best<OLD_UNLOCK[i]){const a=OLD_UNLOCK[i-1],b=OLD_UNLOCK[i];return Math.floor(NEW_UNLOCK[i-1]+(best-a)/(b-a)*(NEW_UNLOCK[i]-NEW_UNLOCK[i-1]))}return 9999}
+const ub=()=>Math.max(S.best,S.unlockFloor||0);
+const monHp=s=>12*Math.pow(BAL.hpG,s-1);
+const goldDrop=s=>4*Math.pow(BAL.goldG,s-1);
 const ZONES=['황혼 협곡','심연 숲','불꽃 광산','서리 성채'];
 const PAL=[
   ['#0b0820','#2a1748','#7a2d55','#3a1f55','#241641','#140f28','#ff9a7a'],
@@ -355,7 +361,7 @@ function deal(d,crit,src,x,y,o={}){
   else if(crit&&!light){stop=Math.max(stop,.075);addTrauma(.32);zoom+=.045*FXS;flash(.18,'255,150,210')}
   else if(light)addTrauma(.04);
   else{stop=Math.max(stop,.028);addTrauma(.1)}
-  gauge=Math.min(100,gauge+(src==='hero'||src==='tap'?.5:light?.12:src==='skill'?2:.3)*ST.gg);
+  gauge=Math.min(100,gauge+(src==='hero'||src==='tap'?.5:light?.12:src==='skill'?BAL.skillGauge:.3)*ST.gg);
   if(o.crack)addCrack(x,y,o.crack>1);
   if(m.hp<=0)kill(m.boss?getFinisherInfo(src,o,crit):null);
 }
@@ -445,8 +451,9 @@ function kill(fin){
     else{S.kills++;if(S.kills>=KPS){S.stage++;S.kills=0;stageBanner()}}
   }
   S.maxStage=Math.max(S.maxStage,S.stage);S.best=Math.max(S.best,S.stage);
-  for(const s of SK)if(s.unlock>prevBest&&s.unlock<=S.best){banner('새 스킬 해금',s.name,s.c,2.2);sfx.chime();autoEquipPair(s.id);buildBar();buildBook()}
-  for(const a of AWK)if(a.unlock>prevBest&&a.unlock<=S.best){banner('새 각성기 해금',a.name+' · 패널에서 선택하세요',a.c,2.4);sfx.chime();buildBook()}
+  const prevUb=Math.max(prevBest,S.unlockFloor||0),nowUb=ub();
+  for(const s of SK)if(s.unlock>prevUb&&s.unlock<=nowUb){banner('새 스킬 해금',s.name,s.c,2.2);sfx.chime();autoEquipPair(s.id);buildBar();buildBook()}
+  for(const a of AWK)if(a.unlock>prevUb&&a.unlock<=nowUb){banner('새 각성기 해금',a.name+' · 패널에서 선택하세요',a.c,2.4);sfx.chime();buildBook()}
   stageUI();
 }
 
