@@ -69,6 +69,16 @@
       const totalMult=shadowHits.reduce((n,h)=>n+h.mult,0);
       ok(shadowHits.length===4&&Math.abs(totalMult-expected)<1e-8&&shadowHits.every(h=>h.pm===.1&&h.sid==='shadow')&&shadowHits.at(-1)?.heavy&&shadowHits.at(-1)?.name==='그림자 분신','그림자 분신: 4타 피해 총합 '+(expected.toFixed(1))+'배(2x3+3.6) / pm=0.1 / sid / 강타 라벨');
     }finally{skillHit=hitS;S.lv.skill=0}
+    // 진홍 대포(cannon) 피해 총합 검증: (6 + TR * 1.2) = 6.0배 (기본)
+    const hitC=skillHit;let cannonHits=[];
+    try{
+      skillHit=function(mult,pm,x,y,o){cannonHits.push({mult,pm,...o});return hitC(mult,pm,x,y,o)};
+      toFight();m.hp=m.max=1e15;castLock=0;frenzyT=0;S.lv.skill=0;cannonHits=[];
+      cast(skOf('cannon'),true);settle(100);
+      const expected=6.0;
+      const totalMult=cannonHits.reduce((n,h)=>n+h.mult,0);
+      ok(cannonHits.length===1&&Math.abs(totalMult-expected)<1e-8&&cannonHits.every(h=>h.pm===.1&&h.sid==='cannon')&&cannonHits[0]?.heavy&&cannonHits[0]?.name==='진홍 포격','진홍 대포: 1타 피해 총합 '+(expected.toFixed(1))+'배 / pm=0.1 / sid / 강타 라벨');
+    }finally{skillHit=hitC;S.lv.skill=0}
   });
 
   section('연계기');
