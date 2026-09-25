@@ -59,6 +59,16 @@
         ok(whipHits.at(-1)?.heavy&&whipHits.at(-1)?.name==='화염 채찍','화염 채찍 마지막 강타 라벨');
       }
     }finally{skillHit=hitW;S.lv.skill=0}
+    // 그림자 분신(shadow) 피해 총합 및 타수 검증: 2.0 * N + 3.6 (기본 9.6배)
+    const hitS=skillHit;let shadowHits=[];
+    try{
+      skillHit=function(mult,pm,x,y,o){shadowHits.push({mult,pm,...o});return hitS(mult,pm,x,y,o)};
+      toFight();m.hp=m.max=1e15;castLock=0;frenzyT=0;S.lv.skill=0;shadowHits=[];
+      cast(skOf('shadow'),true);settle(120);
+      const expected=2*3+3.6;
+      const totalMult=shadowHits.reduce((n,h)=>n+h.mult,0);
+      ok(shadowHits.length===4&&Math.abs(totalMult-expected)<1e-8&&shadowHits.every(h=>h.pm===.1&&h.sid==='shadow')&&shadowHits.at(-1)?.heavy&&shadowHits.at(-1)?.name==='그림자 분신','그림자 분신: 4타 피해 총합 '+(expected.toFixed(1))+'배(2x3+3.6) / pm=0.1 / sid / 강타 라벨');
+    }finally{skillHit=hitS;S.lv.skill=0}
   });
 
   section('연계기');
