@@ -261,7 +261,7 @@ function update(rdt){
   for(let i=0;i<steps;i++){updateWorld(rdt*ts*speed/steps,rdt/steps);if(stop>0)break}
 }
 function updateWorld(dt,realDt){
-  gt+=dt;
+  gt+=dt;tickSchoolAudio();
   dimT=0;tintA=0;
 
   for(const s of SK)cds[s.id]=Math.max(0,cds[s.id]-dt*(circleT>0?2:1));if(circleT>0)circleT-=dt;
@@ -1003,8 +1003,9 @@ $('pull').addEventListener('click',()=>{ensureAudio();const c=pullCost();if(S.go
   S.gold-=c;S.pulls++;dispGold=S.gold;relicQ.push({x:(heroX+monX)/2,boss:false});uiTick(true)});
 $('retry').addEventListener('click',()=>{ensureAudio();retryBoss()});
 $('autoSk').addEventListener('change',e=>{S.auto=e.target.checked;save()});
-$('soundBtn').addEventListener('click',()=>{S.sound=!S.sound;if(S.sound)ensureAudio();soundUI();save()});
-function soundUI(){const b=$('soundBtn');b.textContent=S.sound?'소리 켬':'소리 끔';b.setAttribute('aria-pressed',S.sound)}
+$('soundBtn').addEventListener('click',()=>{S.sound=!S.sound;if(S.sound)ensureAudio();audioVolume();soundUI();save()});
+$('volume').addEventListener('input',e=>{S.volume=soundVolume(Number(e.target.value));audioVolume();$('volumeValue').textContent=S.volume+'%';save()});
+function soundUI(){ $('volume').value=S.volume;$('volumeValue').textContent=S.volume+'%';const b=$('soundBtn');b.textContent=S.sound?'소리 켬':'소리 끔';b.setAttribute('aria-pressed',S.sound)}
 const blessingTime=ms=>{const sec=Math.max(0,Math.ceil(ms/1000));return Math.floor(sec/60)+':'+String(sec%60).padStart(2,'0')};
 function blessingUI(){
   const now=Date.now(),b=S.blessing,speed=gameSpeed(now),fast=blessingActive('haste',now),btn=$('speedBtn');btn.textContent='×'+speed;btn.disabled=false;btn.setAttribute('aria-pressed',S.speed===BAL.speed);btn.setAttribute('aria-label',fast?'신속 축복 중 · '+speed+'배속 · 누르면 '+(speed===3?1:speed+1)+'배속 · 종료 후 '+S.speed+'배속':'전투 '+S.speed+'배속 · 누르면 '+(S.speed===1?BAL.speed:1)+'배속');btn.title=fast?'신속 중 배속 전환(×3→×1→×2) · 종료 후 ×'+S.speed:'전투 배속 전환';
