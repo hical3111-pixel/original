@@ -915,6 +915,48 @@
     }finally{skillHit=originalHit;deal=originalDeal;Math.random=random;cast=originalCast;reset();m=null;buildBook();buildBar()}
   });
 
+  section('태극묵륜 (무계열 수묵 각성기)');
+  guard('태극묵륜',()=>{
+    const reset=()=>{S=fresh();S.best=999;S.auto=false;S.sound=false;ST=stats();CH=null;BI=null;BF=null;CUT=null;BN=null;FX=[];P=[];T=[];B=[];PR=[];C=[];relicQ=[];shieldOn=null;stop=slowT=castLock=frenzyT=circleT=desat=0;gauge=0;lastCast=pendingCombo=null;spawnT=100;miniQ=0;h.stun=0;atkT=1e6;verdantCD=bloodBuffT=0;
+      m=makeMonster(1);m.state='fight';m.x=monX;m.sh=0;m.hp=m.max=1e12;for(const s of SK)cds[s.id]=0};
+    const step=n=>{for(let i=0;i<n;i++)update(1/60)};
+    const originalHit=skillHit,originalDeal=deal;let hits=[];
+    try{
+      skillHit=function(mult,pm,x,y,o){hits.push({mult,pm,...o});return originalHit(mult,pm,x,y,o)};
+      const a=AWK.find(x=>x.id==='taichi');
+      ok(a&&a.name==='태극묵륜'&&a.unlock===235,'태극묵륜 AWK 등록 및 해금 스테이지 235');
+      ok(!SCHOOLS.some(s=>s.awk==='taichi'),'태극묵륜: 무계열 각성기 (SCHOOLS 미소속/집중 보너스 없음)');
+      ok(!!awkIcon(a),'태극묵륜 아이콘 존재');
+      reset();S.awkSel=a.id;S.best=234;S.unlockFloor=0;ok(awkSel().id==='thousand','태극묵륜 234 잠금 (해금 전 실전 선택 차단)');
+      S.unlockFloor=235;ok(awkSel()===a,'태극묵륜 ub 235 해금');
+      for(const [tr,lv] of [[0,0],[1,5],[2,10],[3,20]]){
+        reset();S.lv.skill=lv;ST=stats();ST.cc=0;hits=[];S.awkSel=a.id;gauge=100;
+        ok(castAwaken()&&gauge===0&&CUT.name===a.name,'태극묵륜 TR '+tr+' 발동/컷인');step(330);
+        const expected=48+6*tr;
+        const totalMult=hits.reduce((n,h)=>n+h.mult,0);
+        ok(Math.abs(totalMult-expected)<1e-8&&hits.every(h=>h.pm===1&&h.sid==='taichi'),'태극묵륜 TR '+tr+' 피해 '+(expected.toFixed(1))+'배 (양의개천 이하)');
+        ok(hits.at(-1)?.heavy&&hits.at(-1)?.crack===2&&hits.at(-1)?.name==='태극묵륜','태극묵륜 TR '+tr+' 마지막 강타/균열');
+      }
+      reset();hits=[];a.fn(.1);const awk=FX.find(o=>o.taichi);ok(awk?.dur===2.8,'태극묵륜 화면 연출 2.8초');
+      let grayFrames=0,grayAwk=true;for(let i=0;i<150;i++){const frozen=stop>0;desat=0;update(1/60);if(!frozen&&FX.includes(awk)){grayFrames++;grayAwk=grayAwk&&desat===1}}
+      ok(grayFrames>60&&grayAwk,'태극묵륜 모든 월드 프레임 흑백 유지');
+      step(200);ok(hits.every(h=>h.pm===.1)&&FX.length===0,'태극묵륜 시연 0.1배 및 연출 종료');
+      ok(desat===0,'태극묵륜 종료 후 흑백 복귀 (desat===0)');
+      reset();a.fn(1);m=null;step(330);ok(FX.length===0,'태극묵륜 대상 소멸 안전');
+      reset();let emitted=0,colors=[];const push=P.push;P.push=function(...args){emitted+=args.length;colors.push(...args.map(p=>p.color));return push.apply(this,args)};a.fn(.1);step(330);
+      ok(emitted<=100&&colors.every(col=>INK_COL.includes(col)),'태극묵륜 100개 이하 수묵 입자: '+emitted);delete P.push;
+      reset();const paint=[],fill=ctx.fill,stroke=ctx.stroke;
+      ctx.fill=function(...args){paint.push(this.fillStyle);return fill.apply(this,args)};
+      ctx.stroke=function(...args){paint.push(this.strokeStyle);return stroke.apply(this,args)};
+      try{
+        a.fn(.1);for(let i=0;i<200;i++){update(1/60);if(i%8===0)for(const f of FX)if(f.post)f.post(f)}
+        const allowed=INK_COL.concat('#FFD45B').map(c=>c.toLowerCase());
+        ok(paint.length>0&&paint.every(c=>allowed.includes(String(c).toLowerCase())),'태극묵륜 도형 팔레트 5색+금색만 사용');
+        ok(paint.map(c=>String(c).toLowerCase()).includes('#ffd45b'),'태극묵륜 적중 시 금색 절단선 실제 그림');
+      }finally{ctx.fill=fill;ctx.stroke=stroke}
+    }finally{skillHit=originalHit;deal=originalDeal;reset();m=null;buildBook();buildBar()}
+  });
+
   section('정리');
   guard('정리',()=>{tick(600);ok(FX.length===0,'연출이 끝나지 않고 남아 있음: '+FX.length+'개');ok(castLock<=0,'castLock이 풀리지 않음');ok(desat===0,'흑백(desat)이 풀리지 않고 남아 있음: '+desat)});
 
