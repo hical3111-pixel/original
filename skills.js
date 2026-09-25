@@ -396,35 +396,126 @@ function castShadow(pm){
   });
 }
 
-/* ================= 5. 진홍 대포 ================= */
+/* ================= 5. 진홍 대포 (마귀 포효) ================= */
+const CANNON_PAL=['#05070B','#821E36','#77808C','#ff4f5e','#FFFFFF'];
+
+function drawFiendMask(cx,cy,sc,jawOpen,eyeGlow,alpha){
+  if(alpha<=0||sc<=0)return;
+  ctx.save();ctx.translate(cx,cy);ctx.scale(U*sc,U*sc);ctx.globalAlpha=alpha;
+  // 1. 외곽 검은 바탕 / 뿔 테두리 (#05070B)
+  ctx.fillStyle=CANNON_PAL[0];ctx.beginPath();
+  ctx.moveTo(-16,-20);ctx.bezierCurveTo(-38,-48,-48,-75,-34,-86);ctx.bezierCurveTo(-26,-82,-24,-58,-12,-34);
+  ctx.lineTo(0,-38);ctx.lineTo(12,-34);ctx.bezierCurveTo(24,-58,26,-82,34,-86);ctx.bezierCurveTo(48,-75,38,-48,16,-20);
+  ctx.lineTo(34,0);ctx.lineTo(26,26+jawOpen*16);ctx.lineTo(0,36+jawOpen*20);ctx.lineTo(-26,26+jawOpen*16);ctx.lineTo(-34,0);ctx.closePath();ctx.fill();
+  // 2. 어두운 진홍 (#821E36)
+  ctx.fillStyle=CANNON_PAL[1];ctx.beginPath();
+  ctx.moveTo(-14,-18);ctx.bezierCurveTo(-32,-44,-42,-68,-32,-80);ctx.bezierCurveTo(-26,-76,-22,-54,-10,-32);
+  ctx.lineTo(0,-34);ctx.lineTo(10,-32);ctx.bezierCurveTo(22,-54,26,-76,32,-80);ctx.bezierCurveTo(42,-68,32,-44,14,-18);
+  ctx.lineTo(28,-2);ctx.lineTo(22,22+jawOpen*14);ctx.lineTo(0,30+jawOpen*18);ctx.lineTo(-22,22+jawOpen*14);ctx.lineTo(-28,-2);ctx.closePath();ctx.fill();
+  // 3. 밝은 진홍 윤곽 & 뿔 능선 (#ff4f5e)
+  ctx.strokeStyle=CANNON_PAL[3];ctx.lineWidth=2.5;ctx.beginPath();
+  ctx.moveTo(-28,-76);ctx.quadraticCurveTo(-22,-50,-10,-26);ctx.moveTo(28,-76);ctx.quadraticCurveTo(22,-50,10,-26);
+  ctx.moveTo(-22,-14);ctx.lineTo(-6,-8);ctx.lineTo(0,-12);ctx.lineTo(6,-8);ctx.lineTo(22,-14);ctx.stroke();
+  // 4. 입 (Mouth cavity & teeth)
+  const mouthY=6+jawOpen*6,mouthH=10+jawOpen*22;
+  ctx.fillStyle=CANNON_PAL[0];ctx.beginPath();ctx.ellipse(0,mouthY,18,mouthH*.5,0,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle=CANNON_PAL[4];ctx.beginPath();
+  ctx.moveTo(-14,mouthY-mouthH*.35);ctx.lineTo(-10,mouthY+(jawOpen>.4?4:0));ctx.lineTo(-6,mouthY-mouthH*.35);
+  ctx.lineTo(-2,mouthY-mouthH*.4);ctx.lineTo(0,mouthY-mouthH*.3);ctx.lineTo(2,mouthY-mouthH*.4);
+  ctx.lineTo(6,mouthY-mouthH*.35);ctx.lineTo(10,mouthY+(jawOpen>.4?4:0));ctx.lineTo(14,mouthY-mouthH*.35);ctx.closePath();ctx.fill();
+  if(jawOpen>.25){
+    ctx.beginPath();ctx.moveTo(-12,mouthY+mouthH*.35);ctx.lineTo(-8,mouthY-2);ctx.lineTo(-4,mouthY+mouthH*.35);
+    ctx.lineTo(4,mouthY+mouthH*.35);ctx.lineTo(8,mouthY-2);ctx.lineTo(12,mouthY+mouthH*.35);ctx.closePath();ctx.fill();
+  }
+  // 5. 눈 (Eyes)
+  ctx.fillStyle=eyeGlow?CANNON_PAL[4]:CANNON_PAL[3];ctx.beginPath();
+  ctx.moveTo(-20,-10);ctx.lineTo(-12,-7);ctx.lineTo(-16,-5);ctx.closePath();
+  ctx.moveTo(20,-10);ctx.lineTo(12,-7);ctx.lineTo(16,-5);ctx.closePath();ctx.fill();
+  if(eyeGlow){ctx.save();ctx.globalCompositeOperation='lighter';ctx.fillStyle=CANNON_PAL[4];ctx.fillRect(-17,-8,4,2);ctx.fillRect(13,-8,4,2);ctx.restore()}
+  ctx.restore();
+}
+
+function drawCrimsonBeam(sx,sy,tx,ty,progress,wScale,alpha){
+  if(alpha<=0||progress<=0)return;
+  const ang=Math.atan2(ty-sy,tx-sx),totalLen=Math.hypot(tx-sx,ty-sy),len=totalLen*progress;
+  if(len<=0)return;
+  ctx.save();ctx.translate(sx,sy);ctx.rotate(ang);ctx.globalAlpha=alpha;
+  const w0=18*U*wScale,w1=30*U*wScale;
+  // Layer 1: 검은 외곽 톱니 껍질 (#05070B)
+  ctx.fillStyle=CANNON_PAL[0];ctx.beginPath();
+  ctx.moveTo(0,-w0);ctx.lineTo(len*.3,-w0*1.3);ctx.lineTo(len*.6,-w1*1.1);ctx.lineTo(len,-w1*1.25);
+  ctx.lineTo(len,w1*1.25);ctx.lineTo(len*.6,w1*1.1);ctx.lineTo(len*.3,w0*1.3);ctx.lineTo(0,w0);ctx.closePath();ctx.fill();
+  // Layer 2: 어두운 진홍 (#821E36)
+  ctx.fillStyle=CANNON_PAL[1];ctx.beginPath();
+  ctx.moveTo(0,-w0*.75);ctx.lineTo(len*.5,-w0*.95);ctx.lineTo(len,-w1*.9);ctx.lineTo(len,w1*.9);ctx.lineTo(len*.5,w0*.95);ctx.lineTo(0,w0*.75);ctx.closePath();ctx.fill();
+  // Layer 4: 밝은 진홍 (#ff4f5e)
+  ctx.fillStyle=CANNON_PAL[3];ctx.beginPath();
+  ctx.moveTo(0,-w0*.45);ctx.lineTo(len*.5,-w0*.55);ctx.lineTo(len,-w1*.55);ctx.lineTo(len,w1*.55);ctx.lineTo(len*.5,w0*.55);ctx.lineTo(0,w0*.45);ctx.closePath();ctx.fill();
+  // Layer 5: 순백 코어 (#FFFFFF 가산 합성)
+  ctx.save();ctx.globalCompositeOperation='lighter';ctx.fillStyle=CANNON_PAL[4];ctx.beginPath();
+  ctx.moveTo(0,-w0*.18);ctx.lineTo(len,-w1*.22);ctx.lineTo(len,w1*.22);ctx.lineTo(0,w0*.18);ctx.closePath();ctx.fill();
+  ctx.strokeStyle=CANNON_PAL[3];ctx.lineWidth=2.5*U;
+  for(let x=40*U;x<len-20*U;x+=55*U){ctx.beginPath();ctx.ellipse(x,0,7*U,(w0+(x/len)*(w1-w0))*.85,0,0,Math.PI*2);ctx.stroke()}
+  ctx.restore();ctx.restore();
+}
+
+function drawCrimsonCrescentShockwave(cx,cy,r,rot,alpha){
+  if(alpha<=0||r<=0)return;
+  ctx.save();ctx.translate(cx,cy);ctx.rotate(rot);ctx.scale(U,U);ctx.globalAlpha=alpha;
+  ctx.fillStyle=CANNON_PAL[0];ctx.beginPath();ctx.arc(0,0,r*1.12,-Math.PI*.45,Math.PI*.45);ctx.arc(r*.35,0,r*.88,Math.PI*.45,-Math.PI*.45,true);ctx.closePath();ctx.fill();
+  ctx.fillStyle=CANNON_PAL[1];ctx.beginPath();ctx.arc(0,0,r*1.05,-Math.PI*.42,Math.PI*.42);ctx.arc(r*.3,0,r*.82,Math.PI*.42,-Math.PI*.42,true);ctx.closePath();ctx.fill();
+  ctx.fillStyle=CANNON_PAL[3];ctx.beginPath();ctx.arc(0,0,r,-Math.PI*.38,Math.PI*.38);ctx.arc(r*.25,0,r*.8,Math.PI*.38,-Math.PI*.38,true);ctx.closePath();ctx.fill();
+  ctx.save();ctx.globalCompositeOperation='lighter';ctx.strokeStyle=CANNON_PAL[4];ctx.lineWidth=3.5;ctx.beginPath();ctx.arc(0,0,r*.94,-Math.PI*.32,Math.PI*.32);ctx.stroke();ctx.restore();
+  ctx.fillStyle=CANNON_PAL[2];for(let i=-2;i<=2;i++){const a=i*.28,pr=r*(1.18+Math.abs(i)*.08);ctx.fillRect(Math.cos(a)*pr-4,Math.sin(a)*pr-4,7,7)}
+  ctx.restore();
+}
+
 function castCannon(pm){
   const TR=tier();castLock=2;sfx.charge();
-  const bx=heroX+30*U,by=groundY-58*U;
-  addFX({dur:2.1,kick:0,app:0,up(dt,o){const t=o.t;dimT=Math.max(dimT,.45);h.ang=-.2;h.t=9;
-    o.app=Math.min(1,t/.25)*(t>1.5?Math.max(0,1-(t-1.5)/.3):1);
-    const mx=bx+110*U;
-    if(t>.3&&t<.75&&Math.random()<dt*70){const a=rnd(0,7),r=rnd(60,120)*U,px=mx+Math.cos(a)*r,py=by+Math.sin(a)*r;P.push({t:'dot',x:px,y:py,vx:(mx-px)/.2,vy:(by-py)/.2,g:0,drag:0,size:rnd(2,4)*U,life:.2,max:.2,color:'#ff4f5e'})}
-    at(o,.3,()=>P.push({t:'ring',x:mx,y:by,r0:80*U,r1:6*U,w:4*U,sx:.35,life:.45,max:.45,color:'#ff4f5e'}));
-    at(o,.75,()=>{o.kick=1;sfx.bigboom();addTrauma(.6);flash(.3,'255,90,110');P.push({t:'star',x:mx,y:by,size:120*U,life:.14,max:.14});
-      for(let i=0;i<3;i++)P.push({t:'ring',x:mx+i*22*U,y:by,r0:10*U,r1:(70-i*12)*U,w:5*U,sx:.3,life:.35,max:.35,color:i===1?'#fff':'#ff4f5e'});
-      smoke(mx,by,8,'#55555f',.7);o.shot={t:0}});
+  const c0=m?mCenter(m):{x:monX,y:groundY-50*U};
+  const fx=heroX+55*U,fy=groundY-56*U;
+  addFX({dur:2.1,kick:0,shot:false,hit:false,up(dt,o){
+    const t=o.t;dimT=Math.max(dimT,.45);castLock=Math.max(castLock,.05);h.ang=-.2;h.t=9;
+    const c=m?mCenter(m):c0;o.cx=c.x;o.cy=c.y;
+    const jaw=t<.35?0:clamp((t-.35)/.35,0,1);
+    const mx=fx+16*U,my=fy+(8+jaw*6)*U;o.mx=mx;o.my=my;
+    if(t>.35&&t<.72&&Math.random()<dt*45){
+      const a=rnd(0,7),r=rnd(50,110)*U,px=mx+Math.cos(a)*r,py=my+Math.sin(a)*r;
+      P.push({t:'dot',x:px,y:py,vx:(mx-px)/.18,vy:(my-py)/.18,g:0,drag:0,size:rnd(2,4)*U,life:.18,max:.18,color:CANNON_PAL[3]});
+    }
+    at(o,.36,()=>P.push({t:'ring',x:mx,y:my,r0:75*U,r1:6*U,w:4*U,sx:.35,life:.35,max:.35,color:CANNON_PAL[3]}));
+    at(o,.72,()=>{
+      o.kick=1;o.shot=true;sfx.bigboom();sfx.slash2();addTrauma(.5);flash(.3,'255,90,110');
+      P.push({t:'star',x:mx,y:my,size:110*U,life:.15,max:.15,color:CANNON_PAL[4]});
+      for(let i=0;i<3;i++)P.push({t:'ring',x:mx+i*22*U,y:my,r0:10*U,r1:(65-i*12)*U,w:5*U,sx:.3,life:.32,max:.32,color:i===1?CANNON_PAL[4]:CANNON_PAL[3]});
+    });
     o.kick=Math.max(0,o.kick-dt*4);
-    if(o.shot&&!o.boom){const c=m?mCenter(m):{x:monX,y:by};o.shot.t+=dt;const k=Math.min(1,o.shot.t/.12);o.shot.x=lerp(mx,c.x,k);o.shot.y=lerp(by,c.y,k);
-      if(k>=1){o.boom={x:c.x,y:c.y,t:0,seed:[...Array(12)].map(()=>rnd(0,7))};stop=Math.max(stop,.14);
-        smoke(c.x,groundY-20*U,14,'#141014',1.4);ink(c.x,c.y,20,'#4a0a14');
-        skillHit((6+TR*1.2)*(br('cannon')==='b'?1.7:1),pm,c.x,c.y,{heavy:1,name:'진홍 포격',col:'#ffb3b8',fc:'255,120,140',crack:2,sid:'cannon'})}}
-    if(o.boom)o.boom.t+=dt;
+    at(o,.84,()=>{
+      o.hit=true;stop=Math.max(stop,.14);addTrauma(.6);sfx.boom();sfx.hit(true);
+      P.push({t:'star',x:c.x,y:c.y,size:140*U,life:.18,max:.18,color:CANNON_PAL[4]});
+      P.push({t:'ring',x:c.x,y:groundY,r0:10*U,r1:180*U,w:8*U,sy:.28,life:.45,max:.45,color:CANNON_PAL[3]});
+      for(let i=0;i<8;i++)P.push({t:'shard',x:c.x+rnd(-15,15)*U,y:c.y+rnd(-15,15)*U,vx:rnd(-450,450)*U,vy:rnd(-550,-100)*U,g:1400*U,drag:1,floor:1,size:rnd(4,9)*U,rot:rnd(0,6),vr:rnd(-10,10),life:.8,max:.8,color:i%2?CANNON_PAL[2]:CANNON_PAL[1]});
+      smoke(c.x,groundY-20*U,10,'#141014',1.2);ink(c.x,c.y,12,'#4a0a14');
+      skillHit((6+TR*1.2)*(br('cannon')==='b'?1.7:1),pm,c.x,c.y,{heavy:1,name:'진홍 포격',col:'#ffb3b8',fc:'255,120,140',crack:2,sid:'cannon'});
+    });
   },draw(o){
-    if(o.app>0){ctx.save();ctx.globalAlpha=o.app;ctx.translate(bx-o.kick*20*U,by);ctx.scale(U,U);
-      ctx.fillStyle='#4a4a56';ctx.beginPath();ctx.roundRect(-22,-24,52,48,6);ctx.fill();
-      ctx.fillStyle='#6c6c7a';ctx.beginPath();ctx.roundRect(20,-16,92,32,5);ctx.fill();
-      ctx.fillStyle='#3a3a44';for(const x of [40,70,100])ctx.fillRect(x,-18,6,36);
-      ctx.fillStyle='#ff4f5e';ctx.fillRect(-12,-4,30,3);ctx.fillRect(28,-2,62,2);
-      if(o.t>.3&&o.t<.8){ctx.globalCompositeOperation='lighter';ctx.fillStyle='#ff4f5e';const r=6+18*Math.min(1,(o.t-.3)/.45);ctx.globalAlpha=.8;ctx.beginPath();ctx.arc(114,0,r,0,7);ctx.fill();ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(114,0,r*.45,0,7);ctx.fill()}
-      ctx.restore()}
-    if(o.shot&&!o.boom&&o.shot.x!==undefined){ctx.globalCompositeOperation='lighter';ctx.strokeStyle='#ff4f5e';ctx.lineWidth=10*U;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(bx+110*U,by);ctx.lineTo(o.shot.x,o.shot.y);ctx.stroke();
-      ctx.fillStyle='#fff';ctx.beginPath();ctx.ellipse(o.shot.x,o.shot.y,16*U,8*U,0,0,7);ctx.fill();ctx.globalCompositeOperation='source-over'}
-    if(o.boom)fleshBoom(o.boom,(1+.15*TR)*(br('cannon')==='b'?1.6:1));
+    const t=o.t,maskAlpha=t<1.4?Math.min(1,t/.25):Math.max(0,1-(t-1.4)/.4);
+    const jaw=t<.35?0:t<.72?clamp((t-.35)/.35,0,1):t<1.2?1.2:Math.max(0,1.2-(t-1.2)*2);
+    const eyeGlow=t>.3&&t<1.3,mx=o.mx||(fx+16*U),my=o.my||(fy+8*U),cx=o.cx||c0.x,cy=o.cy||c0.y;
+    if(maskAlpha>0)drawFiendMask(fx-o.kick*18*U,fy,1,jaw,eyeGlow,maskAlpha);
+    if(t>.32&&t<.75){
+      const rSphere=(5+18*easeIn(clamp((t-.32)/.38,0,1)))*U;
+      ctx.save();ctx.globalCompositeOperation='lighter';ctx.fillStyle=CANNON_PAL[3];ctx.beginPath();ctx.arc(mx,my,rSphere,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle=CANNON_PAL[4];ctx.beginPath();ctx.arc(mx,my,rSphere*.45,0,Math.PI*2);ctx.fill();ctx.restore();
+    }
+    if(t>=.72&&t<1.35){
+      const beamProg=clamp((t-.72)/.11,0,1),beamAlpha=t<1.1?1:clamp((1.35-t)/.25,0,1),wScale=t<.8?1:1+Math.sin((t-.8)*25)*.08;
+      drawCrimsonBeam(mx,my,cx+80*U,cy,beamProg,wScale,beamAlpha);
+    }
+    if(t>=.84&&t<1.45){
+      const shockP=clamp((t-.84)/.5,0,1),shockR=(40+easeOut(shockP)*110)*U,shockAlpha=clamp((1.45-t)/.45,0,1),ang=Math.atan2(cy-my,(cx+80*U)-mx);
+      drawCrimsonCrescentShockwave(cx,cy,shockR,ang,shockAlpha);
+    }
   }});
 }
 
