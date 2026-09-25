@@ -194,7 +194,7 @@ function ensureAudio(){
   if(!S.sound)return;
   if(AC){if(AC.state==='suspended')AC.resume();return}
   try{AC=new(window.AudioContext||window.webkitAudioContext)();audioGraph();
-    const len=AC.sampleRate*1.2;noiseBuf=AC.createBuffer(1,len,AC.sampleRate);const d=noiseBuf.getChannelData(0);for(let i=0;i<len;i++)d[i]=Math.random()*2-1;}catch(e){AC=null}
+    const len=AC.sampleRate*1.2;noiseBuf=AC.createBuffer(1,len,AC.sampleRate);const d=noiseBuf.getChannelData(0);for(let i=0;i<len;i++)d[i]=Math.random()*2-1;if(typeof preloadSchoolFiles==='function')preloadSchoolFiles();}catch(e){AC=null}
 }
 function tone(type,f0,f1,dur,vol,delay=0){
   if(schoolSoundContext||!audioRoom())return;const t=AC.currentTime+delay;const o=AC.createOscillator(),g=AC.createGain();

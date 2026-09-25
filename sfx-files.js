@@ -512,6 +512,8 @@ function loadSfx(id,ac=AC){
   })();return entry.promise;
 }
 function warmSchoolFiles(owner){if(!owner||!AC||!S.sound||S.volume===0)return Promise.resolve([]);return Promise.all(['cast','hit','finish'].map(p=>loadSfx(sfxChoice(owner,p))))}
+// 오디오를 켤 때 현재 선택된 파일을 미리 받아 첫 시전부터 파일 소리를 낸다(후보는 수련장에서 필요할 때만).
+function preloadSchoolFiles(ac=AC){if(!ac||!S.sound)return Promise.resolve([]);const ids=new Set();for(const p of Object.values(SFX_SCHOOL))for(const slots of Object.values(p.files||{}))for(const slot of Object.values(slots))ids.add(slot.selected);return Promise.all([...ids].map(id=>loadSfx(id,ac)))}
 function playSfxBuffer(id,buffer,owner,phase){
   const priority=phase==='finish'?2:1;if(!audioRoom(priority))return false;
   const t=AC.currentTime,key='file:'+id;if(t-(thr[key]??-Infinity)<.085)return false;thr[key]=t;
