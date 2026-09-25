@@ -959,14 +959,30 @@ function schoolState(loadout=S.loadout,best=ub()){
   return{counts,focus:SCHOOLS.filter(s=>counts[s.id]===2).map(s=>s.id),resonance:RESONANCES.filter(r=>counts[r.a]>0&&counts[r.b]>0).map(r=>r.id)};
 }
 function recommendLoadout(best=ub(),keep=[]){
-  const fixed=cleanLoadout(keep),pool=COMBOS.filter(c=>!fixed.includes(c.a)&&[c.a,c.b].some(id=>skOf(id).unlock<=best)),n=Math.min(4-fixed.length,pool.length);
-  let result=fixed,bestScore=[-1,-1,-1];
-  const visit=(i,picked)=>{if(picked.length===n){const ids=fixed.concat(picked),st=schoolState(ids,best),skills=ids.map(id=>COMBOS.find(c=>c.a===id)).flatMap(c=>[c.a,c.b]);
-      const score=[st.focus.length+st.resonance.length,Object.values(st.counts).reduce((n,v)=>n+v,0),skills.filter(id=>skOf(id).unlock<=best).length];
-      // 동률이면 완전히 열린 쌍, 열린 스킬 수, 마지막으로 COMBOS의 고정 순서로 결정한다.
-      const diff=score.findIndex((v,j)=>v!==bestScore[j]);if(diff>=0&&score[diff]>bestScore[diff]){bestScore=score;result=ids}return}
-    for(let j=i;j<=pool.length-(n-picked.length);j++)visit(j+1,picked.concat(pool[j].a))};
-  visit(0,[]);return result;
+  const fixed=cleanLoadout(keep),unlocks=new Map(SK.map(s=>[s.id,s.unlock])),groups=SCHOOLS.map(s=>({id:s.id,pool:[],full:0,neighbors:[]})),bySchool=new Map(groups.map(g=>[g.id,g]));
+  let available=0,complete=0,opened=0;
+  COMBOS.forEach((c,index)=>{const g=bySchool.get(c.school),open=Number(unlocks.get(c.a)<=best)+Number(unlocks.get(c.b)<=best);
+    if(fixed.includes(c.a)){g.full+=open===2?1:0;complete+=open===2?1:0;opened+=open}
+    else if(open){g.pool.push({index,open});available++}});
+  for(const r of RESONANCES){const a=bySchool.get(r.a),b=bySchool.get(r.b);a.neighbors.push(b);b.neighbors.push(a)}
+  let score=groups.filter(g=>g.full===2).length+RESONANCES.filter(r=>bySchool.get(r.a).full&&bySchool.get(r.b).full).length;
+  // 같은 계열에서 같은 칸 수면 완성 쌍→열린 스킬→데이터 순으로 한 후보만 남겨도 항상 우월하다.
+  for(const g of groups)g.pool.sort((a,b)=>b.open-a.open||a.index-b.index);
+  const n=Math.min(4-fixed.length,available),tail=Array(groups.length+1).fill(0),picked=[];let result=[],bestScore=[-1,-1,-1];
+  for(let i=groups.length-1;i>=0;i--)tail[i]=tail[i+1]+groups[i].pool.length;
+  const visit=(i,left,points,full,open)=>{
+    if(!left){const candidate=[points,full,open],diff=candidate.findIndex((v,j)=>v!==bestScore[j]);if(diff>=0&&candidate[diff]<bestScore[diff])return;
+      const order=picked.slice().sort((a,b)=>a-b),earlier=order.findIndex((v,j)=>v!==result[j]);
+      if(diff>=0||earlier>=0&&order[earlier]<result[earlier]){bestScore=candidate;result=order}return}
+    if(i===groups.length||tail[i]<left)return;const g=groups[i],before=g.full,mark=picked.length;let f=0,o=0;
+    for(let k=0;k<=Math.min(left,g.pool.length);k++){
+      if(k){const p=g.pool[k-1];picked.push(p.index);f+=p.open===2?1:0;o+=p.open}
+      g.full=before+f;const gain=(g.full===2?1:0)-(before===2?1:0)+(before===0&&g.full>0?g.neighbors.filter(g=>g.full>0).length:0);
+      visit(i+1,left-k,points+gain,full+f,open+o);
+    }
+    g.full=before;picked.length=mark;
+  };
+  visit(0,n,score,complete,opened);return fixed.concat(result.map(i=>COMBOS[i].a));
 }
 function syncEquip(){S.loadout=cleanLoadout(S.loadout);S.equip=S.loadout.flatMap(id=>{const c=COMBOS.find(c=>c.a===id);return[c.a,c.b]});if(typeof stats==='function')ST=stats()}
 function restoreLoadout(raw){
