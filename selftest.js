@@ -1271,6 +1271,9 @@ function referenceLoadout(best=ub(),keep=[]){
   section('진홍·빙정 효과음 · 저장 · 재생 제한');
   guard('효과음',()=>runAudioSelftest(ok,testReset,persistForAudio));
 
+  section('CC0 파일 · 캐시 · 대체음');
+  try{await runFileAudioSelftest(ok)}catch(e){ok(false,'파일 음원 검사: '+e.message)}
+
   section('수련장 별도 문서');
   const labFrame=document.createElement('iframe');labFrame.style.cssText='position:fixed;left:-2000px;width:390px;height:844px';labFrame.src='?lab&selftest';document.body.appendChild(labFrame);
   try{const deadline=performance.now()+25000;while(!labFrame.contentWindow?.__selftest&&performance.now()<deadline)await new Promise(r=>setTimeout(r,25));
