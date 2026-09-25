@@ -24,15 +24,16 @@ const KEY='blade-road-v1';
 // 밸런스 수치는 여기 한곳에 둔다. 축복 시간은 Date.now와 같은 밀리초 단위다.
 const BAL={hpG:1.3,goldG:1.19,comboGauge:8,skillGauge:.8,speed:2,blessSpeed:3,blessPower:2,blessGold:2,blessDuration:30*60*1000,blessCap:2*60*60*1000,blessRecharge:2*60*60*1000,blessCharges:3,blessRitual:3000,taichi:[48,6],
   ink:{twinstroke:[9,1.2,24],whitestep:[13.5,1.8,30],inkrain:[9.5,1.2,26],halfmoon:[14,1.8,32],yinyangsky:[48,6],combo:16,focusHit:4,window:2,crit:.2,markTime:5,markDamage:.15,reset:.2},
-  wuji:{ink_gate:[9,1.2,26],bind:[13.5,1.8,32],talisman:[9.5,1.2,28],backflow:[14,1.8,34],wuji_return:[48,6],combo:16,wardCD:25,talismanCount:5,talismanHit:1,refund:1,taihe:.2,counter:5}};
+  wuji:{ink_gate:[9,1.2,26],bind:[13.5,1.8,32],talisman:[9.5,1.2,28],backflow:[14,1.8,34],wuji_return:[48,6],combo:16,wardCD:25,talismanCount:5,talismanHit:1,refund:1,taihe:.2,counter:5},
+  spirit:{koi:[9,1.2,28],crane:[13.5,1.8,34],turtle:[9.5,1.2,30],tiger:[14,1.8,36],ascension:[48,6],combo:16,focusHit:4,stunFactor:.5,gauge:10,frozenHit:4,critHit:2,critCD:3}};
 const freshBlessing=()=>({charges:BAL.blessCharges,chargeAt:Date.now(),until:{power:0,gold:0,haste:0},pending:null});
 const freshLv=()=>({atk:0,spd:0,crit:0,critd:0,skill:0,spirit:0,archer:0,mage:0,greed:0});
 const fresh=()=>({gold:0,stage:1,kills:0,maxStage:1,best:1,farm:false,farmKills:0,lv:freshLv(),souls:0,auto:true,sound:true,speed:1,hasteSpeed:3,blessing:freshBlessing(),t:Date.now(),totalKills:0,
   relics:{},ach:{},title:'',loadout:['dash'],equip:['dash','neon'],maxCombo:0,bossKills:0,parries:0,legends:0,rebirths:0,combos:0,awakes:0,eclBoss:0,pulls:0,
   awk:{},daily:{key:'',done:false},dailyWins:0,phase2:0,awkSel:'thousand',codex:{},unlockFloor:0,unlockV:2,
-  mastery:{crimson:0,eclipse:0,verdant:0,abyss:0,storm:0,hellfire:0,frost:0,ink:0,wuji:0}});
+  mastery:{crimson:0,eclipse:0,verdant:0,abyss:0,storm:0,hellfire:0,frost:0,ink:0,wuji:0,spirit:0}});
 let S=fresh();
-function load(d){try{const raw=d||JSON.parse(localStorage.getItem(KEY)||'null');if(raw){S=Object.assign(fresh(),raw);if(!raw.unlockV){S.unlockFloor=unlockFloorOf(raw.best||1);S.unlockV=2}S.unlockFloor=Math.min(S.unlockFloor||0,NEW_UNLOCK[NEW_UNLOCK.length-1]);S.lv=Object.assign(freshLv(),raw.lv||{});S.relics=Object.assign({},raw.relics||{});S.ach=Object.assign({},raw.ach||{});S.awk=Object.assign({},raw.awk||{});S.daily=Object.assign({key:'',done:false},raw.daily||{});S.codex=Object.assign({},raw.codex||{});S.mastery=Object.assign({crimson:0,eclipse:0,verdant:0,abyss:0,storm:0,hellfire:0,frost:0,ink:0,wuji:0},raw.mastery||{});S.speed=raw.speed===BAL.speed?BAL.speed:1;S.hasteSpeed=[1,2,3].includes(raw.hasteSpeed)?raw.hasteSpeed:BAL.blessSpeed;restoreBlessing(raw.blessing);restoreLoadout(raw)}}catch(e){}}
+function load(d){try{const raw=d||JSON.parse(localStorage.getItem(KEY)||'null');if(raw){S=Object.assign(fresh(),raw);if(!raw.unlockV){S.unlockFloor=unlockFloorOf(raw.best||1);S.unlockV=2}S.unlockFloor=Math.min(S.unlockFloor||0,NEW_UNLOCK[NEW_UNLOCK.length-1]);S.lv=Object.assign(freshLv(),raw.lv||{});S.relics=Object.assign({},raw.relics||{});S.ach=Object.assign({},raw.ach||{});S.awk=Object.assign({},raw.awk||{});S.daily=Object.assign({key:'',done:false},raw.daily||{});S.codex=Object.assign({},raw.codex||{});S.mastery=Object.assign({crimson:0,eclipse:0,verdant:0,abyss:0,storm:0,hellfire:0,frost:0,ink:0,wuji:0,spirit:0},raw.mastery||{});S.speed=raw.speed===BAL.speed?BAL.speed:1;S.hasteSpeed=[1,2,3].includes(raw.hasteSpeed)?raw.hasteSpeed:BAL.blessSpeed;restoreBlessing(raw.blessing);restoreLoadout(raw)}}catch(e){}}
 function save(){S.t=Date.now();const out=CH?Object.assign({},S,CH.saved):S;try{localStorage.setItem(KEY,JSON.stringify(out))}catch(e){}}
 
 /* 실제 시각 기준 축복: 충전 잔여분은 보존하고, 가득 찬 동안은 다음 충전을 쌓지 않는다. */
@@ -363,6 +364,7 @@ function deal(d,crit,src,x,y,o={}){
   if(crit&&m&&typeof focusTier==='function'&&focusTier('crimson')>=2){
     m.burn=3;if(!m.burnNotified){m.burnNotified=true;T.push({x:x,y:y-m.rb*U*.6,vx:0,vy:-50*U,text:'화상!',crit:0,label:'',size:22,life:1,max:1,color:'#ff4f5e'})}
   }
+  if(!o._preview)spiritHitEffects(crit,o);
   if(o.sid==='combo'&&heavy&&!o._extra){
     if(typeof focusTier==='function'&&focusTier('crimson')>=3){
       later(.12,()=>{if(fighting()){const c=mCenter(m);sfx.slash2();stop=Math.max(stop,.08);flash(.3,'255,100,100');
@@ -374,7 +376,7 @@ function deal(d,crit,src,x,y,o={}){
       for(let i=0;i<3;i++)later(.1+i*.12,()=>{if(fighting()){const c=mCenter(m),bx=c.x+rnd(-35,35)*U;
         P.push({t:'bolt',pts:genBolt(bx,0,bx,c.y),life:.25,max:.25,color:'#ffe853'});sfx.boom();stop=Math.max(stop,.04);
         if(gv)m.vuln=Math.max(m.vuln||0,2);
-        deal(ST.atk*ST.sk*1.5*(gc?ST.cm:1),gc,'skill',bx,c.y,{light:1,col:'#ffe853',name:'추가 낙뢰',sid:'storm_bolt',_extra:1});
+        deal(ST.atk*ST.sk*1.5*(gc?ST.cm:1),gc,'skill',bx,c.y,{light:1,col:'#ffe853',name:'추가 낙뢰',sid:'storm_bolt',_extra:1,_preview:o._preview});
         if(i===0)T.push({x:c.x,y:(m?mTop(m):c.y)-45*U,vx:0,vy:-50*U,text:'추가 낙뢰!',crit:gc?1:0,label:'',size:22,life:1,max:1,color:'#ffe853'});
         if(gv&&i===0)T.push({x:c.x,y:(m?mTop(m):c.y)-70*U,vx:0,vy:-40*U,text:'속박!',crit:0,label:'',size:18,life:1,max:1,color:'#ffe853'})}});
     }
@@ -438,7 +440,7 @@ function skillHit(mult,pm,x,y,o){
   }
   const isAwk=o&&(o.sid==='awaken'||o.sid==='awk'||(typeof AWK!=='undefined'&&AWK.some(a=>a.id===o.sid)));
   if(isAwk&&typeof isFocusAwk==='function'&&isFocusAwk())mult*=1.5;
-  const target=m;deal(ST.atk*ST.sk*mult*pm*(crit?ST.cm:1)*rnd(.9,1.1),crit,'skill',x,y,o);
+  const target=m;deal(ST.atk*ST.sk*mult*pm*(crit?ST.cm:1)*rnd(.9,1.1),crit,'skill',x,y,Object.assign({},o,{_preview:pm!==1}));
   if(pm===1&&o?.sid==='combo'&&target===m&&fighting()&&hasRes('eclipse_ink')){m.inkMark=BAL.ink.markTime;inkMarkFX(m)}
 }
 function shieldBreak(){

@@ -90,7 +90,7 @@ function resolveHit(p,weight=1,evade=null){
     deal(ST.atk*4*rv('phoenix')*weight,false,'relic',c.x,c.y,{heavy:1,name:'불사조 반격',col:'#ffb040',fc:'255,190,110'});return 'phoenix'}
   if(evade===null?Math.random()<.55:evade){h.dodgeT=0;sfx.whoosh();T.push({x:hx,y:hy-80*U,vx:0,vy:-80*U,text:'회피',crit:0,label:'',size:26,life:.8,max:.8,color:'#e0f6ff'});return 'dodged'}
   if(hasMod('glass')){burst(hx,hy,['#7fe8ff','#fff'],24,1000);chFail('유리 대포 — 기절하고 말았습니다');return}
-  h.stun=weight===1?1.3:Math.max(0,h.stun)+1.3*weight;flash(.5*weight,'255,40,60');addTrauma(.8*weight);sfx.hurt();burst(hx,hy,['#ff2a3a','#fff'],18,900);
+  const stun=1.3*weight*spiritStunFactor();h.stun=weight===1?stun:Math.max(0,h.stun)+stun;flash(.5*weight,'255,40,60');addTrauma(.8*weight);sfx.hurt();burst(hx,hy,['#ff2a3a','#fff'],18,900);
   T.push({x:hx,y:hy-80*U,vx:0,vy:-80*U,text:'기절!',crit:1,label:'',size:36,life:1.1,max:1.1,color:'#ff4f5e'});
   return 'hit';
 }
@@ -120,7 +120,7 @@ function resolveBossOrb(p,g){
     triggerBloodBuff();
     burst(hx,hy,['#ffe066','#fff'],12,600);P.push({t:'ring',x:hx,y:hy,r0:10*U,r1:65*U,w:4*U,life:.25,max:.25,color:'#ffe066'});
     T.push({x:hx,y:hy-50*U,vx:0,vy:-60*U,text:`패링! ${p.orbs.filter(o=>o.result==='parried').length}/${n}`,crit:0,label:'',size:26,life:.32,max:.32,color:'#ffe066'});
-  }else{if(p.evade===undefined&&!rv('phoenix'))p.evade=Math.random()<.55;g.result=resolveHit(g,1/n,p.evade??null);if(g.result==='hit')p.stunTotal=(p.stunTotal||0)+1.3/n}
+  }else{if(p.evade===undefined&&!rv('phoenix'))p.evade=Math.random()<.55;g.result=resolveHit(g,1/n,p.evade??null);if(g.result==='hit')p.stunTotal=(p.stunTotal||0)+1.3/n*spiritStunFactor()}
   if(p.orbs.every(o=>o.res)&&m&&m.pat===p&&fighting()){
     if(p.orbs.every(o=>o.result==='parried'))reflectBossOrbs(p);
     else{const k=p.orbs.filter(o=>o.result==='parried'||o.result==='blocked').length;if(k)banner('추적탄 방어',`${k}/${n}개 방어 · 기절 피해 ${Math.round(k/n*100)}% 감소`,'#c9b8ff',1.3)}}

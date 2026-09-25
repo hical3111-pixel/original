@@ -829,7 +829,9 @@ const COMBOS=[
   {school:'ink',a:'twinstroke',b:'whitestep',name:'양의교차',fn:comboInkCross,col:'#D9DFE5',keep:{get:()=>inkKeep('strokes'),ready:1.2,release:releaseInk},d:'남은 흑백 초승달 획 2개를 백영보 잔상이 통과한다. 원래 획이 교차해 X자로 폭발한다.'},
   {school:'ink',a:'inkrain',b:'halfmoon',name:'묵경반천',fn:comboInkMirror,col:'#D9DFE5',keep:{get:()=>inkKeep('swords'),ready:1.4,release:releaseInk},d:'지면에 박힌 먹검 5개를 반월경이 회수한다. 같은 검이 거울을 통과해 적에게 반사된다.'},
   {school:'wuji',a:'ink_gate',b:'bind',name:'묵문봉인',fn:comboWujiSeal,col:'#D9DFE5',keep:{get:()=>wujiKeep('gates'),ready:1.25,release:releaseWuji},d:'남아 있는 먹문 2개에서 흑백 띠가 뻗어 나온다. 같은 문이 적을 감싸 하나의 봉인으로 닫힌다.'},
-  {school:'wuji',a:'talisman',b:'backflow',name:'백지환류',fn:comboWujiFlow,col:'#D9DFE5',keep:{get:()=>wujiKeep('papers'),ready:1.3,release:releaseWuji},d:'공중에 남은 부적 5장을 먹물 파도가 하나씩 빨아들인다. 부적을 품은 역류가 적을 덮쳐 폭발한다.'}];
+  {school:'wuji',a:'talisman',b:'backflow',name:'백지환류',fn:comboWujiFlow,col:'#D9DFE5',keep:{get:()=>wujiKeep('papers'),ready:1.3,release:releaseWuji},d:'공중에 남은 부적 5장을 먹물 파도가 하나씩 빨아들인다. 부적을 품은 역류가 적을 덮쳐 폭발한다.'},
+  {school:'spirit',a:'koi',b:'crane',name:'어학회천',fn:comboSpiritCrane,col:'#D9DFE5',keep:{get:()=>spiritKeep('trails'),ready:1.25,release:releaseSpirit},d:'흑백 잉어 궤적 2개가 남는다. 백학의 날개가 같은 궤적을 흡수해 교차 돌진한다.'},
+  {school:'spirit',a:'turtle',b:'tiger',name:'현호파진',fn:comboSpiritTiger,col:'#D9DFE5',keep:{get:()=>spiritKeep('plates'),ready:1.3,release:releaseSpirit},d:'현무의 등껍질 판 6개가 남는다. 같은 판이 묵호의 갑옷이 되어 돌진하고 폭발한다.'}];
 /* ================= 계열 · 편성 (A단계: 활성 상태만 계산) ================= */
 const SCHOOLS=[
   {id:'crimson',name:'진홍',c:'#ff4f5e',awk:'inferno'},
@@ -841,6 +843,7 @@ const SCHOOLS=[
   {id:'frost',name:'빙정',c:'#61dcf3',awk:'frostcrown'},
   {id:'ink',name:'음양검결',c:'#D9DFE5',awk:'yinyangsky'},
   {id:'wuji',name:'무극도법',c:'#D9DFE5',awk:'wuji_return'},
+  {id:'spirit',name:'묵령현신',c:'#D9DFE5',awk:'ascension'},
 ].map(s=>({...s,pairs:COMBOS.filter(c=>c.school===s.id).map(c=>c.a)}));
 const RESONANCES=[
   {id:'crimson_hellfire',a:'crimson',b:'hellfire',name:'홍련작'},
@@ -854,6 +857,8 @@ const RESONANCES=[
   {id:'abyss_ink',a:'abyss',b:'ink',name:'현묵'},
   {id:'ink_wuji',a:'ink',b:'wuji',name:'태허도검'},
   {id:'verdant_wuji',a:'verdant',b:'wuji',name:'생무극'},
+  {id:'frost_spirit',a:'frost',b:'spirit',name:'빙령유영'},
+  {id:'crimson_spirit',a:'crimson',b:'spirit',name:'혈호포효'},
 ];
 // 저장에는 안정적인 시작 스킬 id를 최대 4개 보관한다. 빈 편성도 그대로 유지한다.
 function cleanLoadout(ids){return [...new Set((Array.isArray(ids)?ids:[]).filter(id=>COMBOS.some(c=>c.a===id)))].slice(0,4)}
@@ -882,8 +887,9 @@ function restoreLoadout(raw){
 function setLoadout(ids){S.loadout=cleanLoadout(ids);syncEquip()}
 function autoEquipPair(id){const c=comboOf(id);if(c&&S.loadout.length<4&&!S.loadout.includes(c.a))setLoadout(S.loadout.concat(c.a))}
 
-/* ================= 집중 효과 (8계열 × 3단계) & 숙련 ================= */
+/* ================= 집중 효과 (10계열 × 3단계) & 숙련 ================= */
 const FOCUS_FX={
+  spirit:['연계 발동 시 영수 1마리 추가 공격(공격력 ×4)','현무 가호: 보스 공격 기절 시간 -50%','연계 발동 시 각성 게이지 +10'],
   crimson:['연계기 피해 +30%','치명타 시 화상(추가 피해)','연계기 마지막 강타 1회 추가'],
   eclipse:['연계 창 +3초','연계 시 분신 1체가 추가타','연계 창 동안 받는 기절 무효'],
   verdant:['보스 공격 1회를 자동으로 막음(쿨 20초)','막을 때 반사 피해','막을 때 각성 게이지 +15'],
@@ -894,8 +900,10 @@ const FOCUS_FX={
   ink:['연계 발동 시 흑백 일섬 추가타(공격력 ×4)','연계 창 +2초','수묵 스킬의 흑백 연출 중 치명타 확률 +20%p'],
   wuji:['연계 시 먹문 방어 준비: 다음 보스 공격 1회 흡수(쿨 25초)','연계 시 부적 5장 추가 타격(각 공격력 ×1)','연계 시 모든 스킬 쿨타임 -1초'],
 };
-/* ================= 공명 효과 (기존 고리 7쌍 + 수묵 연결 2쌍) ================= */
+/* ================= 공명 효과 (기존 고리 7쌍 + 수묵 연결 6쌍) ================= */
 const RES_FX={
+  frost_spirit:'빙령유영 · 빙결된 적에게 연계기가 적중하면 먹 잉어 추가 공격(공격력 ×4)',
+  crimson_spirit:'혈호포효 · 치명타 시 묵호 발톱 추가 공격(공격력 ×2, 쿨 3초)',
   crimson_hellfire:'연계기 발동 시 적에게 화상 3초(0.5초마다 공격력 ×0.4). 화상 중인 적이 속박 상태면 화상 피해 2배',
   hellfire_eclipse:'연계기 발동 시 적을 속박 2초 + 그림자 분신 추가타(공격력 ×3)',
   eclipse_abyss:'연계 창 +2초, 모든 쿨타임 -8%',
@@ -917,7 +925,7 @@ function isFocusAwk(){if(!S||!S.awkSel)return false;const s=SCHOOLS.find(s=>s.aw
 function triggerResonanceCombo(cb,wasFrz,prevFrz){
   if(!fighting()||!m)return;
   if(focusTier('ink')>=1)inkFocusStrike();
-  triggerWujiFocus();
+  triggerWujiFocus();triggerSpiritFocus();
   if(hasRes('abyss_ink')&&Math.random()<BAL.ink.reset){cds[cb.b]=0;T.push({x:heroX,y:groundY-165*U,vx:0,vy:-45*U,text:'현묵 · 재사용!',crit:0,label:'',size:22,life:1.1,max:1.1,color:'#D9DFE5'})}
   const c=mCenter(m);
   if(hasRes('crimson_hellfire')){
@@ -1078,6 +1086,12 @@ SK.push(
   {id:'bind',name:'양의속박',unlock:250,cd:BAL.wuji.bind[2],c:'#D9DFE5',fn:castWujiBind,d:'흑백 띠로 적을 휘감아 조인다. 축지묵문의 먹문이 남아 있으면 두 문을 닫아 묵문봉인으로 폭발한다.'},
   {id:'talisman',name:'백지귀환',unlock:260,cd:BAL.wuji.talisman[2],c:'#D9DFE5',fn:castTalisman,d:'백지 부적 5장이 적을 스치고 공중에 돌아와 남는다. 역류묵하가 같은 부적을 흡수한다.'},
   {id:'backflow',name:'역류묵하',unlock:270,cd:BAL.wuji.backflow[2],c:'#D9DFE5',fn:castBackflow,d:'거대한 먹물 파도가 역류한다. 남아 있는 백지귀환의 부적 5장을 흡수해 백지환류를 터뜨린다.'}
+);
+SK.push(
+  {id:'koi',name:'쌍어유영',unlock:280,cd:BAL.spirit.koi[2],c:'#D9DFE5',fn:castKoi,d:'흑백 잉어가 적을 감아 베고 궤적 2개를 남긴다. 백학쇄도로 이어 어학회천.'},
+  {id:'crane',name:'백학쇄도',unlock:290,cd:BAL.spirit.crane[2],c:'#D9DFE5',fn:castCrane,d:'커다란 학의 날개가 적을 가로지른다. 남은 잉어 궤적을 흡수해 교차 돌진한다.'},
+  {id:'turtle',name:'현무진',unlock:300,cd:BAL.spirit.turtle[2],c:'#D9DFE5',fn:castTurtle,d:'현무의 먹 등껍질이 솟아 적을 짓누르고 판 6개를 남긴다. 공격 스킬이며 방패 차단은 없다.'},
+  {id:'tiger',name:'묵호출산',unlock:310,cd:BAL.spirit.tiger[2],c:'#D9DFE5',fn:castTiger,d:'먹 호랑이가 도약해 적을 덮친다. 남은 등껍질 판을 갑옷으로 두르고 현호파진을 터뜨린다.'}
 );
 SK.sort((a,b)=>a.unlock-b.unlock);
 const cds={};SK.forEach(s=>cds[s.id]=0);
@@ -2524,3 +2538,122 @@ for(const id of ['ink_gate','bind','talisman','backflow'])BR[id]={a:['현묵','�
 // 기존 각성기 순서는 보존한다. 동시에 추가되는 계열 없는 taichi와 독립된 끝 항목이다.
 AWK.push({id:'wuji_return',name:'무극귀일',unlock:255,c:'#FFD45B',fn:awkWujiReturn,d:'먹으로 만상을 감싼다. 회색 파편이 한 점으로 모이고, 백색 공간이 터진 뒤 작은 빛으로 돌아간다.'});
 AWK_IC.wuji_return='<svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="13" fill="#FFFFFF" stroke="#FFD45B"/><circle cx="16" cy="16" r="5" fill="#05070B"/><path d="M1 16h30M16 1v6m0 18v6" stroke="#77808C"/><circle cx="16" cy="14" r="2" fill="#FFFFFF"/></svg>';
+
+/* ================= 묵령현신 — 붓으로 그린 영수 ================= */
+const SPIRIT_COL=['#05070B','#363F4D','#77808C','#D9DFE5','#FFFFFF'];
+const spiritKeep=kind=>FX.find(o=>o.spiritKind===kind&&!o.collapse&&!o.consumed);
+const spiritPower=(id,tr=tier())=>BAL.spirit[id][0]+BAL.spirit[id][1]*tr;
+function releaseSpirit(o){o.collapse=true;o.dur=o.t+.35}
+function spiritPoly(points,col,edge){ctx.fillStyle=col;ctx.beginPath();points.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.closePath();ctx.fill();if(edge){ctx.strokeStyle=edge;ctx.lineWidth=2;ctx.stroke()}}
+// 큰 몸체, 눈 한 점, 붓 끝 몇 개만 그린다. 털·깃털·비늘 텍스처는 쓰지 않는다.
+function spiritAnimal(kind,x,y,sc=1,a=0,white=false,pose=0){
+  if(sc<=0)return;ctx.save();ctx.translate(x,y);ctx.rotate(a);ctx.scale(U*sc,U*sc);
+  const body=white?SPIRIT_COL[3]:SPIRIT_COL[0],edge=white?SPIRIT_COL[1]:SPIRIT_COL[2],line=white?SPIRIT_COL[0]:SPIRIT_COL[4];
+  if(kind==='koi'){
+    spiritPoly([[-36,0],[-70,-27],[-55,0],[-70,27]],body,edge);ctx.fillStyle=body;ctx.strokeStyle=edge;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(-45,0);ctx.bezierCurveTo(-5,-35,48,-23,57,0);ctx.bezierCurveTo(40,25,-12,26,-45,0);ctx.fill();ctx.stroke();
+    spiritPoly([[-9,-15],[-35,-37],[17,-20]],body);spiritPoly([[-2,15],[-22,32],[25,16]],body);ctx.fillStyle=line;ctx.beginPath();ctx.arc(39,-5,3,0,7);ctx.fill();
+  }else if(kind==='crane'||kind==='phoenix'){
+    const lift=Math.sin(pose)*12;
+    for(const d of [-1,1]){ctx.save();ctx.scale(1,d);spiritPoly([[-22,3],[-70,-36-lift],[-90,-86],[-66,-66],[-60,-99],[-41,-65],[-32,-92],[-15,-55],[20,-12]],body,edge);ctx.restore()}
+    spiritPoly([[-65,8],[-38,-9],[4,-9],[18,-35],[38,-42],[52,-34],[77,-31],[50,-26],[37,-30],[27,-8],[8,10],[-35,15],[-79,27],[-63,13],[-94,15]],body,edge);
+    if(kind==='phoenix')for(let i=0;i<3;i++){ctx.strokeStyle=body;ctx.lineWidth=9-i*2;ctx.beginPath();ctx.moveTo(-35,9);ctx.bezierCurveTo(-105,65+i*10,-150,-60+i*25,-195,25+i*24);ctx.stroke()}
+    ctx.fillStyle=line;ctx.beginPath();ctx.arc(42,-34,2.5,0,7);ctx.fill();
+  }else if(kind==='turtle'){
+    spiritPoly([[-77,15],[-101,44],[-60,34],[-46,17],[39,18],[66,37],[82,32],[66,5],[92,0],[114,7],[108,-9],[81,-18],[66,-10],[42,-37],[-20,-43],[-66,-19]],body,edge);
+    ctx.fillStyle=body;ctx.strokeStyle=edge;ctx.lineWidth=3;ctx.beginPath();ctx.ellipse(-8,-8,73,43,-.05,Math.PI,Math.PI*2);ctx.lineTo(67,15);ctx.lineTo(-79,15);ctx.closePath();ctx.fill();ctx.stroke();ctx.fillStyle=line;ctx.fillRect(99,-6,4,3);
+  }else if(kind==='tiger'){
+    spiritPoly([[-110,5],[-85,-20],[-35,-33],[15,-24],[35,-50],[43,-76],[57,-59],[75,-69],[85,-43],[116,-32],[102,-17],[86,-14],[70,3],[48,7],[104,41],[81,48],[31,20],[-35,13],[-81,45],[-106,43],[-66,6]],body,edge);
+    ctx.strokeStyle=body;ctx.lineWidth=11;ctx.beginPath();ctx.moveTo(-92,-5);ctx.bezierCurveTo(-137,-28,-153,-62,-115,-73);ctx.stroke();ctx.strokeStyle=line;ctx.lineWidth=4;ctx.beginPath();for(let i=0;i<3;i++){ctx.moveTo(-53+i*25,-23);ctx.lineTo(-65+i*25,-5)}ctx.moveTo(75,-35);ctx.lineTo(87,-32);ctx.stroke();
+  }else if(kind==='dragon'){
+    ctx.strokeStyle=body;ctx.lineWidth=32;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(-145,20);ctx.bezierCurveTo(-70,70,-88,-45,-25,-22);ctx.bezierCurveTo(12,8,19,-42,55,-30);ctx.stroke();
+    spiritPoly([[35,-36],[47,-57],[41,-83],[65,-58],[84,-66],[80,-44],[111,-32],[130,-29],[109,-13],[78,-14],[54,1]],body,edge);
+    for(let i=0;i<4;i++)spiritPoly([[-116+i*36,6-i*6],[-126+i*36,-25-i*6],[-104+i*36,-9-i*6]],body);
+    ctx.strokeStyle=line;ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(84,-36);ctx.lineTo(98,-31);ctx.moveTo(113,-22);ctx.quadraticCurveTo(137,-4,143,-19);ctx.stroke();
+  }
+  ctx.globalCompositeOperation='lighter';ctx.strokeStyle=SPIRIT_COL[4];ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(-31,-5);ctx.quadraticCurveTo(-8,-16,15,-6);ctx.stroke();ctx.restore();
+}
+function spiritTrail(x,y,r,a,white,sc=1){
+  if(sc<=0)return;ctx.save();ctx.translate(x,y);ctx.rotate(a);ctx.scale(U*sc,U*sc);
+  for(const [w,col] of [[24,SPIRIT_COL[2]],[20,white?SPIRIT_COL[3]:SPIRIT_COL[0]],[3,SPIRIT_COL[4]]]){ctx.strokeStyle=col;ctx.lineWidth=w;ctx.beginPath();ctx.ellipse(0,0,r,r*.58,0,-2.1,.65);ctx.stroke()}
+  for(let i=0;i<4;i++)spiritPoly([[-r+i*15,-10-i*8],[-r-40+i*15,-20-i*9],[-r+5+i*15,-18-i*8]],white?SPIRIT_COL[4]:SPIRIT_COL[0]);ctx.restore();
+}
+function spiritPlate(x,y,a=0,sc=1){
+  if(sc<=0)return;ctx.save();ctx.translate(x,y);ctx.rotate(a);ctx.scale(U*sc,U*sc);
+  spiritPoly([[-25,-12],[-8,-25],[19,-19],[29,4],[10,24],[-21,18],[-29,0]],SPIRIT_COL[0],SPIRIT_COL[3]);
+  spiritPoly([[-19,-9],[-6,-18],[13,-13],[21,3],[8,17],[-15,13]],SPIRIT_COL[1]);ctx.strokeStyle=SPIRIT_COL[4];ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(-23,-10);ctx.lineTo(-7,-23);ctx.lineTo(16,-18);ctx.stroke();ctx.restore();
+}
+function drawSpiritKeep(o){
+  if(o.consumed)return;const fade=clamp((o.dur-o.t)/.35,0,1);
+  for(const p of o.pieces){if(p.used||o.t<p.born)continue;const c=wujiPoint(p),sc=clamp((o.t-p.born)/.25,0,1)*fade*(p.sc??1);
+    if(o.spiritKind==='trails')spiritTrail(c.x,c.y,112,p.a,p.white,sc);else spiritPlate(c.x,c.y,p.a,sc)}
+}
+function castKoi(pm){
+  const c=m?mCenter(m):{x:monX,y:groundY-60*U},nx=c.x/W,alt=(groundY-c.y)/U,power=spiritPower('koi');castLock=1.25;sfx.dark();
+  const pieces=[0,1].map((i)=>({nx,alt,a:i*Math.PI-.35,white:!!i,born:.15+i*.18}));
+  return addFX({inkSchool:true,spiritKind:'trails',pieces,dur:1.6,up(dt,o){desat=1;if(o.t<1.25){castLock=Math.max(castLock,.05);h.ang=-1.2;h.t=9}
+    for(let i=0;i<2;i++)at(o,.45+i*.4,()=>{wujiBurst(nx*W,groundY-alt*U,8);sfx.slash2();skillHit(power/2,pm,nx*W,groundY-alt*U,{light:!i,heavy:!!i,name:'쌍어유영',sid:'koi',col:SPIRIT_COL[3],fc:'255,255,255'})});
+  },post(o){drawSpiritKeep(o);if(o.t<1.2)for(let i=0;i<2;i++){const a=o.t*5+i*Math.PI,sc=clamp(o.t/.3,0,1)*clamp((1.2-o.t)/.25,0,1);spiritAnimal('koi',nx*W+Math.cos(a)*110*U,groundY-alt*U+Math.sin(a)*65*U,.72*sc,a+Math.PI/2,!!i)}}});
+}
+function castTurtle(pm){
+  const c=m?mCenter(m):{x:monX,y:groundY-60*U},nx=(heroX+c.x)*.5/W,power=spiritPower('turtle');castLock=1.3;sfx.dark();
+  const pieces=Array.from({length:6},(_,i)=>{const a=i*Math.PI/3;return{nx:nx+Math.cos(a)*83*U/W,alt:102+Math.sin(a)*65,a:a*.25,born:.15+i*.06}});
+  return addFX({inkSchool:true,spiritKind:'plates',pieces,dur:1.65,up(dt,o){desat=1;if(o.t<1.3){castLock=Math.max(castLock,.05);h.ang=-1.5;h.t=9}
+    at(o,.65,()=>{wujiBurst(c.x,c.y,20);sfx.boom();skillHit(power,pm,c.x,c.y,{heavy:1,name:'현무진',sid:'turtle',col:SPIRIT_COL[3],fc:'255,255,255'})});
+  },post(o){if(o.t<.95)spiritAnimal('turtle',nx*W,groundY-45*U,1.35*clamp(o.t/.3,0,1)*clamp((.95-o.t)/.3,0,1));if(!o.claimed)drawSpiritKeep(o)}});
+}
+function spiritChargeFX(pm,kind,kept){
+  const tiger=kind==='tiger',id=tiger?'tiger':'crane',name=tiger?'묵호출산':'백학쇄도',comboName=tiger?'현호파진':'어학회천',c=m?mCenter(m):{x:monX,y:groundY-60*U},nx=c.x/W,alt=(groundY-c.y)/U,power=spiritPower(id),dur=2.05;
+  castLock=dur;sfx.roar();if(kept){kept.dur=kept.t+dur+.05;for(const p of kept.pieces){p.snx=p.nx;p.salt=p.alt;p.sa=p.a}}
+  return addFX({inkSchool:true,kept,spiritCharge:kind,dur,up(dt,o){desat=1;castLock=Math.max(castLock,.05);o.x=lerp(heroX+15*U,nx*W+25*U,easeIn(clamp((o.t-.35)/.95,0,1)));
+    if(kept)for(let i=0;i<kept.pieces.length;i++){const p=kept.pieces[i],k=clamp((o.t-.1-i*.025)/.62,0,1),dx=tiger?-65+i*23:0,dy=tiger?alt+33+(i%2)*15:alt;
+      p.nx=lerp(p.snx,(o.x+dx*U)/W,k);p.alt=lerp(p.salt,dy,k);p.a=lerp(p.sa,tiger?-.2:i*Math.PI-.45,k);p.sc=tiger?1-k*.3:1-k*.92;
+      if(k>=1){if(tiger)p.attached=true;else{p.absorbed=true;p.used=true}}}
+    at(o,.82,()=>{sfx.slash2();skillHit(power*.25,pm,nx*W,groundY-alt*U,{light:1,sid:id,col:SPIRIT_COL[3]})});
+    at(o,1.3,()=>{if(kept){kept.consumed=true;kept.pieces.forEach(p=>p.used=true)}wujiBurst(nx*W,groundY-alt*U,48);sfx.bigboom();
+      const mark=T.length;skillHit(power*.75,pm,nx*W,groundY-alt*U,{heavy:1,name,sid:id,col:SPIRIT_COL[3],fc:'255,255,255'});if(kept&&T.length>mark){T[mark].x-=70*U;T[mark].y-=65*U;T[mark].size=26}
+      if(kept)skillHit(BAL.spirit.combo,pm,nx*W,groundY-alt*U,{heavy:1,name:comboName,sid:'combo',col:SPIRIT_COL[4],fc:'255,255,255',crack:2})});
+  },post(o){const x=o.x||heroX,y=groundY-alt*U,f=clamp(o.t/.3,0,1)*clamp((dur-o.t)/.55,0,1),sc=(kept?1.5:1.2)*f;
+    spiritAnimal(kind,x,y,sc,tiger?-.06:0,!tiger,o.t*8);if(kept&&tiger)drawSpiritKeep(kept);
+    if(!tiger&&kept&&o.t>.45){spiritAnimal('crane',x-35*U,y+42*U,.9*f,.35,false,o.t*8);for(let i=0;i<2;i++)inkSlash(x,y,150,-.6+i*1.2,clamp((o.t-.45)/.7,0,1)*f)}
+    if(o.t>1.25){const k=clamp((o.t-1.25)/.8,0,1),s=Math.sin(k*Math.PI);inkSlash(nx*W,groundY-alt*U,260,-.65,s);inkSlash(nx*W,groundY-alt*U,240,.65,s)}
+  }});
+}
+function castCrane(pm){return spiritChargeFX(pm,'crane')}
+function castTiger(pm){return spiritChargeFX(pm,'tiger')}
+function comboSpiritCrane(pm=1,kept){if(kept)return spiritChargeFX(pm,'crane',kept)}
+function comboSpiritTiger(pm=1,kept){if(kept)return spiritChargeFX(pm,'tiger',kept)}
+
+// 추가타는 원래 대상을 캡처한다. 비치명·별도 sid로 재귀 발동하지 않는다.
+function spiritStrike(kind,mult,name,sid){
+  if(!fighting()||m.hp<=0)return;const target=m,owner=S;wujiNotice(name+'!');
+  addFX({inkSchool:true,spiritStrike:sid,dur:.55,up(dt,o){desat=1;at(o,.2,()=>{if(S!==owner||m!==target||!fighting())return;const c=mCenter(m);deal(ST.atk*mult,false,'skill',c.x,c.y,{light:1,col:SPIRIT_COL[4],name,sid,_extra:1});sfx.slash2()})},post(o){if(m!==target||S!==owner)return;const c=mCenter(target),k=clamp(o.t/.35,0,1);spiritAnimal(kind,lerp(c.x-110*U,c.x+45*U,k),c.y-25*U,Math.sin(o.t/.55*Math.PI)*.75,0,kind==='crane');if(kind==='tiger')for(let i=0;i<3;i++)inkSlash(c.x+(i-1)*16*U,c.y,75,-1,.7*Math.sin(o.t/.55*Math.PI))}});
+}
+function triggerSpiritFocus(){const level=focusTier('spirit');if(!level)return;spiritStrike('crane',BAL.spirit.focusHit,'영수 현신','spirit_focus');if(level>=3)gauge=Math.min(100,gauge+BAL.spirit.gauge*ST.gg)}
+function spiritStunFactor(){return m?.boss&&focusTier('spirit')>=2?BAL.spirit.stunFactor:1}
+let spiritClawState={owner:null,readyAt:0};
+function spiritHitEffects(crit,o){
+  if(!fighting()||m.hp<=0)return;
+  if(o.sid==='combo'&&!o._extra&&m.freeze>0&&hasRes('frost_spirit'))spiritStrike('koi',BAL.spirit.frozenHit,'빙령유영','spirit_koi');
+  if(crit&&hasRes('crimson_spirit')){if(spiritClawState.owner!==S)spiritClawState={owner:S,readyAt:0};if(gt>=spiritClawState.readyAt){spiritClawState.readyAt=gt+BAL.spirit.critCD;spiritStrike('tiger',BAL.spirit.critHit,'혈호포효','spirit_claw')}}
+}
+function awkAscension(pm=1){
+  cutin('음양승천','각성 · 흑룡과 백봉이 하늘로','#FFD45B');castLock=2.8;sfx.charge();
+  const c=m?mCenter(m):{x:monX,y:groundY-60*U},nx=c.x/W,alt=(groundY-c.y)/U,power=spiritPower('ascension');
+  return addFX({inkSchool:true,ascension:true,dur:2.8,up(dt,o){desat=1;castLock=Math.max(castLock,.05);dimT=Math.max(dimT,.4);h.ang=o.t<1.6?-1.7:1;h.t=9;
+    at(o,.85,()=>{sfx.dark();skillHit(power*.125,pm,nx*W,groundY-alt*U,{light:1,sid:'ascension',col:SPIRIT_COL[3]})});
+    at(o,1.6,()=>{wujiBurst(nx*W,groundY-alt*U,80);sfx.bigboom();stop=Math.max(stop,.28);addTrauma(.85);zoom+=.12*FXS;flash(.9,'255,255,255');skillHit(power*.875,pm,nx*W,groundY-alt*U,{heavy:1,name:'음양승천',sid:'ascension',col:'#FFD45B',fc:'255,255,255',crack:2})});
+  },post(o){const x=nx*W,y=groundY-(alt+65)*U,t=o.t,grow=easeOut(clamp(t/.6,0,1)),fade=clamp((2.8-t)/.65,0,1),spin=t*2.3,r=130*grow*U;
+    for(let i=0;i<2;i++){const a=spin+i*Math.PI,release=clamp((t-1.65)/1.15,0,1),rr=r*(1+release*.7);spiritTrail(x,y,148,a,!!i,grow*fade);spiritAnimal(i?'phoenix':'dragon',x+Math.cos(a)*rr,y+Math.sin(a)*rr*.7,1.15*grow*fade,a+Math.PI/2,!!i,t*6)}
+    if(t>.65)wujiDisc(x,y,100,spin*.4,grow*fade*clamp((t-.65)/.7,0,1),true);
+    if(t>1.55){const k=clamp((t-1.55)/1.25,0,1);inkSlash(x,y,340,-1.1,Math.sin(k*Math.PI));ctx.save();ctx.strokeStyle='#FFD45B';ctx.lineWidth=3*U*fade;ctx.beginPath();ctx.ellipse(x,y,240*U*Math.sin(k*Math.PI),175*U*Math.sin(k*Math.PI),-.25,0,7);ctx.stroke();ctx.restore()}
+  }});
+}
+Object.assign(IC,{
+  koi:'<svg viewBox="0 0 32 32"><path d="M3 17Q5 0 24 6L30 2l-2 9Q19 21 8 14l-5 8m26-7Q27 32 8 26l-6 4 2-9q9-10 20-3z" fill="#D9DFE5" stroke="#77808C"/><circle cx="19" cy="9" r="2" fill="#05070B"/></svg>',
+  crane:'<svg viewBox="0 0 32 32"><path d="M3 2l12 17L21 3l-1 15 7-7 4 2-7 3-5 9-16 5 8-10z" fill="#FFFFFF"/><path d="M3 3l12 17" stroke="#77808C"/></svg>',
+  turtle:'<svg viewBox="0 0 32 32"><path d="M2 21Q2 4 16 5q12 0 12 15l4-2v5l-8 1-3 5-3-5H8l-5 4z" fill="#05070B" stroke="#D9DFE5"/><path d="M10 9l10 0 4 9-9 6-9-8z" fill="none" stroke="#77808C"/></svg>',
+  tiger:'<svg viewBox="0 0 32 32"><path d="M2 20l8-9 12 1 1-9 4 5 3-2 1 11-8 5 6 7-13-7-11 7 3-8z" fill="#05070B" stroke="#D9DFE5"/><path d="M10 13l-2 5m8-5-2 5m11-5 3 1" stroke="#FFFFFF"/></svg>'
+});
+for(const id of ['koi','crane','turtle','tiger'])BR[id]={a:['현령','피해 +40%'],b:['유영','재사용 대기 -30%'],gen:1};
+AWK.push({id:'ascension',name:'음양승천',unlock:295,c:'#FFD45B',fn:awkAscension,d:'흑룡과 백봉이 화면을 크게 휘감아 태극을 이룬다. 금빛 경계가 갈라지며 흑백의 영수가 승천한다.'});
+AWK_IC.ascension='<svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="14" fill="#05070B" stroke="#FFD45B"/><path d="M16 2a14 14 0 010 28c-13-3 11-12 0-14C4 13 7 2 16 2" fill="#FFFFFF"/><circle cx="16" cy="8" r="3" fill="#05070B"/><circle cx="16" cy="24" r="3" fill="#FFFFFF"/></svg>';
