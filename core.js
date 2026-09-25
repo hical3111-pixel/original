@@ -25,19 +25,20 @@ const KEY='blade-road-v1';
 const BAL={hpG:1.3,goldG:1.19,comboGauge:12,skillGauge:1.2,speed:2,blessSpeed:3,blessPower:2,blessGold:2,blessDuration:30*60*1000,blessCap:2*60*60*1000,blessRecharge:2*60*60*1000,blessCharges:3,blessRitual:3000};
 const freshBlessing=()=>({charges:BAL.blessCharges,chargeAt:Date.now(),until:{power:0,gold:0,haste:0},pending:null});
 const freshLv=()=>({atk:0,spd:0,crit:0,critd:0,skill:0,spirit:0,archer:0,mage:0,greed:0});
-const fresh=()=>({gold:0,stage:1,kills:0,maxStage:1,best:1,farm:false,farmKills:0,lv:freshLv(),souls:0,auto:true,sound:true,speed:1,blessing:freshBlessing(),t:Date.now(),totalKills:0,
+const fresh=()=>({gold:0,stage:1,kills:0,maxStage:1,best:1,farm:false,farmKills:0,lv:freshLv(),souls:0,auto:true,sound:true,speed:1,hasteSpeed:3,blessing:freshBlessing(),t:Date.now(),totalKills:0,
   relics:{},ach:{},title:'',loadout:['dash'],equip:['dash','neon'],maxCombo:0,bossKills:0,parries:0,legends:0,rebirths:0,combos:0,awakes:0,eclBoss:0,pulls:0,
   awk:{},daily:{key:'',done:false},dailyWins:0,phase2:0,awkSel:'thousand',codex:{},unlockFloor:0,unlockV:2,
   mastery:{crimson:0,eclipse:0,verdant:0,abyss:0,storm:0,hellfire:0,frost:0}});
 let S=fresh();
-function load(d){try{const raw=d||JSON.parse(localStorage.getItem(KEY)||'null');if(raw){S=Object.assign(fresh(),raw);if(!raw.unlockV){S.unlockFloor=unlockFloorOf(raw.best||1);S.unlockV=2}S.lv=Object.assign(freshLv(),raw.lv||{});S.relics=Object.assign({},raw.relics||{});S.ach=Object.assign({},raw.ach||{});S.awk=Object.assign({},raw.awk||{});S.daily=Object.assign({key:'',done:false},raw.daily||{});S.codex=Object.assign({},raw.codex||{});S.mastery=Object.assign({crimson:0,eclipse:0,verdant:0,abyss:0,storm:0,hellfire:0,frost:0},raw.mastery||{});S.speed=raw.speed===BAL.speed?BAL.speed:1;restoreBlessing(raw.blessing);restoreLoadout(raw)}}catch(e){}}
+function load(d){try{const raw=d||JSON.parse(localStorage.getItem(KEY)||'null');if(raw){S=Object.assign(fresh(),raw);if(!raw.unlockV){S.unlockFloor=unlockFloorOf(raw.best||1);S.unlockV=2}S.lv=Object.assign(freshLv(),raw.lv||{});S.relics=Object.assign({},raw.relics||{});S.ach=Object.assign({},raw.ach||{});S.awk=Object.assign({},raw.awk||{});S.daily=Object.assign({key:'',done:false},raw.daily||{});S.codex=Object.assign({},raw.codex||{});S.mastery=Object.assign({crimson:0,eclipse:0,verdant:0,abyss:0,storm:0,hellfire:0,frost:0},raw.mastery||{});S.speed=raw.speed===BAL.speed?BAL.speed:1;S.hasteSpeed=[1,2,3].includes(raw.hasteSpeed)?raw.hasteSpeed:BAL.blessSpeed;restoreBlessing(raw.blessing);restoreLoadout(raw)}}catch(e){}}
 function save(){S.t=Date.now();const out=CH?Object.assign({},S,CH.saved):S;try{localStorage.setItem(KEY,JSON.stringify(out))}catch(e){}}
 
 /* 실제 시각 기준 축복: 충전 잔여분은 보존하고, 가득 찬 동안은 다음 충전을 쌓지 않는다. */
 const BLESSINGS=[{id:'power',name:'힘',icon:'⚔',d:'공격력 ×2'},{id:'gold',name:'풍요',icon:'◆',d:'골드 ×2'},{id:'haste',name:'신속',icon:'»',d:'전투 ×3'}];
 function blessingActive(id,now=Date.now()){return(S.blessing?.until?.[id]||0)>now}
 function blessingMask(now=Date.now()){return(blessingActive('power',now)?1:0)|(blessingActive('gold',now)?2:0)}
-function gameSpeed(now=Date.now()){return blessingActive('haste',now)?BAL.blessSpeed:S.speed===BAL.speed?BAL.speed:1}
+// 신속 중에는 S.hasteSpeed(기본 3, 버튼으로 3→1→2 순환)를 쓰고, 끝나면 저장된 S.speed(1/2)로 돌아간다.
+function gameSpeed(now=Date.now()){return blessingActive('haste',now)?([1,2].includes(S.hasteSpeed)?S.hasteSpeed:BAL.blessSpeed):S.speed===BAL.speed?BAL.speed:1}
 function restoreBlessing(raw){
   const now=Date.now(),b=Object.assign(freshBlessing(),raw&&typeof raw==='object'?raw:{});b.until=Object.assign({power:0,gold:0,haste:0},raw?.until||{});
   b.charges=Number.isFinite(b.charges)?clamp(Math.floor(b.charges),0,BAL.blessCharges):BAL.blessCharges;b.chargeAt=Number.isFinite(b.chargeAt)?clamp(b.chargeAt,0,now):now;
@@ -49,7 +50,7 @@ function syncBlessings(now=Date.now()){
   const b=S.blessing;if(b.chargeAt>now)b.chargeAt=now;
   if(b.charges>=BAL.blessCharges)b.chargeAt=now;
   else{const n=Math.floor((now-b.chargeAt)/BAL.blessRecharge);if(n>0){b.charges=Math.min(BAL.blessCharges,b.charges+n);b.chargeAt=b.charges===BAL.blessCharges?now:b.chargeAt+n*BAL.blessRecharge}}
-  if(b.pending&&now>=b.pending.readyAt){const {id,readyAt}=b.pending;b.until[id]=Math.min(readyAt+BAL.blessCap,Math.max(readyAt,b.until[id])+BAL.blessDuration);b.pending=null;return true}return false;
+  if(b.pending&&now>=b.pending.readyAt){const {id,readyAt}=b.pending;if(id==='haste')S.hasteSpeed=BAL.blessSpeed;b.until[id]=Math.min(readyAt+BAL.blessCap,Math.max(readyAt,b.until[id])+BAL.blessDuration);b.pending=null;return true}return false;
 }
 function beginBlessing(id,now=Date.now()){
   syncBlessings(now);const b=S.blessing;if(!BLESSINGS.some(a=>a.id===id)||b.pending||b.charges<=0||b.until[id]>=now+BAL.blessCap-BAL.blessRitual)return false;

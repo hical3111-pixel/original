@@ -1005,7 +1005,7 @@ $('soundBtn').addEventListener('click',()=>{S.sound=!S.sound;if(S.sound)ensureAu
 function soundUI(){const b=$('soundBtn');b.textContent=S.sound?'소리 켬':'소리 끔';b.setAttribute('aria-pressed',S.sound)}
 const blessingTime=ms=>{const sec=Math.max(0,Math.ceil(ms/1000));return Math.floor(sec/60)+':'+String(sec%60).padStart(2,'0')};
 function blessingUI(){
-  const now=Date.now(),b=S.blessing,speed=gameSpeed(now),fast=blessingActive('haste',now),btn=$('speedBtn');btn.textContent='×'+speed;btn.disabled=fast;btn.setAttribute('aria-pressed',S.speed===BAL.speed);btn.setAttribute('aria-label',fast?'신속 축복 · 3배속 · 종료 후 '+S.speed+'배속':'전투 '+S.speed+'배속 · 누르면 '+(S.speed===1?BAL.speed:1)+'배속');btn.title=fast?'신속 종료 후 ×'+S.speed:'전투 배속 전환';
+  const now=Date.now(),b=S.blessing,speed=gameSpeed(now),fast=blessingActive('haste',now),btn=$('speedBtn');btn.textContent='×'+speed;btn.disabled=false;btn.setAttribute('aria-pressed',S.speed===BAL.speed);btn.setAttribute('aria-label',fast?'신속 축복 중 · '+speed+'배속 · 누르면 '+(speed===3?1:speed+1)+'배속 · 종료 후 '+S.speed+'배속':'전투 '+S.speed+'배속 · 누르면 '+(S.speed===1?BAL.speed:1)+'배속');btn.title=fast?'신속 중 배속 전환(×3→×1→×2) · 종료 후 ×'+S.speed:'전투 배속 전환';
   $('blessBtn').textContent=(b.pending?'축복 받는 중':'축복 받기')+' · '+b.charges+'/'+BAL.blessCharges;$('blessBtn').disabled=b.charges<=0&&!b.pending;
   $('blessNext').textContent=b.charges===BAL.blessCharges?'충전 가득 참':'다음 충전 '+blessingTime(b.chargeAt+BAL.blessRecharge-now);
   $('blessBuffs').innerHTML=BLESSINGS.filter(a=>blessingActive(a.id,now)).map(a=>`<span class="bless-buff" data-blessing="${a.id}" title="${a.d}">${a.icon} ${a.name} <time>${blessingTime(b.until[a.id]-now)}</time></span>`).join('');
@@ -1013,7 +1013,7 @@ function blessingUI(){
   if(b.pending){const a=BLESSINGS.find(a=>a.id===b.pending.id);$('blessRitualName').textContent=a.name+' · '+a.d;$('blessSymbol').textContent=a.icon;$('blessRitual').style.setProperty('--ritual',RM?0:clamp(1-(b.pending.readyAt-now)/BAL.blessRitual,0,1));if(!$('blessPicker').open)$('blessPicker').showModal()}
   for(const btn of $('blessChoices').children)btn.disabled=b.charges<=0||!!b.pending||b.until[btn.dataset.blessing]>=now+BAL.blessCap-BAL.blessRitual;
 }
-$('speedBtn').addEventListener('click',()=>{if(blessingActive('haste'))return;S.speed=S.speed===BAL.speed?1:BAL.speed;blessingUI();save()});
+$('speedBtn').addEventListener('click',()=>{if(blessingActive('haste')){const v=gameSpeed();S.hasteSpeed=v===3?1:v+1;blessingUI();save();return}S.speed=S.speed===BAL.speed?1:BAL.speed;blessingUI();save()});
 for(const a of BLESSINGS){const btn=document.createElement('button');btn.className='bless-choice';btn.dataset.blessing=a.id;btn.innerHTML=`<b>${a.icon} ${a.name}</b><small>${a.d} · 30분</small>`;btn.addEventListener('click',()=>{ensureAudio();if(beginBlessing(a.id)){sfx.charge();blessingUI()}});$('blessChoices').appendChild(btn)}
 $('blessBtn').addEventListener('click',()=>{syncBlessings();blessingUI();if(!$('blessPicker').open)$('blessPicker').showModal()});
 $('closeBlessPicker').addEventListener('click',()=>$('blessPicker').close());
