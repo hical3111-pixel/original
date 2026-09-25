@@ -764,7 +764,7 @@
       load(JSON.parse(JSON.stringify(S)));ok(S.unlockFloor===190&&ub()===190,'보정한 바닥값 재저장/불러오기 유지');
       S=fresh();ok(S.unlockV===2&&S.unlockFloor===0&&ub()===1,'새 게임은 바닥값 0');
       S.best=31;S.maxStage=31;S.unlockFloor=90;Object.assign(S,{gold:0,stage:1,kills:0,maxStage:1,farm:false,farmKills:0,lv:freshLv()});ok(S.unlockFloor===90&&ub()===90,'환생 필드 초기화에 바닥값 포함 안 됨');
-      ok(BAL.hpG===1.3&&BAL.comboGauge===12,'밸런스 v2 수치(체력 증가율 1.3, 연계 게이지 12)');
+      ok(BAL.hpG===1.3&&BAL.comboGauge===8&&BAL.skillGauge===.8,'밸런스 v3 수치(체력 증가율 1.3, 연계 게이지 8, 스킬 적중 게이지 0.8)');
     }finally{S=fresh();S.best=999;S.gold=1e300;S.auto=false;S.sound=false;ST=stats();m=null;spawnT=100;buildBar();buildBook()}
   });
 
