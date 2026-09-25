@@ -740,6 +740,51 @@
     }finally{S=fresh();S.best=999;S.gold=1e300;S.auto=false;S.sound=false;ST=stats();m=null;spawnT=100;buildBar();buildBook()}
   });
 
+  section('배속 · 실제 시간 축복 · 저장');
+  guard('배속/축복',()=>{
+    const dateNow=Date.now,random=Math.random,originalCast=cast;let now=1800000000000;
+    const close=()=>{if($('blessPicker').open)$('blessPicker').close()};
+    const reset=()=>{close();S=fresh();S.best=999;S.auto=false;S.sound=false;setLoadout([]);ST=stats();CH=null;BI=null;BF=null;CUT=null;BN=null;FX=[];P=[];T=[];B=[];PR=[];C=[];CR=[];relicQ=[];shieldOn=null;stop=slowT=castLock=frenzyT=circleT=desat=0;lastCast=pendingCombo=null;spawnT=100;miniQ=0;h.stun=0;h.dodgeT=-1;atkT=1e6;verdantCD=bloodBuffT=0;gt=0;
+      m=makeMonster(5);m.state='fight';m.x=monX;m.yo=0;m.hp=m.max=1e12;m.sh=0;m.atkT=1e6;bossT=bossMax=100;for(const s of SK)cds[s.id]=100};
+    const near=(a,b)=>Math.abs(a-b)<1e-6;
+    try{Date.now=()=>now;Math.random=()=>.5;
+      for(const speed of [1,2,3]){reset();S.speed=speed===3?2:speed;if(speed===3)S.blessing.until.haste=now+BAL.blessDuration;
+        BN={t:0,dur:10};CUT={t:0,dur:10};BF={t:0,dur:10};const fx=addFX({dur:10}),oldBg=bgX;for(let i=0;i<60;i++)update(1/60);
+        ok(near(100-cds.dash,speed),speed+'배: 1초당 쿨타임 진행');ok(near(100-bossT,speed),speed+'배: 보스 제한 시간도 같은 비율');
+        ok(near(gt,speed)&&near(fx.t,speed)&&near(m.t,speed)&&near(bgX-oldBg,14*U*speed),speed+'배: 월드/FX/몬스터/이동 시간');
+        ok(near(BN.t,1)&&near(CUT.t,1)&&near(BF.t,1),speed+'배: 배너/컷인/결정타는 실제 1초');
+        reset();S.speed=speed===3?2:speed;if(speed===3)S.blessing.until.haste=now+BAL.blessDuration;stop=.5;trauma=1;flashA=1;update(.1);
+        ok(near(stop,.4)&&near(trauma,.83)&&near(flashA,.65)&&gt===0,speed+'배: 히트스톱/흔들림/섬광 실제 시간, 월드 정지');
+        reset();S.speed=speed===3?2:speed;if(speed===3)S.blessing.until.haste=now+BAL.blessDuration;startPat();const pat=m.pat;update(.05);ok(near(pat.t,.05*speed),speed+'배: 보스 패턴 진행 비율');
+      }
+      reset();ok(S.speed===1&&S.blessing.charges===3,'신규 저장 기본 ×1/축복 3회');S.speed=2;const saved=JSON.parse(JSON.stringify(S));load(saved);ok(S.speed===2&&S.blessing.charges===3,'배속·충전 저장 왕복');
+      load({best:30,gold:123});ok(S.speed===1&&S.blessing.charges===3&&S.blessing.until.power===0&&S.gold===123&&ub()===unlockFloorOf(30),'예전 저장 기본값 병합과 해금 바닥값 보존');
+      load({unlockV:2,speed:7,blessing:{charges:99,until:{power:now+1000}}});ok(S.speed===1&&S.blessing.charges===3&&S.blessing.until.gold===0,'손상된 배속/충전 보정 및 until 필드 병합');
+      reset();S.blessing.charges=0;const start=now;now+=BAL.blessRecharge-1;syncBlessings();ok(S.blessing.charges===0,'2시간 직전 충전 없음');now++;syncBlessings();ok(S.blessing.charges===1&&S.blessing.chargeAt===now,'2시간 경계에 정확히 1회 충전');
+      now=start+BAL.blessRecharge*2+1234;syncBlessings();ok(S.blessing.charges===2&&S.blessing.chargeAt===start+BAL.blessRecharge*2,'충전 후 남은 실제 시간 보존');now+=BAL.blessRecharge*10;syncBlessings();ok(S.blessing.charges===3&&S.blessing.chargeAt===now,'최대 3회와 가득 찬 초과 시간 버림');
+      ok(beginBlessing('power')&&S.blessing.charges===2,'축복 선택 시 정확히 1회 소비');ok(!beginBlessing('gold')&&S.blessing.charges===2,'연출 중 중복 소비 금지');now+=BAL.blessRitual-1;update(0);ok(!blessingActive('power'),'3초 연출 전 버프 없음');now++;update(0);ok(blessingActive('power')&&S.blessing.until.power===now+BAL.blessDuration&&!S.blessing.pending,'3초 후 30분 발동');
+      const fullEnd=S.blessing.until.power;ok(beginBlessing('power'),'같은 축복 재선택');now+=BAL.blessRitual;update(0);ok(S.blessing.until.power===fullEnd+BAL.blessDuration,'같은 축복의 기존 남은 시간에 30분 연장');
+      S.blessing.until.power=now+BAL.blessCap-10000;S.blessing.charges=1;beginBlessing('power');now+=BAL.blessRitual;update(0);ok(S.blessing.until.power===now+BAL.blessCap,'축복 연장 최대 2시간');S.blessing.charges=1;ok(!beginBlessing('power')&&S.blessing.charges===1,'상한에 도달한 축복은 충전 낭비 방지');
+      const end=S.blessing.until.power;now=end-1;ok(blessingActive('power'),'만료 1ms 전 활성');now=end;update(0);ok(!blessingActive('power')&&ST.blessingMask===0,'실제 만료 시각에 효과·스탯 해제');
+      reset();S.blessing.charges=0;ok(!beginBlessing('gold')&&!S.blessing.pending,'충전 0회 수령 금지');ok(!beginBlessing('bad'),'없는 축복 수령 금지');
+      const old=JSON.parse(JSON.stringify(S));now+=BAL.blessRecharge*2+10000;load(old);ok(S.blessing.charges===2,'게임 종료 중 4시간 충전');
+      reset();beginBlessing('gold');const pendingSave=JSON.parse(JSON.stringify(S));now+=1000;load(pendingSave);ok(S.blessing.charges===2&&S.blessing.pending.id==='gold'&&!blessingActive('gold'),'연출 중 저장 복원: 충전 중복 소비 없음');now+=2000;update(0);ok(blessingActive('gold'),'복원한 연출은 원래 완료 시각에 발동');
+      reset();beginBlessing('haste');const offlinePending=JSON.parse(JSON.stringify(S));now+=BAL.blessDuration+BAL.blessRitual+1;load(offlinePending);ok(!S.blessing.pending&&!blessingActive('haste'),'연출 중 종료 후 오래 지나면 버프도 만료 (재접속부터 연장 금지)');
+      reset();const base=stats();for(const id of ['power','gold','haste'])S.blessing.until[id]=now+BAL.blessDuration;update(0);
+      ok(near(ST.atk,base.atk*2)&&near(ST.gm,base.gm*2)&&ST.blessingMask===3,'힘 공격력 ×2/풍요 골드 ×2 동시 적용');
+      ok(gameSpeed()===3,'신속은 ×1 설정에서도 ×3');S.speed=2;ok(gameSpeed()===3,'신속은 ×2와 곱하지 않고 ×3');now+=BAL.blessDuration;update(0);ok(gameSpeed()===2&&near(ST.atk,base.atk)&&near(ST.gm,base.gm),'만료 후 저장한 ×2와 원래 스탯 복귀');
+      reset();m.boss=false;m.hp=m.max=1e8;let hp=m.hp;skillHit(1,1,monX,groundY,{light:1});const dmg=hp-m.hp;S.blessing.until.power=now+BAL.blessDuration;update(0);hp=m.hp;skillHit(1,1,monX,groundY,{light:1});ok(Math.abs(hp-m.hp-dmg*2)<1e-5,'힘 축복 실제 피해 ×2');
+      reset();m.boss=false;kill();const gold=C.reduce((n,c)=>n+c.v,0);reset();m.boss=false;S.blessing.until.gold=now+BAL.blessDuration;update(0);kill();ok(near(C.reduce((n,c)=>n+c.v,0),gold*2),'풍요 축복 실제 처치 골드 ×2');
+      reset();S.totalKills=10;S.stage=20;pending=0;showOffline(3600);const offline=pending;pending=0;S.speed=2;for(const a of BLESSINGS)S.blessing.until[a.id]=now+BAL.blessDuration;ST=stats();showOffline(3600);ok(near(pending,offline),'오프라인 보상에 배속/축복 배율 미적용');pending=0;$('modal').hidden=true;
+      reset();blessingUI();$('speedBtn').click();ok(S.speed===2&&$('speedBtn').textContent==='×2','HUD 배속 전환');$('blessBtn').click();ok($('blessPicker').open&&$('blessChoices').children.length===3,'축복 버튼에서 3종 선택');$('blessChoices').querySelector('[data-blessing="haste"]').click();ok(S.blessing.pending?.id==='haste'&&!$('blessRitual').hidden&&$('blessSelection').hidden,'선택 후 금빛 연출 표시');
+      now+=BAL.blessRitual;update(0);blessingUI();ok(!$('blessPicker').open&&$('speedBtn').textContent==='×3'&&$('speedBtn').disabled&&$('blessBuffs').querySelector('[data-blessing="haste"]'),'연출 종료/신속 HUD 표시');now+=BAL.blessDuration;update(0);blessingUI();ok($('speedBtn').textContent==='×2'&&!$('speedBtn').disabled&&!$('blessBuffs').children.length,'신속 만료 HUD 복귀');
+      // 기존 1배속 측정과 별도로 2배속에서 같은 120 게임초/14·15 기준을 검사한다. 렌더 생략.
+      reset();m.boss=false;S.equip=['spear','thunder','archers','wolf','gravity','meteor'];S.speed=2;S.auto=true;for(const s of SK)cds[s.id]=0;let finish=0,linked=0;
+      cast=function(s,preview){const n=S.combos,result=originalCast(s,preview);if(result&&!preview&&COMBOS.some(c=>c.b===s.id)){finish++;if(pendingCombo||S.combos>n)linked++}return result};
+      const startTime=gt;for(let i=0;i<14400&&gt-startTime<120;i++)update(1/60);ok(gt-startTime>=120,'2배속 120 게임초 도달');ok(finish>=15&&linked/finish>=14/15,'2배속 자동 연계 기준 14/15 유지: '+linked+'/'+finish);lines.push('2배속 자동 연계: '+linked+'/'+finish+' (게임 시간 120초)');
+    }finally{Date.now=dateNow;Math.random=random;cast=originalCast;reset();m=null;spawnT=100;pending=0;$('modal').hidden=true;buildBar();buildBook();blessingUI()}
+  });
+
   section('정리');
   guard('정리',()=>{tick(600);ok(FX.length===0,'연출이 끝나지 않고 남아 있음: '+FX.length+'개');ok(castLock<=0,'castLock이 풀리지 않음');ok(desat===0,'흑백(desat)이 풀리지 않고 남아 있음: '+desat)});
 

@@ -42,6 +42,26 @@ button:focus-visible,input:focus-visible+span{outline:2px solid var(--spirit);ou
 #bossBar{width:150px;height:6px;border-radius:3px;background:rgba(255,255,255,.14);overflow:hidden}
 #bossFill{display:block;height:100%;width:100%;background:linear-gradient(90deg,var(--blood),var(--ember))}
 .hud-r{display:grid;gap:6px;justify-items:end}
+.hud-controls{display:flex;gap:4px}
+#blessHud{position:absolute;top:112px;left:12px;right:12px;pointer-events:none;display:grid;gap:5px;justify-items:start;font-size:11px}
+.bless-charge{display:flex;align-items:center;gap:8px;padding-right:9px;border-radius:18px;background:#100c22dd;color:#ffe6a0}
+#blessBtn{pointer-events:auto;border-color:#b68d36;color:#FFD45B}
+#blessBuffs{display:flex;gap:5px;flex-wrap:wrap}
+.bless-buff{display:inline-flex;gap:4px;align-items:center;padding:4px 7px;border:1px solid #6e5529;border-radius:8px;background:#100c22dd;color:#ffe6a0;font-variant-numeric:tabular-nums}
+#blessPicker{width:min(360px,calc(100vw - 28px));border:1px solid #b68d36;border-radius:16px;padding:18px;background:#17132b;color:var(--ink)}
+#blessPicker::backdrop{background:#05070bba}
+#blessPicker p{font-size:12px;color:#c8bddb;line-height:1.6}
+.bless-choices{display:grid;gap:8px}
+.bless-choice{border:1px solid #6e5529;background:#211a31;border-radius:10px;padding:12px;text-align:left;cursor:pointer}
+.bless-choice b{color:#FFD45B}.bless-choice small{display:block;margin-top:3px;color:#c8bddb}.bless-choice:disabled{opacity:.45;cursor:default}
+.bless-ritual{position:relative;height:230px;display:grid;place-content:center;text-align:center;overflow:hidden}
+.bless-seal{position:relative;width:150px;height:150px;display:grid;place-items:center;margin:auto;color:#FFF4CA;font-size:55px}
+.bless-seal i{position:absolute;inset:6px;border:3px solid #FFD45B;border-radius:50%;transform:rotate(calc(var(--ritual,0)*360deg)) scaleX(.55)}
+.bless-seal i:nth-child(2){transform:rotate(calc(60deg + var(--ritual,0)*-360deg)) scaleX(.55)}
+.bless-seal i:nth-child(3){transform:rotate(calc(120deg + var(--ritual,0)*360deg)) scaleX(.55)}
+.bless-seal::after{content:'✦';position:absolute;inset:-8px;color:#b68d36;font-size:165px;line-height:1;z-index:-1}
+.bless-ritual strong{color:#FFD45B;margin-top:12px}.bless-ritual small{color:#c8bddb;margin-top:6px}
+@media(max-width:600px){.hud-controls .chip{padding:6px 8px}#blessHud{top:103px;left:9px;right:9px}.bless-charge{gap:5px}#blessNext{font-size:10px}.bless-buff{font-size:10px}}
 .chip{background:rgba(8,5,20,.62);border:1px solid rgba(255,255,255,.14);border-radius:999px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
 .chip[aria-pressed="false"]{color:var(--dim)}
 .switch{display:flex;align-items:center;gap:8px;background:rgba(8,5,20,.62);border-radius:999px;padding:5px 12px 5px 5px;font-size:12px;font-weight:700;cursor:pointer;user-select:none;white-space:nowrap}
@@ -254,10 +274,11 @@ details.fold>*+*{margin-top:10px}
         <button id="retry" hidden>보스 재도전</button>
       </div>
       <div class="hud-r">
-        <button class="chip" id="soundBtn" aria-pressed="true">소리 켬</button>
+        <div class="hud-controls"><button class="chip" id="speedBtn" aria-label="전투 배속" aria-pressed="false">×1</button><button class="chip" id="soundBtn" aria-pressed="true">소리 켬</button></div>
         <label class="switch"><input type="checkbox" id="autoSk" checked><span></span>자동 스킬</label>
       </div>
     </div>
+    <div id="blessHud" aria-label="축복"><div class="bless-charge"><button class="chip" id="blessBtn">축복 받기 · 3/3</button><span id="blessNext"></span></div><div id="blessBuffs"></div></div>
     <div class="combat-loadout" id="combatLoadout"><div id="battleEffects" class="battle-effects" aria-label="활성 집중·공명" hidden></div><div class="skills" id="skBar"></div></div>
   </section>
 
@@ -334,6 +355,7 @@ details.fold>*+*{margin-top:10px}
 </div>
 
 <dialog id="pairPicker" aria-labelledby="pairPickerTitle"><div class="picker-head"><b id="pairPickerTitle">연계 쌍 선택</b><button type="button" id="closePairPicker">닫기</button></div><div id="pairOptions" class="pair-options"></div></dialog>
+<dialog id="blessPicker" aria-labelledby="blessTitle"><div class="picker-head"><b id="blessTitle">축복을 선택하세요</b><button id="closeBlessPicker">닫기</button></div><div id="blessSelection"><p>2시간마다 1회 충전 · 최대 3회<br>각 30분, 같은 축복은 최대 2시간까지 연장됩니다.<br>전투 중 적용되며 오프라인 보상에는 적용되지 않습니다.</p><div id="blessChoices" class="bless-choices"></div></div><div id="blessRitual" class="bless-ritual" hidden><div class="bless-seal"><i></i><i></i><i></i><span id="blessSymbol">✦</span></div><strong id="blessRitualName"></strong><small>금빛 축복이 깨어납니다…</small></div></dialog>
 <script src="core.js"></script>
 <script src="skills.js"></script>
 <script src="main.js"></script>

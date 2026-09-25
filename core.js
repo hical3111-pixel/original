@@ -21,14 +21,40 @@ function fmt(n){
 
 /* ================= state ================= */
 const KEY='blade-road-v1';
+// 밸런스 수치는 여기 한곳에 둔다. 축복 시간은 Date.now와 같은 밀리초 단위다.
+const BAL={hpG:1.3,goldG:1.19,comboGauge:12,skillGauge:1.2,speed:2,blessSpeed:3,blessPower:2,blessGold:2,blessDuration:30*60*1000,blessCap:2*60*60*1000,blessRecharge:2*60*60*1000,blessCharges:3,blessRitual:3000};
+const freshBlessing=()=>({charges:BAL.blessCharges,chargeAt:Date.now(),until:{power:0,gold:0,haste:0},pending:null});
 const freshLv=()=>({atk:0,spd:0,crit:0,critd:0,skill:0,spirit:0,archer:0,mage:0,greed:0});
-const fresh=()=>({gold:0,stage:1,kills:0,maxStage:1,best:1,farm:false,farmKills:0,lv:freshLv(),souls:0,auto:true,sound:true,t:Date.now(),totalKills:0,
+const fresh=()=>({gold:0,stage:1,kills:0,maxStage:1,best:1,farm:false,farmKills:0,lv:freshLv(),souls:0,auto:true,sound:true,speed:1,blessing:freshBlessing(),t:Date.now(),totalKills:0,
   relics:{},ach:{},title:'',loadout:['dash'],equip:['dash','neon'],maxCombo:0,bossKills:0,parries:0,legends:0,rebirths:0,combos:0,awakes:0,eclBoss:0,pulls:0,
   awk:{},daily:{key:'',done:false},dailyWins:0,phase2:0,awkSel:'thousand',codex:{},unlockFloor:0,unlockV:2,
   mastery:{crimson:0,eclipse:0,verdant:0,abyss:0,storm:0,hellfire:0,frost:0}});
 let S=fresh();
-function load(d){try{const raw=d||JSON.parse(localStorage.getItem(KEY)||'null');if(raw){S=Object.assign(fresh(),raw);if(!raw.unlockV){S.unlockFloor=unlockFloorOf(raw.best||1);S.unlockV=2}S.lv=Object.assign(freshLv(),raw.lv||{});S.relics=Object.assign({},raw.relics||{});S.ach=Object.assign({},raw.ach||{});S.awk=Object.assign({},raw.awk||{});S.daily=Object.assign({key:'',done:false},raw.daily||{});S.codex=Object.assign({},raw.codex||{});S.mastery=Object.assign({crimson:0,eclipse:0,verdant:0,abyss:0,storm:0,hellfire:0,frost:0},raw.mastery||{});restoreLoadout(raw)}}catch(e){}}
+function load(d){try{const raw=d||JSON.parse(localStorage.getItem(KEY)||'null');if(raw){S=Object.assign(fresh(),raw);if(!raw.unlockV){S.unlockFloor=unlockFloorOf(raw.best||1);S.unlockV=2}S.lv=Object.assign(freshLv(),raw.lv||{});S.relics=Object.assign({},raw.relics||{});S.ach=Object.assign({},raw.ach||{});S.awk=Object.assign({},raw.awk||{});S.daily=Object.assign({key:'',done:false},raw.daily||{});S.codex=Object.assign({},raw.codex||{});S.mastery=Object.assign({crimson:0,eclipse:0,verdant:0,abyss:0,storm:0,hellfire:0,frost:0},raw.mastery||{});S.speed=raw.speed===BAL.speed?BAL.speed:1;restoreBlessing(raw.blessing);restoreLoadout(raw)}}catch(e){}}
 function save(){S.t=Date.now();const out=CH?Object.assign({},S,CH.saved):S;try{localStorage.setItem(KEY,JSON.stringify(out))}catch(e){}}
+
+/* 실제 시각 기준 축복: 충전 잔여분은 보존하고, 가득 찬 동안은 다음 충전을 쌓지 않는다. */
+const BLESSINGS=[{id:'power',name:'힘',icon:'⚔',d:'공격력 ×2'},{id:'gold',name:'풍요',icon:'◆',d:'골드 ×2'},{id:'haste',name:'신속',icon:'»',d:'전투 ×3'}];
+function blessingActive(id,now=Date.now()){return(S.blessing?.until?.[id]||0)>now}
+function blessingMask(now=Date.now()){return(blessingActive('power',now)?1:0)|(blessingActive('gold',now)?2:0)}
+function gameSpeed(now=Date.now()){return blessingActive('haste',now)?BAL.blessSpeed:S.speed===BAL.speed?BAL.speed:1}
+function restoreBlessing(raw){
+  const now=Date.now(),b=Object.assign(freshBlessing(),raw&&typeof raw==='object'?raw:{});b.until=Object.assign({power:0,gold:0,haste:0},raw?.until||{});
+  b.charges=Number.isFinite(b.charges)?clamp(Math.floor(b.charges),0,BAL.blessCharges):BAL.blessCharges;b.chargeAt=Number.isFinite(b.chargeAt)?clamp(b.chargeAt,0,now):now;
+  for(const a of BLESSINGS)b.until[a.id]=Number.isFinite(b.until[a.id])?clamp(b.until[a.id],0,now+BAL.blessCap):0;
+  if(!b.pending||!BLESSINGS.some(a=>a.id===b.pending.id)||!Number.isFinite(b.pending.readyAt))b.pending=null;
+  S.blessing=b;syncBlessings(now);
+}
+function syncBlessings(now=Date.now()){
+  const b=S.blessing;if(b.chargeAt>now)b.chargeAt=now;
+  if(b.charges>=BAL.blessCharges)b.chargeAt=now;
+  else{const n=Math.floor((now-b.chargeAt)/BAL.blessRecharge);if(n>0){b.charges=Math.min(BAL.blessCharges,b.charges+n);b.chargeAt=b.charges===BAL.blessCharges?now:b.chargeAt+n*BAL.blessRecharge}}
+  if(b.pending&&now>=b.pending.readyAt){const {id,readyAt}=b.pending;b.until[id]=Math.min(readyAt+BAL.blessCap,Math.max(readyAt,b.until[id])+BAL.blessDuration);b.pending=null;return true}return false;
+}
+function beginBlessing(id,now=Date.now()){
+  syncBlessings(now);const b=S.blessing;if(!BLESSINGS.some(a=>a.id===id)||b.pending||b.charges<=0||b.until[id]>=now+BAL.blessCap-BAL.blessRitual)return false;
+  b.charges--;b.pending={id,readyAt:now+BAL.blessRitual};save();return true;
+}
 
 /* ================= daily challenge ================= */
 let CH=null;
@@ -54,8 +80,6 @@ function chMul(src,crit,o){if(!CH)return 1;let k=1;
 
 const KPS=8;
 const isBoss=s=>s%5===0;
-// 밸런스 수치는 여기 한곳에 모은다(성장 곡선 시뮬레이션이 이 값을 바꿔 가며 측정한다)
-const BAL={hpG:1.3,goldG:1.19,comboGauge:12,skillGauge:1.2};
 // 해금 기준 스테이지. 예전 저장(해금 기준 v1)은 그때 도달했던 위치를 새 기준으로 환산해 S.unlockFloor에 두어, 이미 연 스킬이 다시 잠기지 않게 한다.
 const OLD_UNLOCK=[1,3,5,8,9,11,12,14,17,18,20,21,23,26,27,30,32,34,36,40,44,48,52,56,60,64,68,72],NEW_UNLOCK=[1,5,10,15,20,26,32,38,45,52,60,68,76,84,90,96,102,108,114,120,128,136,144,152,160,170,180,190];
 function unlockFloorOf(best){for(let i=1;i<OLD_UNLOCK.length;i++)if(best<OLD_UNLOCK[i]){const a=OLD_UNLOCK[i-1],b=OLD_UNLOCK[i];return Math.floor(NEW_UNLOCK[i-1]+(best-a)/(b-a)*(NEW_UNLOCK[i]-NEW_UNLOCK[i-1]))}return 9999}
@@ -125,18 +149,18 @@ const ACH=[
 ];
 
 /* ================= stats ================= */
-function stats(lv=S.lv){
+function stats(lv=S.lv,blessed=true){
   const soul=1+0.1*S.souls,am=1+.03*Object.keys(S.ach).length,cdx=1+codexBonus();
-  const atk=4*(1+lv.atk)*Math.pow(1.08,lv.atk)*soul*(1+.06*rv('whet'))*(1+.25*rv('crown'))*am*cdx;
-  return{atk,aps:(1.2+0.12*lv.spd)*(1+.03*rv('boots')),cc:Math.min(.8,.05+.02*lv.crit+.02*rv('hawk')),cm:2+.3*lv.critd,
+  const atk=4*(1+lv.atk)*Math.pow(1.08,lv.atk)*soul*(1+.06*rv('whet'))*(1+.25*rv('crown'))*am*cdx*(blessed&&blessingActive('power')?BAL.blessPower:1);
+  return{blessingMask:blessed?blessingMask():0,atk,aps:(1.2+0.12*lv.spd)*(1+.03*rv('boots')),cc:Math.min(.8,.05+.02*lv.crit+.02*rv('hawk')),cm:2+.3*lv.critd,
     sn:hasMod('spirit')?6:Math.min(6,lv.spirit),sd:atk*.35*(1+.15*Math.max(0,lv.spirit-1))*(lv.spirit||hasMod('spirit')?1:0),
     ar:lv.archer?atk*.3*Math.pow(lv.archer,.9):0,mg:lv.mage?atk*1.4*Math.pow(lv.mage,.9):0,
-    gm:(1+.2*lv.greed)*soul*(1+.08*rv('coin')),sk:(1+.25*lv.skill)*(1+.4*rv('abyss')),
+    gm:(1+.2*lv.greed)*soul*(1+.08*rv('coin'))*(blessed&&blessingActive('gold')?BAL.blessGold:1),sk:(1+.25*lv.skill)*(1+.4*rv('abyss')),
     cdm:Math.max(.4,(1-.05*rv('frost'))*(typeof focusTier==='function'&&focusTier('abyss')>=1?.85:1)*(typeof hasRes==='function'&&hasRes('eclipse_abyss')?.92:1)),gg:1+.25*rv('shard'),cdx};
 }
 let ST=stats();
 const tier=()=>S.lv.skill>=20?3:S.lv.skill>=10?2:S.lv.skill>=5?1:0;
-function dps(){const cf=1+ST.cc*(ST.cm-1),f=frenzyT>0?2.8:1;return ST.atk*ST.aps*f*cf+ST.sn*.8*ST.sd*cf+ST.ar*1.4*cf+ST.mg/2.6*cf}
+function dps(st=ST){const cf=1+st.cc*(st.cm-1),f=frenzyT>0?2.8:1;return st.atk*st.aps*f*cf+st.sn*.8*st.sd*cf+st.ar*1.4*cf+st.mg/2.6*cf}
 
 const UP=[
   {id:'atk',b:'공',c:'#ff8a5c',name:'검 단련',max:Infinity,cost:l=>10*Math.pow(1.14,l),
