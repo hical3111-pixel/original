@@ -84,6 +84,7 @@ function resolveHit(p,weight=1,evade=null){
     triggerBloodBuff();
     return 'blocked';
   }
+  if(m.boss&&absorbWujiAttack())return 'blocked';
   if(rv('phoenix')){for(let i=0;i<16;i++)P.push({t:'flame',x:hx+rnd(-40,40)*U,y:groundY-rnd(0,60)*U,vx:rnd(-40,40)*U,vy:-rnd(200,420)*U,drag:1,g:0,r:rnd(12,26)*U,cols:['#7a1606','#ff8a2a','#ffe08a'],life:rnd(.4,.8),max:.8});
     T.push({x:hx,y:hy-80*U,vx:0,vy:-80*U,text:'불사조!',crit:1,label:'',size:40,life:1,max:1,color:'#ffb040'});
     deal(ST.atk*4*rv('phoenix')*weight,false,'relic',c.x,c.y,{heavy:1,name:'불사조 반격',col:'#ffb040',fc:'255,190,110'});return 'phoenix'}
@@ -95,6 +96,7 @@ function resolveHit(p,weight=1,evade=null){
 }
 
 function triggerBloodBuff(){
+  if(hasRes('verdant_wuji'))wujiTalismanStrike(1,BAL.wuji.counter,'생무극');
   if(typeof hasRes==='function'&&hasRes('verdant_crimson')){
     bloodBuffT=10;
     T.push({x:heroX+30*U,y:groundY-100*U,vx:0,vy:-60*U,text:'역린혈공!',crit:1,label:'',size:28,life:1,max:1,color:'#ff4f5e'});

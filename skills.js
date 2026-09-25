@@ -827,7 +827,9 @@ const COMBOS=[
   {school:'frost',a:'frostcut',b:'icedragon',name:'빙룡쇄파',fn:comboIceDragon,col:'#61DCF3',keep:{get:()=>iceKeep('spikes'),ready:1.25,release:releaseIce},d:'서리 월참의 가시 3개가 남는다. 백룡이 같은 가시를 차례로 깨뜨려 빙룡쇄파를 일으킨다.'},
   {school:'frost',a:'iceflower',b:'frostspiral',name:'만화빙정',fn:comboIceFlower,col:'#61DCF3',keep:{get:()=>iceKeep('petals'),ready:1.35,release:releaseIce},d:'빙화 장벽의 꽃잎 6개가 남는다. 동결 나선이 같은 꽃잎을 흡수해 거대한 빙정으로 폭발한다.'},
   {school:'ink',a:'twinstroke',b:'whitestep',name:'양의교차',fn:comboInkCross,col:'#D9DFE5',keep:{get:()=>inkKeep('strokes'),ready:1.2,release:releaseInk},d:'남은 흑백 초승달 획 2개를 백영보 잔상이 통과한다. 원래 획이 교차해 X자로 폭발한다.'},
-  {school:'ink',a:'inkrain',b:'halfmoon',name:'묵경반천',fn:comboInkMirror,col:'#D9DFE5',keep:{get:()=>inkKeep('swords'),ready:1.4,release:releaseInk},d:'지면에 박힌 먹검 5개를 반월경이 회수한다. 같은 검이 거울을 통과해 적에게 반사된다.'}];
+  {school:'ink',a:'inkrain',b:'halfmoon',name:'묵경반천',fn:comboInkMirror,col:'#D9DFE5',keep:{get:()=>inkKeep('swords'),ready:1.4,release:releaseInk},d:'지면에 박힌 먹검 5개를 반월경이 회수한다. 같은 검이 거울을 통과해 적에게 반사된다.'},
+  {school:'wuji',a:'ink_gate',b:'bind',name:'묵문봉인',fn:comboWujiSeal,col:'#D9DFE5',keep:{get:()=>wujiKeep('gates'),ready:1.25,release:releaseWuji},d:'남아 있는 먹문 2개에서 흑백 띠가 뻗어 나온다. 같은 문이 적을 감싸 하나의 봉인으로 닫힌다.'},
+  {school:'wuji',a:'talisman',b:'backflow',name:'백지환류',fn:comboWujiFlow,col:'#D9DFE5',keep:{get:()=>wujiKeep('papers'),ready:1.3,release:releaseWuji},d:'공중에 남은 부적 5장을 먹물 파도가 하나씩 빨아들인다. 부적을 품은 역류가 적을 덮쳐 폭발한다.'}];
 /* ================= 계열 · 편성 (A단계: 활성 상태만 계산) ================= */
 const SCHOOLS=[
   {id:'crimson',name:'진홍',c:'#ff4f5e',awk:'inferno'},
@@ -838,6 +840,7 @@ const SCHOOLS=[
   {id:'hellfire',name:'업화',c:'#ffa05a',awk:'hellking'},
   {id:'frost',name:'빙정',c:'#61dcf3',awk:'frostcrown'},
   {id:'ink',name:'음양검결',c:'#D9DFE5',awk:'yinyangsky'},
+  {id:'wuji',name:'무극도법',c:'#D9DFE5',awk:'wuji_return'},
 ].map(s=>({...s,pairs:COMBOS.filter(c=>c.school===s.id).map(c=>c.a)}));
 const RESONANCES=[
   {id:'crimson_hellfire',a:'crimson',b:'hellfire',name:'홍련작'},
@@ -849,6 +852,8 @@ const RESONANCES=[
   {id:'verdant_crimson',a:'verdant',b:'crimson',name:'역린혈공'},
   {id:'eclipse_ink',a:'eclipse',b:'ink',name:'묵월'},
   {id:'abyss_ink',a:'abyss',b:'ink',name:'현묵'},
+  {id:'ink_wuji',a:'ink',b:'wuji',name:'태허도검'},
+  {id:'verdant_wuji',a:'verdant',b:'wuji',name:'생무극'},
 ];
 // 저장에는 안정적인 시작 스킬 id를 최대 4개 보관한다. 빈 편성도 그대로 유지한다.
 function cleanLoadout(ids){return [...new Set((Array.isArray(ids)?ids:[]).filter(id=>COMBOS.some(c=>c.a===id)))].slice(0,4)}
@@ -887,6 +892,7 @@ const FOCUS_FX={
   hellfire:['속박 적에게 피해 +30%','연계 시 속박 부여','속박 중 적 공격 속도 -30%'],
   frost:['연계 시 빙결(적 공격 느려짐)','빙결 적이 받는 피해 +20%','빙결 중 적 패턴 1회 취소'],
   ink:['연계 발동 시 흑백 일섬 추가타(공격력 ×4)','연계 창 +2초','수묵 스킬의 흑백 연출 중 치명타 확률 +20%p'],
+  wuji:['연계 시 먹문 방어 준비: 다음 보스 공격 1회 흡수(쿨 25초)','연계 시 부적 5장 추가 타격(각 공격력 ×1)','연계 시 모든 스킬 쿨타임 -1초'],
 };
 /* ================= 공명 효과 (기존 고리 7쌍 + 수묵 연결 2쌍) ================= */
 const RES_FX={
@@ -899,6 +905,8 @@ const RES_FX={
   verdant_crimson:'막기(결정 방패·녹광 방호) 또는 패링 성공 시 10초간 연계기 피해 +20%',
   eclipse_ink:'연계기 적중 시 먹물 표식 5초. 표식 중 받는 피해 +15%',
   abyss_ink:'연계기 발동 시 20% 확률로 마무리 스킬 쿨타임 즉시 초기화',
+  ink_wuji:'태허도검 · 수묵 스킬의 흑백 연출 중 연계기 피해 +20%',
+  verdant_wuji:'생무극 · 막기(결정 방패·녹광 방호) 또는 패링 성공 시 부적 반격(공격력 ×5)',
 };
 function masteryTier(id){const m=(S&&S.mastery&&S.mastery[id])||0;return m>=25?3:m>=10?2:1}
 function focusTier(id){return(typeof schoolState==='function'&&schoolState().focus.includes(id))?masteryTier(id):0}
@@ -909,6 +917,7 @@ function isFocusAwk(){if(!S||!S.awkSel)return false;const s=SCHOOLS.find(s=>s.aw
 function triggerResonanceCombo(cb,wasFrz,prevFrz){
   if(!fighting()||!m)return;
   if(focusTier('ink')>=1)inkFocusStrike();
+  triggerWujiFocus();
   if(hasRes('abyss_ink')&&Math.random()<BAL.ink.reset){cds[cb.b]=0;T.push({x:heroX,y:groundY-165*U,vx:0,vy:-45*U,text:'현묵 · 재사용!',crit:0,label:'',size:22,life:1.1,max:1.1,color:'#D9DFE5'})}
   const c=mCenter(m);
   if(hasRes('crimson_hellfire')){
@@ -1063,6 +1072,12 @@ SK.push(
   {id:'whitestep',name:'백영보',unlock:210,cd:BAL.ink.whitestep[2],c:'#D9DFE5',fn:castWhitestep,d:'하얀 잔상이 전장을 가로질러 벤다. 남은 쌍획참의 획 2개를 X자로 교차시킨다.'},
   {id:'inkrain',name:'묵우검',unlock:220,cd:BAL.ink.inkrain[2],c:'#D9DFE5',fn:castInkrain,d:'먹검 다섯 자루가 비처럼 내려와 지면에 박힌다. 반월경으로 회수해 반사할 수 있다.'},
   {id:'halfmoon',name:'반월경',unlock:230,cd:BAL.ink.halfmoon[2],c:'#D9DFE5',fn:castHalfmoon,d:'흑백 반달 거울이 적을 벤다. 묵우검의 박힌 검 5개를 회수해 적에게 되돌린다.'}
+);
+SK.push(
+  {id:'ink_gate',name:'축지묵문',unlock:240,cd:BAL.wuji.ink_gate[2],c:'#D9DFE5',fn:castInkGate,d:'먹으로 공간을 가르고 적 양옆에 먹문 2개를 남긴다. 양의속박의 띠가 이 문에서 뻗어 나온다.'},
+  {id:'bind',name:'양의속박',unlock:250,cd:BAL.wuji.bind[2],c:'#D9DFE5',fn:castWujiBind,d:'흑백 띠로 적을 휘감아 조인다. 축지묵문의 먹문이 남아 있으면 두 문을 닫아 묵문봉인으로 폭발한다.'},
+  {id:'talisman',name:'백지귀환',unlock:260,cd:BAL.wuji.talisman[2],c:'#D9DFE5',fn:castTalisman,d:'백지 부적 5장이 적을 스치고 공중에 돌아와 남는다. 역류묵하가 같은 부적을 흡수한다.'},
+  {id:'backflow',name:'역류묵하',unlock:270,cd:BAL.wuji.backflow[2],c:'#D9DFE5',fn:castBackflow,d:'거대한 먹물 파도가 역류한다. 남아 있는 백지귀환의 부적 5장을 흡수해 백지환류를 터뜨린다.'}
 );
 SK.sort((a,b)=>a.unlock-b.unlock);
 const cds={};SK.forEach(s=>cds[s.id]=0);
@@ -2256,3 +2271,132 @@ Object.assign(IC,{
   halfmoon:'<svg viewBox="0 0 32 32"><path d="M20 2Q-10 16 20 30Q3 16 20 2" fill="#FFFFFF"/><path d="M12 16h18l-6-6m6 6-6 6" fill="none" stroke="#77808C" stroke-width="2"/></svg>'
 });
 for(const id of ['twinstroke','whitestep','inkrain','halfmoon'])BR[id]={a:['진묵','피해 +40%'],b:['유묵','재사용 대기 -30%'],gen:1};
+
+/* ================= 무극도법 — 원본 먹문·부적의 공간 연계 ================= */
+const WUJI_COL=['#05070B','#363F4D','#77808C','#D9DFE5','#FFFFFF'];
+const wujiKeep=kind=>FX.find(o=>o.wujiKind===kind&&!o.collapse&&!o.consumed);
+const wujiPoint=p=>({x:p.nx*W,y:groundY-p.alt*U});
+const wujiPower=(id,tr=tier())=>BAL.wuji[id][0]+BAL.wuji[id][1]*tr;
+function releaseWuji(o){o.collapse=true;o.dur=o.t+.35}
+function wujiBurst(x,y,n){for(let i=0;i<n;i++)P.push({t:'shard',x,y,vx:rnd(-650,650)*U,vy:rnd(-650,80)*U,g:1400*U,drag:1,floor:1,size:rnd(3,10)*U,rot:rnd(0,6),vr:rnd(-12,12),life:.8,max:.8,color:WUJI_COL[i%5]});smoke(x,y,4,WUJI_COL[0],.8)}
+function wujiGate(x,y,r=105,sc=1){
+  if(sc<=0)return;ctx.save();ctx.translate(x,y);ctx.scale(U*sc,U*sc);
+  for(const [k,col] of [[1.12,WUJI_COL[0]],[1.04,WUJI_COL[2]],[.96,WUJI_COL[4]],[.83,WUJI_COL[1]],[.72,WUJI_COL[0]]]){ctx.fillStyle=col;ctx.beginPath();for(let i=0;i<=40;i++){const a=i*Math.PI/20,j=i%4===0?1.055:1;const px=Math.cos(a)*r*.3*k*j,py=Math.sin(a)*r*k*j;i?ctx.lineTo(px,py):ctx.moveTo(px,py)}ctx.closePath();ctx.fill()}
+  ctx.globalCompositeOperation='lighter';ctx.strokeStyle=WUJI_COL[4];ctx.lineWidth=1.5;ctx.beginPath();ctx.ellipse(0,0,r*.27,r*.92,0,-1.35,1.35);ctx.stroke();ctx.restore();
+}
+function wujiPaper(x,y,a=0,sc=1,mark=0){
+  if(sc<=0)return;ctx.save();ctx.translate(x,y);ctx.rotate(a);ctx.scale(U*sc,U*sc);
+  ctx.fillStyle=WUJI_COL[0];ctx.beginPath();ctx.moveTo(-15,-32);ctx.lineTo(13,-29);ctx.lineTo(15,31);ctx.lineTo(8,28);ctx.lineTo(2,33);ctx.lineTo(-14,30);ctx.closePath();ctx.fill();
+  ctx.fillStyle=WUJI_COL[3];ctx.fillRect(-11,-28,21,54);ctx.fillStyle=WUJI_COL[4];ctx.fillRect(-9,-27,16,49);
+  ctx.strokeStyle=WUJI_COL[0];ctx.lineWidth=2.6;ctx.lineJoin='miter';ctx.beginPath();ctx.moveTo(0,-21);for(let j=0;j<6;j++)ctx.lineTo((j%2?-1:1)*(3+(j+mark)%3),-18+j*7);ctx.moveTo(-5,-10);ctx.lineTo(5,-10);ctx.moveTo(-5,9);ctx.lineTo(5,9);ctx.stroke();ctx.restore();
+}
+function wujiDisc(x,y,r,angle=0,sc=1,gold=false){
+  if(sc<=0)return;ctx.save();ctx.translate(x,y);ctx.rotate(angle);ctx.scale(U*sc,U*sc);
+  ctx.fillStyle=WUJI_COL[0];ctx.strokeStyle=gold?'#FFD45B':WUJI_COL[2];ctx.lineWidth=3;ctx.beginPath();for(let i=0;i<=60;i++){const a=i*Math.PI/30,rr=r*(i%4===0?1.09:1);i?ctx.lineTo(Math.cos(a)*rr,Math.sin(a)*rr):ctx.moveTo(rr,0)}ctx.closePath();ctx.fill();ctx.stroke();
+  for(let i=0;i<2;i++){ctx.save();ctx.rotate(i*Math.PI);ctx.fillStyle=i?WUJI_COL[0]:WUJI_COL[4];ctx.beginPath();ctx.arc(0,0,r*.92,-Math.PI/2,Math.PI/2);ctx.arc(0,r*.46,r*.46,Math.PI/2,-Math.PI/2);ctx.arc(0,-r*.46,r*.46,Math.PI/2,-Math.PI/2,true);ctx.closePath();ctx.fill();ctx.fillStyle=i?WUJI_COL[4]:WUJI_COL[0];ctx.beginPath();ctx.arc(0,r*.46,r*.11,0,7);ctx.fill();ctx.restore()}
+  ctx.restore();
+}
+function drawWujiKeep(o){
+  if(o.consumed)return;const fade=clamp((o.dur-o.t)/.35,0,1);
+  for(const p of o.pieces){if(p.used||o.t<p.born)continue;const c=wujiPoint(p),sc=easeOut(clamp((o.t-p.born)/.3,0,1))*fade*(p.sc??1);
+    if(o.wujiKind==='gates')wujiGate(c.x,c.y,105,sc);else wujiPaper(c.x,c.y,p.a,sc,p.index)}
+}
+function castInkGate(pm){
+  const c=m?mCenter(m):{x:monX,y:groundY-60*U},power=wujiPower('ink_gate');castLock=1.25;sfx.dark();
+  const pieces=[-1,1].map((d,i)=>({nx:(c.x+d*72*U)/W,alt:(groundY-c.y)/U+14,born:.18+i*.3,index:i}));
+  return addFX({inkSchool:true,wujiKind:'gates',pieces,dur:1.6,up(dt,o){desat=1;if(o.t<1.25){castLock=Math.max(castLock,.05);h.ang=o.t<.5?-1.65:1;h.t=9}
+    for(let i=0;i<2;i++)at(o,.48+i*.4,()=>{const q=wujiPoint(pieces[i]);sfx.slash2();wujiBurst(q.x,q.y,8);skillHit(power/2,pm,c.x,c.y,{light:!i,heavy:!!i,name:'축지묵문',sid:'ink_gate',col:WUJI_COL[3],fc:'255,255,255'})});
+  },post(o){drawWujiKeep(o);if(o.t<.7)inkSlash(lerp(heroX,c.x,clamp(o.t/.7,0,1)),c.y,100,-1.4,Math.sin(o.t/.7*Math.PI))}});
+}
+function castTalisman(pm){
+  const c=m?mCenter(m):{x:monX,y:groundY-60*U},power=wujiPower('talisman'),mid=(heroX+c.x)*.5;castLock=1.3;sfx.charge();
+  const pieces=Array.from({length:5},(_,i)=>({nx:(mid+(i-2)*38*U)/W,alt:145-Math.abs(i-2)*18,a:(i-2)*.23,born:.1+i*.1,index:i}));
+  return addFX({inkSchool:true,wujiKind:'papers',pieces,dur:1.65,up(dt,o){desat=1;if(o.t<1.3){castLock=Math.max(castLock,.05);h.ang=-1.4;h.t=9}
+    for(let i=0;i<5;i++)at(o,.45+i*.13,()=>{sfx.slash2();skillHit(power/5,pm,c.x,c.y,{light:i<4,heavy:i===4,name:'백지귀환',sid:'talisman',col:WUJI_COL[3],fc:'255,255,255'});if(i===4)wujiBurst(c.x,c.y,20)});
+  },post(o){if(!o.claimed)drawWujiKeep(o);if(o.t>.35&&o.t<1.1){const k=(o.t-.35)/.75;inkSlash(lerp(mid,c.x,Math.sin(k*Math.PI)),c.y,85,-.3,Math.sin(k*Math.PI))}}});
+}
+function wujiRibbons(x,y,sources,t,scale=1){
+  ctx.save();for(let i=0;i<3;i++){const white=i%2===0,start=sources[i%2];
+    for(const [w,col] of [[19,WUJI_COL[2]],[15,white?WUJI_COL[4]:WUJI_COL[0]],[2,white?WUJI_COL[3]:WUJI_COL[4]]]){ctx.strokeStyle=col;ctx.lineWidth=w*U*scale;ctx.beginPath();ctx.moveTo(start.x,start.y+(i-1)*22*U);ctx.bezierCurveTo(start.x+(i%2?70:-70)*U,y-110*U,x+(i%2?90:-90)*U,y+110*U,x,y+(i-1)*34*U);ctx.stroke();
+      ctx.beginPath();ctx.ellipse(x,y+(i-1)*34*U,85*U*scale,23*U*scale,(i-1)*.2,t*2+i,t*2+i+Math.PI*1.8);ctx.stroke()}}
+  ctx.restore();
+}
+function wujiSealFX(pm,kept){
+  const c=m?mCenter(m):{x:monX,y:groundY-60*U},nx=c.x/W,alt=(groundY-c.y)/U,power=wujiPower('bind');castLock=1.9;sfx.dark();
+  if(kept){kept.dur=kept.t+1.95;for(const p of kept.pieces){p.snx=p.nx;p.salt=p.alt}}
+  return addFX({inkSchool:true,kept,dur:1.9,up(dt,o){desat=1;castLock=Math.max(castLock,.05);
+    if(kept)for(const p of kept.pieces){const k=clamp((o.t-.55)/.6,0,1);p.nx=lerp(p.snx,nx,k);p.alt=lerp(p.salt,alt,k);p.sc=1-k*.7;if(o.t>.15)p.extended=true}
+    at(o,.65,()=>skillHit(power*.25,pm,nx*W,groundY-alt*U,{light:1,col:WUJI_COL[3],sid:'bind'}));
+    at(o,1.2,()=>{if(kept){kept.consumed=true;kept.pieces.forEach(p=>p.used=true)}wujiBurst(nx*W,groundY-alt*U,48);sfx.bigboom();
+      const mark=T.length;skillHit(power*.75,pm,nx*W,groundY-alt*U,{heavy:1,name:'양의속박',sid:'bind',col:WUJI_COL[3],fc:'255,255,255'});if(kept&&T.length>mark){T[mark].x-=70*U;T[mark].y-=65*U;T[mark].size=26}
+      if(kept)skillHit(BAL.wuji.combo,pm,nx*W,groundY-alt*U,{heavy:1,name:'묵문봉인',sid:'combo',col:WUJI_COL[4],crack:2,fc:'255,255,255'})});
+  },post(o){const x=nx*W,y=groundY-alt*U,k=clamp(o.t/.4,0,1),f=clamp((1.9-o.t)/.45,0,1),sources=kept?kept.pieces.map(wujiPoint):[{x:heroX,y:groundY-90*U},{x:heroX+25*U,y:groundY-60*U}];
+    if(o.t<1.2)wujiRibbons(x,y,sources,o.t,k);
+    if(o.t>.65){wujiDisc(x,y,125,o.t*.6,clamp((o.t-.65)/.45,0,1)*f);inkSlash(x,y,190,0,f)}}});
+}
+function castWujiBind(pm){return wujiSealFX(pm)}
+function comboWujiSeal(pm=1,kept){if(kept)return wujiSealFX(pm,kept)}
+function wujiWave(x,y,t,sc=1){
+  ctx.save();ctx.translate(x,y);ctx.scale(U*sc,U*sc);
+  for(const [s,col] of [[1.08,WUJI_COL[2]],[1,WUJI_COL[0]],[.86,WUJI_COL[3]],[.79,WUJI_COL[0]],[.62,WUJI_COL[4]],[.55,WUJI_COL[1]]]){ctx.save();ctx.scale(s,s);ctx.fillStyle=col;ctx.beginPath();ctx.moveTo(-215,0);ctx.bezierCurveTo(-155,-30,-105,-160,-20,-172);ctx.bezierCurveTo(75,-202,120,-113,45,-105);ctx.bezierCurveTo(85,-140,5,-160,-20,-75);ctx.bezierCurveTo(30,-112,85,-65,113,0);
+    for(let i=10;i>=0;i--)ctx.lineTo(-215+i*32,-(i%2?6:0));ctx.closePath();ctx.fill();ctx.restore()}
+  for(let i=0;i<5;i++)inkSlash(-130+i*42,-40-Math.sin(t*5+i)*15,35,-.35,.5);ctx.restore();
+}
+function wujiFlowFX(pm,kept){
+  const c=m?mCenter(m):{x:monX,y:groundY-60*U},nx=c.x/W,alt=(groundY-c.y)/U,power=wujiPower('backflow');castLock=2.1;sfx.roar();
+  if(kept){kept.dur=kept.t+2.15;for(const p of kept.pieces){p.snx=p.nx;p.salt=p.alt}}
+  return addFX({inkSchool:true,kept,dur:2.1,up(dt,o){desat=1;castLock=Math.max(castLock,.05);o.wx=lerp(heroX+20*U,nx*W+25*U,easeOut(clamp(o.t/1.45,0,1)));
+    if(kept)for(let i=0;i<kept.pieces.length;i++){const p=kept.pieces[i],k=clamp((o.t-.15-i*.09)/.68,0,1),a=k*5+i;p.nx=lerp(p.snx,o.wx/W,k)+Math.sin(a)*35*U/W*Math.sin(k*Math.PI);p.alt=lerp(p.salt,80,k)+Math.cos(a)*25*Math.sin(k*Math.PI);p.a+=dt*5;p.sc=1-k*.8;if(k>=1){p.absorbed=true;p.used=true}}
+    for(let i=0;i<3;i++)at(o,.7+i*.18,()=>skillHit(power*.15,pm,nx*W,groundY-alt*U,{light:1,col:WUJI_COL[3],sid:'backflow'}));
+    at(o,1.45,()=>{if(kept)kept.consumed=true;wujiBurst(nx*W,groundY-alt*U,48);sfx.bigboom();
+      const mark=T.length;skillHit(power*.55,pm,nx*W,groundY-alt*U,{heavy:1,name:'역류묵하',sid:'backflow',col:WUJI_COL[3],fc:'255,255,255'});if(kept&&T.length>mark){T[mark].x-=70*U;T[mark].y-=65*U;T[mark].size=26}
+      if(kept)skillHit(BAL.wuji.combo,pm,nx*W,groundY-alt*U,{heavy:1,name:'백지환류',sid:'combo',col:WUJI_COL[4],crack:2,fc:'255,255,255'})});
+  },post(o){const f=Math.min(clamp(o.t/.3,0,1),clamp((2.1-o.t)/.65,0,1));wujiWave(o.wx||heroX,groundY,o.t,f*(kept?1.25:1));if(kept)drawWujiKeep(kept);if(o.t>1.4)inkSlash(nx*W,groundY-alt*U,245,-.25,f)}});
+}
+function castBackflow(pm){return wujiFlowFX(pm)}
+function comboWujiFlow(pm=1,kept){if(kept)return wujiFlowFX(pm,kept)}
+
+// 전투 중의 1회 방어만 보관한다. 저장/새 게임에서 S가 바뀌면 이전 방어를 물려주지 않는다.
+let wujiWardState={owner:null,armed:false,readyAt:0};
+function wujiWard(){if(wujiWardState.owner!==S)wujiWardState={owner:S,armed:false,readyAt:0};if(!focusTier('wuji'))wujiWardState.armed=false;return wujiWardState}
+function wujiNotice(text){T.push({x:heroX,y:groundY-155*U,vx:0,vy:-45*U,text,crit:0,label:'',size:23,life:1.1,max:1.1,color:WUJI_COL[3]})}
+function wujiTaihe(pm){const scene=FX.find(f=>f.inkSchool&&!f.collapse&&f.t<f.dur);if(!scene||!hasRes('ink_wuji'))return 1;if(pm===1&&!scene.taiheShown){scene.taiheShown=true;wujiNotice('태허도검!')}return 1+BAL.wuji.taihe}
+function triggerWujiFocus(){
+  const level=focusTier('wuji');if(!level)return;const ward=wujiWard();
+  if(!ward.armed&&gt>=ward.readyAt){ward.armed=true;ward.readyAt=gt+BAL.wuji.wardCD;wujiNotice('먹문 방어 준비!');
+    addFX({wujiWard:ward,dur:.2,up(dt,o){if(wujiWardState!==ward||ward.owner!==S||!ward.armed||!focusTier('wuji'))o.dur=o.t;else o.dur=o.t+.2},post(o){if(ward.owner===S&&ward.armed&&focusTier('wuji'))wujiGate(heroX+38*U,groundY-58*U,70,.7)}})}
+  if(level>=2)wujiTalismanStrike(BAL.wuji.talismanCount,BAL.wuji.talismanHit,'무극 부적');
+  if(level>=3)for(const s of SK)cds[s.id]=Math.max(0,cds[s.id]-BAL.wuji.refund);
+}
+function absorbWujiAttack(){
+  const ward=wujiWard();if(!fighting()||!m.boss||!focusTier('wuji')||!ward.armed)return false;
+  ward.armed=false;sfx.parry();stop=Math.max(stop,.1);addTrauma(.3);flash(.3,'255,255,255');wujiNotice('먹문 흡수!');wujiBurst(heroX+38*U,groundY-60*U,16);return true;
+}
+function wujiTalismanStrike(count,mult,name){
+  if(!fighting())return;const target=m;if(name==='생무극')wujiNotice('생무극!');
+  addFX({dur:.9,up(dt,o){for(let i=0;i<count;i++)at(o,.25+i*.1,()=>{if(m!==target||!fighting())return;const c=mCenter(m);deal(ST.atk*mult,false,'skill',c.x,c.y,{light:1,col:WUJI_COL[4],name,sid:'wuji_talisman'});sfx.slash2()})},post(o){if(m!==target)return;const c=mCenter(m);for(let i=0;i<count;i++){const k=clamp((o.t-i*.1)/.3,0,1);if(k>0&&k<1)wujiPaper(lerp(heroX,c.x,k),lerp(groundY-130*U,c.y,k)-Math.sin(k*Math.PI)*60*U,k*3,1-k*.6,i)}}});
+}
+function awkWujiReturn(pm=1){
+  cutin('무극귀일','각성 · 만상을 한 점으로','#FFD45B');castLock=2.8;sfx.charge();
+  const c=m?mCenter(m):{x:monX,y:groundY-60*U},nx=c.x/W,alt=(groundY-c.y)/U,power=wujiPower('wuji_return');
+  return addFX({inkSchool:true,wujiReturn:true,dur:2.8,up(dt,o){desat=1;castLock=Math.max(castLock,.05);dimT=Math.max(dimT,.4);h.ang=o.t<1.55?-1.65:1;h.t=9;
+    at(o,.85,()=>{sfx.dark();skillHit(power*.125,pm,nx*W,groundY-alt*U,{light:1,col:WUJI_COL[3],sid:'wuji_return'})});
+    at(o,1.55,()=>{wujiBurst(nx*W,groundY-alt*U,80);sfx.bigboom();stop=Math.max(stop,.27);addTrauma(.85);zoom+=.12*FXS;flash(.9,'255,255,255');skillHit(power*.875,pm,nx*W,groundY-alt*U,{heavy:1,name:'무극귀일',sid:'wuji_return',col:'#FFD45B',fc:'255,255,255',crack:2})});
+  },post(o){const x=nx*W,y=groundY-(alt+65)*U,t=o.t;
+    if(t<.45){const k=easeOut(t/.45);wujiDisc(lerp(heroX,x,k),lerp(groundY-135*U,y,k),20,t,k,true)}
+    else{const collapse=clamp((t-1.8)/.75,0,1),sc=easeOut(clamp((t-.45)/.65,0,1))*(1-collapse),r=205*sc;
+      ctx.save();ctx.translate(x,y);ctx.rotate(t*.5);for(let i=0;i<12;i++){const a=i*Math.PI/6,rr=(r+30+(i%3)*15)*U;ctx.fillStyle=WUJI_COL[i%3];ctx.beginPath();ctx.moveTo(Math.cos(a)*rr,Math.sin(a)*rr);ctx.lineTo(Math.cos(a+.1)*(rr+18*U*sc),Math.sin(a+.1)*(rr+18*U*sc));ctx.lineTo(Math.cos(a+.19)*rr,Math.sin(a+.19)*rr);ctx.lineTo(Math.cos(a+.1)*(rr-12*U*sc),Math.sin(a+.1)*(rr-12*U*sc));ctx.closePath();ctx.fill()}ctx.restore();
+      if(t<1.55){ctx.save();ctx.strokeStyle=WUJI_COL[0];ctx.lineWidth=22*U*sc;ctx.beginPath();ctx.arc(x,y,r*U,0,7);ctx.stroke();ctx.strokeStyle=WUJI_COL[4];ctx.lineWidth=5*U*sc;for(let i=0;i<5;i++){ctx.beginPath();ctx.arc(x,y,r*U,t*2+i*1.3,t*2+i*1.3+.8);ctx.stroke()}ctx.restore();wujiDisc(x,y,24,t,1,true);for(let i=0;i<5;i++){const a=i*1.256+t;inkSlash(x+Math.cos(a)*r*.55*U,y+Math.sin(a)*r*.55*U,r*.35,a,1)}}
+      else{ctx.save();ctx.fillStyle=WUJI_COL[4];ctx.beginPath();ctx.arc(x,y,r*U,0,7);ctx.fill();ctx.strokeStyle='#FFD45B';ctx.lineWidth=3*U;ctx.stroke();ctx.restore();wujiDisc(x,y,32,-t,1-collapse,true);inkSlash(x,y,r*1.3,0,1)}
+      if(t>2.55){ctx.save();ctx.globalCompositeOperation='lighter';ctx.fillStyle=WUJI_COL[4];ctx.beginPath();ctx.arc(x,y,5*U*clamp((2.8-t)/.25,0,1),0,7);ctx.fill();ctx.restore()}}}});
+}
+Object.assign(IC,{
+  ink_gate:'<svg viewBox="0 0 32 32"><ellipse cx="8" cy="16" rx="5" ry="13" fill="#05070B" stroke="#FFFFFF" stroke-width="2"/><ellipse cx="24" cy="16" rx="5" ry="13" fill="#05070B" stroke="#D9DFE5" stroke-width="2"/></svg>',
+  bind:'<svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="9" fill="#05070B" stroke="#77808C"/><path d="M2 8q28 3 28 8T2 24M2 24q28-3 28-8T2 8" fill="none" stroke="#FFFFFF" stroke-width="3"/></svg>',
+  talisman:'<svg viewBox="0 0 32 32"><path d="M2 8l6-3 5 20-6 3m6-26h7v25h-7m11-21 6 3-5 20-6-3" fill="#FFFFFF"/><path d="M16 5l2 5-3 3 3 5-2 5" fill="none" stroke="#05070B" stroke-width="2"/></svg>',
+  backflow:'<svg viewBox="0 0 32 32"><path d="M1 28C8 21 10 3 23 4q12 1 6 12Q19 4 18 24l12 4z" fill="#05070B" stroke="#D9DFE5" stroke-width="2"/><path d="M2 29q12-7 20-17" fill="none" stroke="#FFFFFF" stroke-width="2"/></svg>'
+});
+for(const id of ['ink_gate','bind','talisman','backflow'])BR[id]={a:['현묵','피해 +40%'],b:['무간','재사용 대기 -30%'],gen:1};
+// 기존 각성기 순서는 보존한다. 동시에 추가되는 계열 없는 taichi와 독립된 끝 항목이다.
+AWK.push({id:'wuji_return',name:'무극귀일',unlock:255,c:'#FFD45B',fn:awkWujiReturn,d:'먹으로 만상을 감싼다. 회색 파편이 한 점으로 모이고, 백색 공간이 터진 뒤 작은 빛으로 돌아간다.'});
+AWK_IC.wuji_return='<svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="13" fill="#FFFFFF" stroke="#FFD45B"/><circle cx="16" cy="16" r="5" fill="#05070B"/><path d="M1 16h30M16 1v6m0 18v6" stroke="#77808C"/><circle cx="16" cy="14" r="2" fill="#FFFFFF"/></svg>';
